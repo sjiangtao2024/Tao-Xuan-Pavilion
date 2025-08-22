@@ -1,0 +1,1 @@
+SELECT p.id, pt.name, pt.description, pt.language FROM products p JOIN product_translations pt ON p.id = pt.product_id;

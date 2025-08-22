@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tao Xuan Pavilion - Find Taoist Artifacts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* --- Talisman Color Palette --- */
+        :root {
+            --bg-mystic-black: #1C1C1C;
+            --bg-talisman-yellow: #EAE0C8;
+            --text-on-dark: #EAE0C8;
+            --text-on-light: #1C1C1C;
+            --primary-cinnabar-red: #B83B1D;
+            --primary-cinnabar-red-hover: #d14f31;
+            --accent-gilded-gold: #A88F5A;
+            --accent-pine-green: #2A5743;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-mystic-black);
+            color: var(--text-on-dark);
+        }
+        .font-serif-sc {
+            font-family: 'Noto Serif SC', serif;
+        }
+        .hero-bg {
+            background-image: url('https://placehold.co/1600x900/1C1C1C/A88F5A?text=道法自然');
+            background-size: cover;
+            background-position: center;
+        }
+        .product-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background-color: var(--bg-talisman-yellow);
+            color: var(--text-on-light);
+            border: 1px solid var(--accent-gilded-gold);
+        }
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+        .btn-primary {
+            background-color: var(--primary-cinnabar-red);
+            color: var(--text-on-dark);
+            transition: background-color 0.3s ease;
+            font-weight: bold;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-cinnabar-red-hover);
+        }
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            color: var(--text-on-dark);
+        }
+        .nav-link:hover {
+             color: var(--accent-gilded-gold);
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--primary-cinnabar-red);
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
+        }
+        .lang-switcher button.active {
+            color: var(--primary-cinnabar-red);
+            font-weight: bold;
+        }
+        .text-primary {
+            color: var(--primary-cinnabar-red);
+        }
+        .text-gold {
+            color: var(--accent-gilded-gold);
+        }
+        .focus-ring-primary:focus {
+            --tw-ring-color: var(--primary-cinnabar-red);
+            border-color: var(--primary-cinnabar-red);
+        }
+        .video-player-container {
+            background-color: #000;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            max-width: 600px; /* Changed from 400px */
+            margin: 0 auto; /* Ensure it's centered if width is less than parent */
+        }
+        .video-player-container video {
+            width: 100%;
+            margin: 0 auto; /* Center video */
+        }
+        /* Carousel Styles */
+        .carousel {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            max-width: 600px; /* New: Limit the maximum width */
+            margin: 0 auto;  /* New: Center it */
+        }
+        .carousel-inner {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+        .carousel-item {
+            min-width: 100%;
+            box-sizing: border-box;
+        }
+        .carousel-item img,
+        .carousel-item video {
+            width: 100%;
+            display: block;
+            border-radius: 0.5rem;
+        }
+        .carousel-control {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 50%;
+            z-index: 10;
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+        .carousel-control.prev {
+            left: 1rem;
+        }
+        .carousel-control.next {
+            right: 1rem;
+        }
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-gilded-gold);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-cinnabar-red);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="bg-black bg-opacity-60 backdrop-blur-sm sticky top-0 z-50 shadow-lg shadow-black/30 border-b border-white/10">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-serif-sc font-bold tracking-wider text-gold" data-lang-key="siteName">Tao Xuan Pavilion</h1>
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#home" class="nav-link text-lg active" onclick="showPage('home')" data-lang-key="navHome">Home</a>
+                <a href="#shop" class="nav-link text-lg" onclick="showPage('shop')" data-lang-key="navShop">All Artifacts</a>
+                <a href="#about" class="nav-link text-lg" onclick="showPage('about')" data-lang-key="navAbout">About Us</a>
+                <a href="#contact" class="nav-link text-lg" onclick="showPage('contact')" data-lang-key="navContact">Contact Us</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <div class="lang-switcher text-gray-300 text-sm">
+                    <button id="lang-zh" class="hover:text-white transition">中文</button>
+                    <span>/</span>
+                    <button id="lang-en" class="hover:text-white transition">English</button>
+                </div>
+                <div id="auth-container">
+                    <button id="login-button" class="btn-primary px-4 py-2 rounded-md text-sm" data-lang-key="login">Login</button>
+                    <div id="user-profile" class="hidden items-center space-x-2">
+                        <span id="user-email" class="text-sm text-gold"></span>
+                        <button id="logout-button" class="text-gray-400 hover:text-white text-sm" data-lang-key="logout">Logout</button>
+                    </div>
+                </div>
+                <button id="cart-button" class="relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-gray-300 hover:text-gold transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span id="cart-count" class="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </button>
+                <button id="mobile-menu-button" class="md:hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4 bg-black/90">
+            <a href="#home" class="block py-2 text-lg" onclick="showPage('home')" data-lang-key="navHomeMobile">Home"></a>
+            <a href="#shop" class="block py-2 text-lg" onclick="showPage('shop')" data-lang-key="navShopMobile">All Artifacts</a>
+            <a href="#about" class="block py-2 text-lg" onclick="showPage('about')" data-lang-key="navAboutMobile">About Us</a>
+            <a href="#contact" class="block py-2 text-lg" onclick="showPage('contact')" data-lang-key="navContactMobile">Contact Us</a>
+        </div>
+    </header>
+
+    <main id="app-content">
+        <!-- Home Page -->
+        <div id="home-page" class="page">
+            <section class="hero-bg h-[60vh] md:h-[80vh] flex items-center justify-center text-center relative">
+                <div class="absolute inset-0 bg-black opacity-60"></div>
+                <div class="relative z-10 px-4">
+                    <h2 class="text-4xl md:text-6xl font-serif-sc font-bold tracking-widest text-gold" data-lang-key="heroTitle">Tao Follows Nature</h2>
+                    <p class="mt-4 text-lg md:text-xl max-w-2xl mx-auto" style="color: var(--text-on-dark);" data-lang-key="heroSubtitle">Selected Taoist artifacts like lightning-struck wood to help you find peace and harmony.</p>
+                    <button onclick="showPage('shop')" class="mt-8 btn-primary py-3 px-8 rounded-lg text-lg shadow-lg shadow-black/30" data-lang-key="heroButton">Explore Artifacts</button>
+                </div>
+            </section>
+
+            <section class="py-16 sm:py-24">
+                <div class="container mx-auto px-6">
+                    <h3 class="text-3xl font-serif-sc font-bold text-center mb-12 text-gold" data-lang-key="featuredTitle">Featured Treasures</h3>
+                    <div id="featured-products" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Featured products will be injected here by JS -->
+                    </div>
+                </div>
+            </section>
+            
+            <section class="py-16 sm:py-24" style="background-color: #111;">
+                <div class="container mx-auto px-6 text-center">
+                    <h3 class="text-3xl font-serif-sc font-bold mb-4 text-gold" data-lang-key="leijimuTitle">What is Lightning-Struck Wood?</h3>
+                    <p class="max-w-3xl mx-auto text-lg leading-relaxed" style="color: var(--text-on-dark);" data-lang-key="leijimuDesc">
+                        Also known as 'evil-warding wood', it's a powerful Taoist artifact. Struck by lightning, it's believed to hold celestial energy, capable of suppressing negative forces and bringing protection, making it an excellent item for spiritual practice and safeguarding.
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Shop Page -->
+        <div id="shop-page" class="page hidden">
+            <div class="container mx-auto px-6 py-16">
+                <h2 class="text-4xl font-serif-sc font-bold text-center mb-4 text-gold" data-lang-key="shopTitle">All Artifacts</h2>
+                <div class="flex justify-center mb-12">
+                    <select id="category-filter" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg focus-ring-primary p-2.5">
+                        <option value="all" data-lang-key="allCategories">All Categories</option>
+                    </select>
+                </div>
+                <div id="all-products" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                    <!-- All products will be injected here by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Detail Page -->
+        <div id="product-page" class="page hidden">
+            <div class="container mx-auto px-6 py-16">
+                <div id="product-detail-content" class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+                    <!-- Product details will be injected here by JS -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- About Page -->
+        <div id="about-page" class="page hidden">
+            <div class="container mx-auto px-6 py-16">
+                <div class="max-w-4xl mx-auto text-center p-8 rounded-lg" style="background-color: var(--bg-talisman-yellow); color: var(--text-on-light);">
+                    <h2 class="text-4xl font-serif-sc font-bold mb-8 text-gold" data-lang-key="aboutTitle">About Tao Xuan Pavilion</h2>
+                    <img src="https://placehold.co/800x400/1C1C1C/A88F5A?text=山间道观" alt="About Us" class="rounded-lg shadow-lg mx-auto mb-8">
+                    <p class="text-lg leading-relaxed mb-4" data-lang-key="aboutDesc1">
+                        Tao Xuan Pavilion stems from a reverence for Taoist culture and natural forces. We travel to sacred mountains to find genuine lightning-struck wood and other precious materials, ensuring each piece embodies pure Taoist essence.
+                    </p>
+                    <p class="text-lg leading-relaxed" data-lang-key="aboutDesc2">
+                        Our mission is to connect modern people with ancient Eastern wisdom, allowing more to feel the protection and power of Taoist artifacts, finding inner peace in a bustling world.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Page -->
+        <div id="contact-page" class="page hidden">
+            <div class="container mx-auto px-6 py-16">
+                <h2 class="text-4xl font-serif-sc font-bold text-center mb-12 text-gold" data-lang-key="contactTitle">Contact Us</h2>
+                <form class="space-y-6 p-8 rounded-lg shadow-lg" style="background-color: var(--bg-talisman-yellow);">
+                    <div>
+                        <label for="name" class="block mb-2 text-sm font-medium" style="color: var(--text-on-light);" data-lang-key="formName">Name</label>
+                        <input type="text" id="name" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5 focus-ring-primary" data-lang-key-placeholder="formNamePlaceholder">
+                    </div>
+                    <div>
+                        <label for="email" class="block mb-2 text-sm font-medium" style="color: var(--text-on-light);" data-lang-key="formEmail">Email</label>
+                        <input type="email" id="email" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5 focus-ring-primary" data-lang-key-placeholder="formEmailPlaceholder">
+                    </div>
+                    <div>
+                        <label for="message" class="block mb-2 text-sm font-medium" style="color: var(--text-on-light);" data-lang-key="formMessage">Your Message</label>
+                        <textarea id="message" rows="6" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5 focus-ring-primary" data-lang-key-placeholder="formMessagePlaceholder"></textarea>
+                    </div>
+                    <button type="submit" class="w-full btn-primary py-3 px-5 rounded-lg text-lg" data-lang-key="formSubmit">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-black text-gray-400 border-t border-white/10">
+        <div class="container mx-auto px-6 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+                <div>
+                    <h4 class="text-xl font-serif-sc font-bold text-gold mb-4" data-lang-key="footerSiteName">Tao Xuan Pavilion</h4>
+                    <p data-lang-key="footerSlogan">Inheriting Taoist wisdom, sharing natural energy.</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-gold mb-4" data-lang-key="footerLinks">Quick Links</h4>
+                    <ul>
+                        <li class="mb-2"><a href="#home" onclick="showPage('home')" class="hover:text-gold" data-lang-key="footerHome">Home</a></li>
+                        <li class="mb-2"><a href="#shop" onclick="showPage('shop')" class="hover:text-gold" data-lang-key="footerShop">All Artifacts</a></li>
+                        <li class="mb-2"><a href="#about" onclick="showPage('about')" class="hover:text-gold" data-lang-key="footerAbout">About Us</a></li>
+                        <li><a href="#contact" onclick="showPage('contact')" class="hover:text-gold" data-lang-key="footerContact">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-gold mb-4" data-lang-key="footerFollow">Follow Us</h4>
+                    <div class="flex justify-center md:justify-start space-x-4">
+                        <a href="#" class="hover:text-gold" data-lang-key="footerSocialWeChat">WeChat</a>
+                        <a href="#" class="hover:text-gold" data-lang-key="footerSocialWeibo">Weibo</a>
+                        <a href="#" class="hover:text-gold" data-lang-key="footerSocialXiaohongshu">Xiaohongshu</a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 border-t border-white/10 pt-6 text-center text-sm">
+                <p data-lang-key="footerCopyright">&copy; 2025 Tao Xuan Pavilion. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center">
+        <div class="rounded-lg shadow-xl w-11/12 md:w-1/3 lg:w-1/4 border border-gold" style="background-color: var(--bg-mystic-black);">
+            <div class="flex justify-between items-center p-6 border-b" style="border-color: var(--accent-gilded-gold);">
+                <h2 class="text-2xl font-serif-sc font-bold text-gold" data-lang-key="loginTitle">Login</h2>
+                <button id="close-login-button" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-8">
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label for="login-email" class="block mb-2 text-sm font-medium" data-lang-key="formEmail">Email</label>
+                        <input type="email" id="login-email" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5 focus-ring-primary" required>
+                    </div>
+                    <div>
+                        <label for="login-password" class="block mb-2 text-sm font-medium" data-lang-key="formPassword">Password</label>
+                        <input type="password" id="login-password" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5 focus-ring-primary" required>
+                    </div>
+                    <p id="login-error" class="text-red-500 text-sm"></p>
+                    <button type="submit" class="w-full btn-primary py-3 px-5 rounded-lg text-lg" data-lang-key="login">Login</button>
+                    <p class="text-center text-sm mt-4">
+                        <span data-lang-key="noAccount">Don't have an account?</span>
+                        <a href="#" id="show-register-from-login" class="text-primary hover:underline" data-lang-key="registerNow">Register Now</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="register-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center">
+        <div class="rounded-lg shadow-xl w-11/12 md:w-1/3 lg:w-1/4 border border-gold" style="background-color: var(--bg-mystic-black);">
+            <div class="flex justify-between items-center p-6 border-b" style="border-color: var(--accent-gilded-gold);">
+                <h2 class="text-2xl font-serif-sc font-bold text-gold" data-lang-key="registerTitle">Register</h2>
+                <button id="close-register-button" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-8">
+                <form id="register-form" class="space-y-6">
+                    <div>
+                        <label for="register-email" class="block mb-2 text-sm font-medium" data-lang-key="formEmail">Email</label>
+                        <input type="email" id="register-email" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5 focus-ring-primary" required>
+                    </div>
+                    <div>
+                        <label for="register-password" class="block mb-2 text-sm font-medium" data-lang-key="formPassword">Password</label>
+                        <input type="password" id="register-password" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5 focus-ring-primary" required>
+                    </div>
+                    <div>
+                        <label for="register-confirm-password" class="block mb-2 text-sm font-medium" data-lang-key="formConfirmPassword">Confirm Password</label>
+                        <input type="password" id="register-confirm-password" class="bg-gray-800 border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5 focus-ring-primary" required>
+                    </div>
+                    <p id="register-error" class="text-red-500 text-sm"></p>
+                    <button type="submit" class="w-full btn-primary py-3 px-5 rounded-lg text-lg" data-lang-key="register">Register</button>
+                    <p class="text-center text-sm mt-4">
+                        <span data-lang-key="haveAccount">Already have an account?</span>
+                        <a href="#" id="show-login-from-register" class="text-primary hover:underline" data-lang-key="loginNow">Login Now</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shopping Cart Modal -->
+    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center">
+        <div class="rounded-lg shadow-xl w-11/12 md:w-2/3 lg:w-1/2 max-h-[80vh] flex flex-col border border-gold" style="background-color: var(--bg-mystic-black);">
+            <div class="flex justify-between items-center p-6 border-b" style="border-color: var(--accent-gilded-gold);">
+                <h2 class="text-2xl font-serif-sc font-bold text-gold" data-lang-key="cartTitle">My Cart</h2>
+                <button id="close-cart-button" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div id="cart-items" class="p-6 overflow-y-auto flex-grow">
+                <!-- Cart items will be injected here -->
+            </div>
+            <div class="p-6 border-t" style="border-color: var(--accent-gilded-gold);">
+                <div class="flex justify-between items-center text-xl mb-4">
+                    <span class="font-bold" data-lang-key="cartTotal">Total:</span>
+                    <span id="cart-total" class="font-bold text-primary">¥0.00</span>
+                </div>
+                <button class="w-full btn-primary py-3 rounded-lg text-lg" data-lang-key="cartCheckout">Proceed to Checkout</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Message Modal -->
+    <div id="message-modal" class="fixed top-20 right-5 text-white py-3 px-6 rounded-lg shadow-lg z-50 transform translate-x-[120%] transition-transform duration-500" style="background-color: var(--primary-cinnabar-red);">
+        <p id="message-text"></p>
+
+
+    <script>
+        // --- LANGUAGE & TRANSLATIONS ---
+        const translations = {
+            en: {
+                siteTitle: "Tao Xuan Pavilion - Find Taoist Artifacts",
+                siteName: "Tao Xuan Pavilion",
+                navHome: "Home", navShop: "All Artifacts", navAbout: "About Us", navContact: "Contact Us",
+                navHomeMobile: "Home", navShopMobile: "All Artifacts", navAboutMobile: "About Us", navContactMobile: "Contact Us",
+                heroTitle: "Tao Follows Nature", heroSubtitle: "Selected Taoist artifacts like lightning-struck wood to help you find peace and harmony.", heroButton: "Explore Artifacts",
+                featuredTitle: "Featured Treasures",
+                leijimuTitle: "What is Lightning-Struck Wood?", leijimuDesc: "Also known as 'evil-warding wood', it's a powerful Taoist artifact. Struck by lightning, it's believed to hold celestial energy, capable of suppressing negative forces and bringing protection, making it an excellent item for spiritual practice and safeguarding.",
+                shopTitle: "All Artifacts",
+                allCategories: "All Categories",
+                aboutTitle: "About Tao Xuan Pavilion", aboutDesc1: "Tao Xuan Pavilion stems from a reverence for Taoist culture and natural forces. We travel to sacred mountains to find genuine lightning-struck wood and other precious materials, ensuring each piece embodies pure Taoist essence.", aboutDesc2: "Our mission is to connect modern people with ancient Eastern wisdom, allowing more to feel the protection and power of Taoist artifacts, finding inner peace in a bustling world.",
+                contactTitle: "Contact Us", formName: "Name", formNamePlaceholder: "Your Name", formEmail: "Email", formEmailPlaceholder: "example@email.com", formMessage: "Your Message", formMessagePlaceholder: "Enter your questions or suggestions here...", formSubmit: "Send Message",
+                footerSiteName: "Tao Xuan Pavilion", footerSlogan: "Inheriting Taoist wisdom, sharing natural energy.", footerLinks: "Quick Links", footerHome: "Home", footerShop: "All Artifacts", footerAbout: "About Us", footerContact: "Contact Us", footerFollow: "Follow Us", footerSocialWeChat: "WeChat", footerSocialWeibo: "Weibo", footerSocialXiaohongshu: "Xiaohongshu", footerCopyright: "© 2025 Tao Xuan Pavilion. All Rights Reserved.",
+                cartTitle: "My Cart", cartTotal: "Total:", cartCheckout: "Proceed to Checkout", cartEmpty: "Your cart is empty.", cartAdded: "added to cart",
+                productLabelQuantity: "Quantity:", productBtnAddToCart: "Add to Cart",
+                loginTitle: "Login", formPassword: "Password", login: "Login", logout: "Logout", loginSuccess: "Login successful!", loginFailed: "Login failed. Please check your credentials.", register: "Register", registrationNotImplemented: "Registration functionality is not yet implemented.", registerTitle: "Register", formConfirmPassword: "Confirm Password", registrationSuccess: "Registration successful! Please log in.",                 registrationFailed: "Registration failed. Please try again.", noAccount: "Don't have an account?", registerNow: "Register Now", haveAccount: "Already have an account?", loginNow: "Login Now", passwordsDoNotMatch: "Passwords do not match.",
+                passwordTooShort: "Password must be at least 8 characters long.",
+                products: {
+                    1: { name: 'Lightning-Struck Jujube Wood Safety Buckle', description: 'Hand-polished from natural lightning-struck jujube wood. The safety buckle, round on the outside and square on the inside, symbolizes the harmony of heaven and earth, offering protection and peace. Each piece has a unique, natural pattern.' },
+                    2: { name: 'Tai Sui Amulet Brocade Pouch', description: 'Contains a cinnabar-drawn Tai Sui amulet, consecrated by a Taoist master. Designed for those afflicted by Tai Sui, it can be carried or placed by the bedside to mitigate misfortune and pray for a smooth year.' },
+                    3: { name: 'Sandalwood Bagua Bracelet', description: 'Made from premium small-leaf red sandalwood, the beads are smooth and rich. Engraved with the Bagua pattern, it helps balance personal energy, inspire wisdom, and ward off negativity.' },
+                    4: { name: 'Pure Copper Bagua Mirror', description: 'Forged from pure copper, available as convex or concave. The convex mirror is used to repel negative energy, while the concave mirror absorbs auspicious vibes. A common tool in Feng Shui.' },
+                    5: { name: 'Peach Wood Sword Pendant', description: 'Peach wood has been considered an evil-warding wood since ancient times. This exquisite peach wood sword is perfect for hanging in a car or behind a door to ward off evil spirits and ensure peace.' },
+                    6: { name: 'Natural Mugwort Incense', description: 'Made from natural mugwort and various herbs. When lit, its elegant aroma purifies the space, dispels negative energy, and calms the mind. Ideal for meditation, reading, or daily use.' }
+                }
+            },
+            zh: {
+                siteTitle: "道玄阁 - 寻觅道家法物",
+                siteName: "道玄阁",
+                navHome: "首页", navShop: "所有法物", navAbout: "关于我们", navContact: "联系我们",
+                navHomeMobile: "首页", navShopMobile: "所有法物", navAboutMobile: "关于我们", navContactMobile: "联系我们",
+                heroTitle: "道法自然 天人合一", heroSubtitle: "精选雷击木、桃木剑等道家法物，助您趋吉避凶，感悟自然大道。", heroButton: "探索所有法物",
+                featuredTitle: "镇店之宝",
+                leijimuTitle: "何为雷击木？", leijimuDesc: "雷击木，又称“辟邪木”，是道家文化中至阳至刚的神秘信物。相传被雷电劈中的树木，凝聚了天地雷电之灵气，能克制一切阴邪之物。佩戴或摆放雷击木制品，可起到镇宅、辟邪、保平安之功效，是修行与守护的绝佳法器。",
+                shopTitle: "所有法物",
+                allCategories: "所有分类",
+                aboutTitle: "关于道玄阁", aboutDesc1: "道玄阁源于对道家文化和自然力量的敬畏。我们深信，每一件法物都承载着独特的能量与祝福。我们走遍名山大川，寻访真正的雷击木、百年桃木等珍贵材料，并由经验丰富的匠人精心雕琢，确保每一件作品都蕴含着纯粹的道法精髓。", aboutDesc2: "我们的使命是连接现代人与古老的东方智慧，让更多有缘人能感受到道家法物的庇护与力量，在纷繁的世界中找到内心的宁静与平衡。",
+                contactTitle: "联系我们", formName: "姓名", formNamePlaceholder: "您的称呼", formEmail: "电子邮箱", formEmailPlaceholder: "example@email.com", formMessage: "您的留言", formMessagePlaceholder: "请在此输入您的疑问或建议...", formSubmit: "发送消息",
+                footerSiteName: "道玄阁", footerSlogan: "传承道家智慧，分享自然能量。", footerLinks: "快速链接", footerHome: "首页", footerShop: "所有法物", footerAbout: "关于我们", footerContact: "联系我们", footerFollow: "关注我们", footerSocialWeChat: "微信", footerSocialWeibo: "微博", footerSocialXiaohongshu: "小红书", footerCopyright: "© 2025 道玄阁. 版权所有.",
+                cartTitle: "我的购物车", cartTotal: "总计:", cartCheckout: "前往结算", cartEmpty: "您的购物车是空的。", cartAdded: "已加入购物车",
+                productLabelQuantity: "数量:", productBtnAddToCart: "加入购物车",
+                                loginTitle: "登录", formPassword: "密码", login: "登录", logout: "登出", loginSuccess: "登录成功！", loginFailed: "登录失败，请检查您的凭证。", register: "注册", registrationNotImplemented: "注册功能尚未实现。", registerTitle: "注册", formConfirmPassword: "确认密码", registrationSuccess: "注册成功！请登录。",                 registrationFailed: "注册失败。请重试。", noAccount: "没有账号？", registerNow: "立即注册", haveAccount: "已有账号？", loginNow: "立即登录", passwordsDoNotMatch: "密码不匹配。", passwordTooShort: "密码长度至少为8个字符。",
+                products: {
+                    1: { name: '雷击枣木平安扣', description: '精选天然雷击枣木，经手工打磨而成。平安扣外圆内方，象征天地混沌，有辟邪化煞、保佑平安之效。其上纹理乃天成，每一件都独一无二。' },
+                    2: { name: '太岁化解符锦囊', description: '内含朱砂手绘太岁符，由道长开光加持。专为犯太岁者设计，可随身携带或置于床头，以化解流年不利，祈求一年顺遂。' },
+                    3: { name: '小叶紫檀八卦手串', description: '选用上等小叶紫檀，珠子圆润，油性十足。刻有先天八卦图样，有助于平衡自身磁场，启迪智慧，化解小人。' },
+                    4: { name: '纯铜八卦镜', description: '纯铜打造，分凸镜与凹镜。凸镜用于镇宅化煞，反射不祥之气；凹镜用于吸纳祥瑞，聚集能量。是家居风水布局的常用法器。' },
+                    5: { name: '桃木剑挂件', description: '“插桃枝于户，连鬼畏之”。桃木自古被认为是辟邪之木，此桃木剑小巧精致，适合挂于车内或门后，斩断邪祟，守护安宁。' },
+                    6: { name: '天然艾草线香', description: '采用天然艾草及多种草药制成。点燃后香气清雅，有净化空间、祛除秽气、安神静心之效。适合打坐、阅读或日常熏香。' }
+                }
+            }
+        };
+                let currentLang = 'en';
+
+        // --- STATE ---
+        let allProducts = [];
+        let cart = { items: [] };
+        let user = null;
+        let carouselIntervals = {}; // New: Store carousel intervals
+
+        // --- DOM ELEMENTS ---
+        const pages = document.querySelectorAll('.page');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const featuredProductsContainer = document.getElementById('featured-products');
+        const allProductsContainer = document.getElementById('all-products');
+        const productDetailContainer = document.getElementById('product-detail-content');
+        const categoryFilter = document.getElementById('category-filter');
+        const cartButton = document.getElementById('cart-button');
+        const closeCartButton = document.getElementById('close-cart-button');
+        const cartModal = document.getElementById('cart-modal');
+        const cartItemsContainer = document.getElementById('cart-items');
+        const cartCount = document.getElementById('cart-count');
+        const cartTotal = document.getElementById('cart-total');
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const messageModal = document.getElementById('message-modal');
+        const messageText = document.getElementById('message-text');
+        const langButtonZh = document.getElementById('lang-zh');
+        const langButtonEn = document.getElementById('lang-en');
+        const loginButton = document.getElementById('login-button');
+        const logoutButton = document.getElementById('logout-button');
+        const loginModal = document.getElementById('login-modal');
+        const closeLoginButton = document.getElementById('close-login-button');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const authContainer = document.getElementById('auth-container');
+        const userProfile = document.getElementById('user-profile');
+        const userEmail = document.getElementById('user-email');
+        const registerModal = document.getElementById('register-modal');
+        const closeRegisterButton = document.getElementById('close-register-button');
+        const registerForm = document.getElementById('register-form');
+        const registerError = document.getElementById('register-error');
+        const showRegisterFromLogin = document.getElementById('show-register-from-login');
+        const showLoginFromRegister = document.getElementById('show-login-from-register');
+
+        // --- API & AUTH FUNCTIONS ---
+        const API_BASE_URL = ''; // Changed to empty string
+
+        async function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('taoistShopToken');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            // Add language parameter to product detail requests
+            let fullUrl = `${API_BASE_URL}${url}`;
+            if (url.startsWith('/api/products/') && !url.includes('/media') && !url.includes('/categories')) {
+                // Extract product ID from URL
+                const productIdMatch = url.match(/\/api\/products\/(\d+)/);
+                if (productIdMatch) {
+                    // Add language parameter to the URL
+                    const separator = url.includes('?') ? '&' : '?';
+                    fullUrl = `${API_BASE_URL}${url}${separator}lang=${currentLang}`;
+                }
+            }
+            
+            const response = await fetch(fullUrl, { ...options, headers });
+            if (!response.ok) {
+                // Log the full response object for debugging
+                console.error('API Fetch Error - Response not OK:', response);
+                const errorData = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
+                throw new Error(errorData.error);
+            }
+            if (response.status === 204) return null;
+            return response.json();
+        }
+
+        async function login(email, password) {
+            try {
+                const data = await apiFetch('/api/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password }),
+                });
+                localStorage.setItem('taoistShopToken', data.token);
+                await checkUserStatus();
+                loginModal.classList.add('hidden');
+                showMessage(translations[currentLang].loginSuccess);
+            } catch (error) {
+                loginError.textContent = translations[currentLang].loginFailed;
+                console.error('Login failed:', error);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('taoistShopToken');
+            user = null;
+            cart = { items: [] };
+            updateAuthUI();
+            updateCart();
+        }
+
+        async function register(email, password) {
+            try {
+                await apiFetch('/api/auth/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password }),
+                });
+                registerModal.classList.add('hidden');
+                loginModal.classList.remove('hidden'); // Show login modal after successful registration
+                showMessage(translations[currentLang].registrationSuccess);
+            } catch (error) {
+                registerError.textContent = translations[currentLang].registrationFailed;
+                console.error('Registration failed:', error);
+            }
+        }
+
+        function parseJwt(token) {
+            try {
+                return JSON.parse(atob(token.split('.')[1]));
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function checkUserStatus() {
+            const token = localStorage.getItem('taoistShopToken');
+            if (token) {
+                const payload = parseJwt(token);
+                if (payload && payload.exp * 1000 > Date.now()) {
+                    user = { email: payload.email, id: payload.sub };
+                    await fetchCart();
+                } else {
+                    logout();
+                }
+            }
+            updateAuthUI();
+        }
+
+        function updateAuthUI() {
+            if (user) {
+                loginButton.classList.add('hidden');
+                userProfile.classList.remove('hidden');
+                userEmail.textContent = user.email;
+            } else {
+                loginButton.classList.remove('hidden');
+                userProfile.classList.add('hidden');
+                userEmail.textContent = '';
+            }
+        }
+
+        // --- LANGUAGE FUNCTIONS ---
+        async function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('taoistShopLang', lang);
+            document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+
+            document.title = translations[lang].siteTitle;
+
+            document.querySelectorAll('[data-lang-key]').forEach(el => {
+                const key = el.getAttribute('data-lang-key');
+                if (translations[lang][key]) {
+                    el.innerText = translations[lang][key];
+                }
+            });
+            
+            document.querySelectorAll('[data-lang-key-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-lang-key-placeholder');
+                if (translations[lang][key]) {
+                    el.placeholder = translations[lang][key];
+                }
+            });
+            
+            langButtonZh.classList.toggle('active', lang === 'zh');
+            langButtonEn.classList.toggle('active', lang === 'en');
+
+            // Re-fetch products with new language
+            try {
+                const productsData = await apiFetch(`/api/products?lang=${lang}`);
+                allProducts = productsData.map(p => ({...p, featured: Boolean(p.featured)}));
+            } catch (error) {
+                console.error('Failed to fetch products:', error);
+                showMessage('Could not load products.');
+            }
+
+            // Re-render dynamic content
+            renderAllProducts();
+            updateCart();
+            
+            // If product detail page is visible, re-render it
+            if (!document.getElementById('product-page').classList.contains('hidden')) {
+                const visibleProductElement = document.querySelector('#product-detail-content [data-product-id]');
+                if (visibleProductElement) {
+                    const visibleProductId = parseInt(visibleProductElement.dataset.productId);
+                    if (visibleProductId) {
+                        showProductDetail(visibleProductId, false); // false to prevent page switch
+                    }
+                }
+            }
+        }
+
+        // --- PAGE NAVIGATION ---
+        function showPage(pageId) {
+            // Clear all carousel intervals when changing pages
+            for (const productId in carouselIntervals) {
+                clearInterval(carouselIntervals[productId]);
+                delete carouselIntervals[productId];
+            }
+
+            pages.forEach(page => page.classList.add('hidden'));
+            document.getElementById(`${pageId}-page`).classList.remove('hidden');
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${pageId}`) link.classList.add('active');
+            });
+            window.scrollTo(0, 0);
+            mobileMenu.classList.add('hidden');
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function createProductCard(product) {
+            // Use product name from the product object (fetched from backend)
+            const productName = product.name || translations[currentLang].products[product.id]?.name || 'Unknown Product';
+            const btnText = translations[currentLang].productBtnAddToCart;
+            const imageUrl = product.media && product.media[0] && product.media[0].asset ? product.media[0].asset.url : 'https://placehold.co/400x400/EAE0C8/1C1C1C?text=No+Image';
+            return `
+                <div class="product-card rounded-lg overflow-hidden shadow-lg flex flex-col">
+                    <a href="#product" onclick="showProductDetail(${product.id})" class="block">
+                        <img src="${imageUrl}" alt="${productName}" class="w-full h-80 object-cover">
+                    </a>
+                    <div class="p-4 flex flex-col flex-grow">
+                        <p class="text-xs text-gold mb-1">${product.category}</p>
+                        <h4 class="text-base font-bold font-serif-sc text-black flex-grow">${productName}</h4>
+                        <p class="text-lg font-semibold text-primary mt-2">¥${product.price.toFixed(2)}</p>
+                        <button onclick="addToCart(${product.id})" class="mt-3 w-full btn-primary py-1 px-3 rounded-md text-sm">${btnText}</button>
+                    </div>
+                </div>`;
+        }
+
+        function renderAllProducts(filter = 'all') {
+            const filteredProducts = filter === 'all' ? allProducts : allProducts.filter(p => p.category === filter);
+            const featuredHtml = allProducts.filter(p => p.featured).map(createProductCard).join('');
+            if(featuredProductsContainer) featuredProductsContainer.innerHTML = featuredHtml;
+            const allHtml = filteredProducts.map(createProductCard).join('');
+            if(allProductsContainer) allProductsContainer.innerHTML = allHtml;
+        }
+
+        function showProductDetail(productId, switchPage = true) {
+            const product = allProducts.find(p => p.id === productId);
+            if (!product) return;
+            
+            // Use product name and description from the product object (fetched from backend)
+            const productName = product.name || translations[currentLang].products[product.id]?.name || 'Unknown Product';
+            const productDescription = product.description || translations[currentLang].products[product.id]?.description || 'No description available';
+            
+            const quantityLabel = translations[currentLang].productLabelQuantity;
+            const btnText = translations[currentLang].productBtnAddToCart;
+
+            console.log(`[showProductDetail] Product ID: ${productId}, Media:`, product.media);
+
+            const images = product.media ? product.media.filter(m => m.asset.mediaType === 'image') : [];
+            const videos = product.media ? product.media.filter(m => m.asset.mediaType === 'video') : [];
+
+            console.log(`[showProductDetail] Images count: ${images.length}, Videos count: ${videos.length}`);
+
+            let imageCarouselHtml = '';
+            if (images.length > 0) {
+                imageCarouselHtml = `
+                    <div class="carousel relative rounded-lg shadow-lg bg-gray-900/50">
+                        <div class="carousel-inner">
+                            ${images.map((m, index) => `
+                                <div class="carousel-item">
+                                    <img src="${m.asset.url}" alt="${productName} - image ${index + 1}">
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${images.length > 1 ? `
+                            <button class="carousel-control prev" onclick="moveCarousel(${product.id}, -1)">&#10094;</button>
+                            <button class="carousel-control next" onclick="moveCarousel(${product.id}, 1)">&#10095;</button>
+                        ` : ''}
+                    </div>
+                `;
+            } else {
+                imageCarouselHtml = '<p>No images available for this product.</p>';
+            }
+
+            let videoPlayerHtml = '';
+            if (videos.length > 0) {
+                const firstVideo = videos[0];
+                videoPlayerHtml = `
+                    <div class="video-player-container mt-8">
+                        <h4 class="text-gold text-xl font-serif-sc mb-4">Product Video</h4>
+                        <video controls src="${firstVideo.asset.url}" class="w-full rounded-lg"></video>
+                    </div>
+                `;
+            }
+
+            productDetailContainer.innerHTML = `
+                <div data-product-id="${product.id}" data-current-slide="0">
+                    ${imageCarouselHtml}
+                    ${videoPlayerHtml}
+                </div>
+                <div class="p-8 rounded-lg" style="background-color: var(--bg-talisman-yellow); color: var(--text-on-light);">
+                    <h2 class="text-4xl font-serif-sc font-bold mb-4 text-black">${productName}</h2>
+                    <p class="text-4xl font-bold text-primary mb-6">¥${product.price.toFixed(2)}</p>
+                    <p class="leading-relaxed mb-6">${productDescription}</p>
+                    <div class="flex items-center space-x-4 mb-8">
+                        <label for="quantity" class="text-lg">${quantityLabel}</label>
+                        <input type="number" id="quantity-${product.id}" value="1" min="1" class="w-20 bg-gray-800 text-white border border-gray-600 rounded-lg p-2 text-center focus-ring-primary">
+                    </div>
+                    <button onclick="addToCart(${product.id}, document.getElementById('quantity-${product.id}').value)" class="w-full btn-primary py-4 px-8 rounded-lg text-xl">${btnText}</button>
+                </div>`;
+
+            // Bug Fix: Explicitly set initial carousel position
+            const newCarousel = productDetailContainer.querySelector('.carousel-inner');
+            if (newCarousel) {
+                newCarousel.style.transform = 'translateX(0%)';
+            }
+
+            if (switchPage) showPage('product');
+
+            // Start autoplay if there are images
+            if (images.length > 0) {
+                console.log(`[showProductDetail] Calling startCarouselAutoPlay for product ${product.id}`);
+                startCarouselAutoPlay(product.id, 5000); // 5 seconds
+            }
+        }
+
+        function moveCarousel(productId, direction) {
+            const container = document.querySelector(`[data-product-id='${productId}']`);
+            const inner = container.querySelector('.carousel-inner');
+            const items = inner.querySelectorAll('.carousel-item'); // Corrected: query items from inner
+            const totalItems = items.length;
+            let currentSlide = parseInt(container.dataset.currentSlide, 10);
+
+            console.log(`[moveCarousel] Product ${productId}: currentSlide=${currentSlide}, direction=${direction}, totalItems=${totalItems}`);
+
+            currentSlide = (currentSlide + direction + totalItems) % totalItems;
+            
+            inner.style.transform = `translateX(-${currentSlide * 100}%)`;
+            container.dataset.currentSlide = currentSlide;
+            console.log(`[moveCarousel] Product ${productId}: newSlide=${currentSlide}`);
+        }
+
+        function startCarouselAutoPlay(productId, interval) {
+            // Clear any existing interval for this product
+            if (carouselIntervals[productId]) {
+                clearInterval(carouselIntervals[productId]);
+                console.log(`[startCarouselAutoPlay] Cleared existing interval for product ${productId}`);
+            }
+            // Start new interval only if there's more than one image
+            const product = allProducts.find(p => p.id === productId);
+            const images = product.media ? product.media.filter(m => m.asset.mediaType === 'image') : [];
+            
+            console.log(`[startCarouselAutoPlay] Product ${productId}: images.length=${images.length}`);
+
+            if (images.length > 1) {
+                carouselIntervals[productId] = setInterval(() => {
+                    console.log(`[startCarouselAutoPlay] Auto-moving carousel for product ${productId}`);
+                    moveCarousel(productId, 1);
+                }, interval);
+                console.log(`[startCarouselAutoPlay] Started new interval for product ${productId}`);
+            } else {
+                console.log(`[startCarouselAutoPlay] Not starting autoplay for product ${productId} (images.length <= 1)`);
+            }
+        }
+        
+        // --- CART LOGIC ---
+        async function fetchCart() {
+            if (!user) return;
+            try {
+                cart = await apiFetch('/api/cart');
+                updateCart();
+            } catch (error) {
+                console.error('Failed to fetch cart:', error);
+                showMessage('Could not load cart.');
+            }
+        }
+
+        async function addToCart(productId, quantity = 1) {
+            if (!user) {
+                loginModal.classList.remove('hidden');
+                return;
+            }
+            const qty = parseInt(quantity);
+            try {
+                const updatedCart = await apiFetch('/api/cart/items', {
+                    method: 'POST',
+                    body: JSON.stringify({ productId, quantity: qty }),
+                });
+                cart = updatedCart;
+                updateCart();
+                const productName = translations[currentLang].products[productId].name;
+                const message = `${productName} ${translations[currentLang].cartAdded}`;
+                showMessage(message);
+            } catch (error) {
+                console.error('Failed to add to cart:', error);
+                showMessage('Error adding item to cart.');
+            }
+        }
+        
+        function showMessage(message) {
+            messageText.textContent = message;
+            messageModal.classList.remove('translate-x-[120%]');
+            setTimeout(() => messageModal.classList.add('translate-x-[120%]'), 3000);
+        }
+
+        function updateCart() {
+            renderCartItems();
+            updateCartCount();
+            updateCartTotal();
+        }
+
+        function renderCartItems() {
+            if (!cart || cart.items.length === 0) {
+                cartItemsContainer.innerHTML = `<p class="text-center text-gray-400">${translations[currentLang].cartEmpty}</p>`;
+                return;
+            }
+            cartItemsContainer.innerHTML = cart.items.map(item => {
+                const langProduct = translations[currentLang].products[item.productId];
+                return `
+                <div class="flex items-center justify-between py-4 border-b" style="border-color: var(--accent-gilded-gold);">
+                    <div class="flex items-center space-x-4">
+                        <img src="${item.product.imageUrl || 'https://placehold.co/100x100/EAE0C8/1C1C1C?text=No+Image'}" alt="${langProduct.name}" class="w-16 h-16 object-cover rounded-md">
+                        <div>
+                            <p class="font-bold text-gold">${langProduct.name}</p>
+                            <p class="text-sm text-gray-400">¥${item.product.price.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <input type="number" value="${item.quantity}" min="1" onchange="updateCartQuantity(${item.id}, this.value)" class="w-16 bg-gray-800 text-white border border-gray-600 rounded p-1 text-center focus-ring-primary">
+                        <button onclick="removeFromCart(${item.id})" class="text-red-500 hover:text-red-400">&times;</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function updateCartQuantity(itemId, quantity) {
+            const qty = parseInt(quantity);
+            if (qty <= 0) {
+                await removeFromCart(itemId);
+                return;
+            }
+            try {
+                await apiFetch(`/api/cart/items/${itemId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ quantity: qty }),
+                });
+                const item = cart.items.find(i => i.id === itemId);
+                if (item) item.quantity = qty;
+                updateCart();
+            } catch (error) {
+                console.error('Failed to update quantity:', error);
+                showMessage('Error updating quantity.');
+            }
+        }
+
+        async function removeFromCart(itemId) {
+            try {
+                await apiFetch(`/api/cart/items/${itemId}`, { method: 'DELETE' });
+                cart.items = cart.items.filter(item => item.id !== itemId);
+                updateCart();
+            } catch (error) {
+                console.error('Failed to remove item:', error);
+                showMessage('Error removing item.');
+            }
+        }
+
+        function updateCartCount() {
+            const count = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+            cartCount.textContent = count;
+        }
+
+        function updateCartTotal() {
+            const total = cart?.items?.reduce((sum, item) => {
+                return sum + item.product.price * item.quantity;
+            }, 0) || 0;
+            cartTotal.textContent = `¥${total.toFixed(2)}`;
+        }
+
+        async function populateCategoryFilter() {
+            try {
+                const categories = await apiFetch('/api/products/categories');
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    categoryFilter.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to fetch categories:', error);
+                showMessage('Could not load categories.');
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        cartButton.addEventListener('click', () => cartModal.classList.remove('hidden'));
+        closeCartButton.addEventListener('click', () => cartModal.classList.add('hidden'));
+        cartModal.addEventListener('click', e => { if (e.target === cartModal) cartModal.classList.add('hidden'); });
+        
+        loginButton.addEventListener('click', () => loginModal.classList.remove('hidden'));
+        closeLoginButton.addEventListener('click', () => loginModal.classList.add('hidden'));
+        loginModal.addEventListener('click', e => { if (e.target === loginModal) loginModal.classList.add('hidden'); });
+        logoutButton.addEventListener('click', logout);
+
+        categoryFilter.addEventListener('change', (e) => {
+            renderAllProducts(e.target.value);
+        });
+
+        // New event listeners for register modal
+        closeRegisterButton.addEventListener('click', () => registerModal.classList.add('hidden'));
+        registerModal.addEventListener('click', e => { if (e.target === registerModal) registerModal.classList.add('hidden'); });
+
+        showRegisterFromLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginModal.classList.add('hidden');
+            registerModal.classList.remove('hidden');
+        });
+
+        showLoginFromRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerModal.classList.add('hidden');
+            loginModal.classList.remove('hidden');
+        });
+
+        loginForm.addEventListener('submit', e => {
+            e.preventDefault();
+            loginError.textContent = '';
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            login(email, password);
+        });
+
+        registerForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            registerError.textContent = '';
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+
+            if (password.length < 8) {
+                registerError.textContent = translations[currentLang].passwordTooShort;
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                registerError.textContent = translations[currentLang].passwordsDoNotMatch;
+                return;
+            }
+
+            await register(email, password);
+        });
+
+        mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        langButtonZh.addEventListener('click', () => setLanguage('zh'));
+        langButtonEn.addEventListener('click', () => setLanguage('en'));
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href.length > 1) {
+                    e.preventDefault();
+                    const pageId = href.substring(1);
+                    if(document.getElementById(`${pageId}-page`)) showPage(pageId);
+                }
+            });
+        });
+
+        // --- INITIALIZATION ---
+        async function initializeApp() {
+            try {
+                // Fetch products with language parameter
+                const productsData = await apiFetch(`/api/products?lang=${currentLang}`);
+                console.log('Fetched productsData:', productsData);
+                allProducts = productsData.map(p => ({...p, featured: Boolean(p.featured)}));
+                renderAllProducts();
+                await populateCategoryFilter();
+            } catch (error) {
+                console.error('Failed to fetch products:', error);
+                showMessage('Could not load products.');
+            }
+            
+            await setLanguage(currentLang);
+            await checkUserStatus();
+            showPage('home');
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>

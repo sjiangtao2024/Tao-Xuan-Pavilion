@@ -1,0 +1,86 @@
+{
+  "name": "tao-ecommerce-app",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-08-17",
+  "assets": {
+    "directory": "./public"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tao-ecommerce-app-db-local",
+      "database_id": "local-dev-placeholder",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "IMAGES_BUCKET",
+      "bucket_name": "tao-ecommerce-images-local"
+    },
+    {
+      "binding": "VIDEOS_BUCKET",
+      "bucket_name": "tao-ecommerce-videos-local"
+    }
+  ],
+  "env": {
+    "development": {
+      "name": "tao-ecommerce-app-development",
+      "vars": {
+        "IS_DEV": "true"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "tao-ecommerce-app-db-dev",
+          "database_id": "$DEV_DB_ID"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "IMAGES_BUCKET",
+          "bucket_name": "tao-ecommerce-images-dev"
+        },
+        {
+          "binding": "VIDEOS_BUCKET",
+          "bucket_name": "tao-ecommerce-videos-dev"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "SESSIONS_KV",
+          "id": "$DEV_KV_ID"
+        }
+      ]
+    },
+    "production": {
+      "name": "tao-ecommerce-app-production",
+      "vars": {
+        "IS_PROD": "true"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "tao-ecommerce-app-db",
+          "database_id": "$PROD_DB_ID"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "IMAGES_BUCKET",
+          "bucket_name": "tao-ecommerce-images"
+        },
+        {
+          "binding": "VIDEOS_BUCKET",
+          "bucket_name": "tao-ecommerce-videos"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "SESSIONS_KV",
+          "id": "$PROD_KV_ID"
+        }
+      ]
+    }
+  }
+}

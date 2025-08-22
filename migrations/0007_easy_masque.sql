@@ -1,0 +1,1 @@
+DROP INDEX `product_translations_product_id_language_unique`;
