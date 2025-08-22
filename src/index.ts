@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
 import * as schema from './db/schema';
-import { products, users, carts, cartItems, productMedia, mediaAssets, productTranslations } from './db/schema';
+import { products, users, carts, cartItems, productMedia, mediaAssets, productTranslations, categories, categoryTranslations } from './db/schema';
 import { and, eq, desc, count } from 'drizzle-orm';
 import { sign, verify } from 'hono/jwt'
 import { z } from 'zod';
@@ -45,7 +45,7 @@ const UpdateCartSchema = z.object({
 const CreateProductSchema = z.object({
     price: z.number().positive(),
     featured: z.boolean().optional().default(false),
-    category: z.string().min(1).optional().default('Uncategorized'),
+    categoryId: z.number().int().positive().optional(),
     name: z.string().min(1),
     description: z.string().min(1),
     lang: z.string().optional().default('en')
@@ -54,7 +54,7 @@ const CreateProductSchema = z.object({
 const UpdateProductSchema = z.object({
     price: z.number().positive().optional(),
     featured: z.boolean().optional(),
-    category: z.string().min(1).optional(),
+    categoryId: z.number().int().positive().optional(),
     name: z.string().min(1).optional(),
     description: z.string().optional(),
 });
@@ -160,7 +160,8 @@ app.get('/openapi.json', async (c) => {
                             "name": { "type": "string" },
                             "description": { "type": "string" },
                             "price": { "type": "number" },
-                            "category": { "type": "string" },
+                            "categoryId": { "type": "integer" },
+                            "categoryName": { "type": "string" },
                             "featured": { "type": "boolean" },
                             "media": {
                                 "type": "array",
@@ -173,6 +174,13 @@ app.get('/openapi.json', async (c) => {
                                     }
                                 }
                             }
+                        }
+                    },
+                    "Category": {
+                        "type": "object",
+                        "properties": {
+                            "id": { "type": "integer" },
+                            "name": { "type": "string" }
                         }
                     },
                     "User": {
@@ -213,6 +221,12 @@ app.get('/openapi.json', async (c) => {
                                 "in": "query",
                                 "description": "Language code (en/zh)",
                                 "schema": { "type": "string", "default": "en" }
+                            },
+                            {
+                                "name": "categoryId",
+                                "in": "query",
+                                "description": "Filter by category ID",
+                                "schema": { "type": "integer" }
                             }
                         ],
                         "responses": {
@@ -243,7 +257,7 @@ app.get('/openapi.json', async (c) => {
                                             "name": { "type": "string" },
                                             "description": { "type": "string" },
                                             "price": { "type": "number" },
-                                            "category": { "type": "string", "default": "Uncategorized" },
+                                            "categoryId": { "type": "integer" },
                                             "featured": { "type": "boolean", "default": false },
                                             "lang": { "type": "string", "default": "en" }
                                         }
@@ -268,6 +282,14 @@ app.get('/openapi.json', async (c) => {
                 "/products/categories": {
                     "get": {
                         "summary": "Get all product categories",
+                        "parameters": [
+                            {
+                                "name": "lang",
+                                "in": "query",
+                                "description": "Language code (en/zh)",
+                                "schema": { "type": "string", "default": "en" }
+                            }
+                        ],
                         "responses": {
                             "200": {
                                 "description": "List of categories",
@@ -275,7 +297,7 @@ app.get('/openapi.json', async (c) => {
                                     "application/json": {
                                         "schema": {
                                             "type": "array",
-                                            "items": { "type": "string" }
+                                            "items": { "$ref": "#/components/schemas/Category" }
                                         }
                                     }
                                 }
@@ -333,7 +355,7 @@ app.get('/openapi.json', async (c) => {
                                             "name": { "type": "string" },
                                             "description": { "type": "string" },
                                             "price": { "type": "number" },
-                                            "category": { "type": "string" },
+                                            "categoryId": { "type": "integer" },
                                             "featured": { "type": "boolean" }
                                         }
                                     }
@@ -521,6 +543,101 @@ app.get('/openapi.json', async (c) => {
                             "404": { "description": "Cart item not found" }
                         }
                     }
+                },
+                "/auth/me": {
+                    "get": {
+                        "summary": "Get current user profile",
+                        "security": [{ "BearerAuth": [] }],
+                        "responses": {
+                            "200": {
+                                "description": "User profile",
+                                "content": {
+                                    "application/json": {
+                                        "schema": { "$ref": "#/components/schemas/User" }
+                                    }
+                                }
+                            },
+                            "401": { "description": "Unauthorized" }
+                        }
+                    }
+                },
+                "/products/{id}/media": {
+                    "post": {
+                        "summary": "Upload media for product",
+                        "security": [{ "BearerAuth": [] }],
+                        "parameters": [
+                            {
+                                "name": "id",
+                                "in": "path",
+                                "required": true,
+                                "schema": { "type": "integer" }
+                            }
+                        ],
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "multipart/form-data": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "image": {
+                                                "type": "array",
+                                                "items": { "type": "string", "format": "binary" }
+                                            },
+                                            "video": {
+                                                "type": "array",
+                                                "items": { "type": "string", "format": "binary" }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            "201": {
+                                "description": "Media uploaded successfully",
+                                "content": {
+                                    "application/json": {
+                                        "schema": { "$ref": "#/components/schemas/Product" }
+                                    }
+                                }
+                            },
+                            "400": { "description": "Invalid input" },
+                            "401": { "description": "Unauthorized" }
+                        }
+                    }
+                },
+                "/products/{productId}/media/{mediaLinkId}/set-thumbnail": {
+                    "post": {
+                        "summary": "Set product media as thumbnail",
+                        "security": [{ "BearerAuth": [] }],
+                        "parameters": [
+                            {
+                                "name": "productId",
+                                "in": "path",
+                                "required": true,
+                                "schema": { "type": "integer" }
+                            },
+                            {
+                                "name": "mediaLinkId",
+                                "in": "path",
+                                "required": true,
+                                "schema": { "type": "integer" }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Thumbnail set successfully",
+                                "content": {
+                                    "application/json": {
+                                        "schema": { "$ref": "#/components/schemas/Product" }
+                                    }
+                                }
+                            },
+                            "400": { "description": "Invalid ID" },
+                            "401": { "description": "Unauthorized" }
+                        }
+                    }
                 }
             }
         };
@@ -572,8 +689,33 @@ const authMiddleware = async (c: any, next: any) => {
 app.get('/api/products', async (c) => {
     const db = drizzle(c.env.DB, { schema });
     const lang = c.req.query('lang') || 'en';
-    const results = await db.query.products.findMany({ with: { media: { with: { asset: true }, orderBy: [schema.productMedia.displayOrder] }, translations: { where: eq(productTranslations.language, lang) } } });
-    const formatted = results.map(p => ({ ...p, name: p.translations[0]?.name, description: p.translations[0]?.description }));
+    const categoryId = c.req.query('categoryId');
+    
+    let whereCondition;
+    if (categoryId && !isNaN(Number(categoryId))) {
+        whereCondition = eq(products.categoryId, Number(categoryId));
+    }
+    
+    const results = await db.query.products.findMany({ 
+        where: whereCondition,
+        with: { 
+            media: { with: { asset: true }, orderBy: [schema.productMedia.displayOrder] }, 
+            translations: { where: eq(productTranslations.language, lang) },
+            category: {
+                with: {
+                    translations: { where: eq(categoryTranslations.language, lang) }
+                }
+            }
+        } 
+    });
+    
+    const formatted = results.map(p => ({ 
+        ...p, 
+        name: p.translations[0]?.name, 
+        description: p.translations[0]?.description,
+        categoryName: p.category?.translations[0]?.name
+    }));
+    
     return c.json(formatted);
 });
 
@@ -581,10 +723,10 @@ app.post('/api/products', authMiddleware, async (c) => {
     const body = await c.req.json();
     const validation = CreateProductSchema.safeParse(body);
     if (!validation.success) return c.json({ error: 'Invalid data', issues: validation.error.issues }, 400);
-    const { price, featured, category, name, description, lang } = validation.data;
+    const { price, featured, categoryId, name, description, lang } = validation.data;
     const db = drizzle(c.env.DB, { schema });
     try {
-        const newProductResult = await db.insert(products).values({ price, featured, category }).returning({ insertedId: products.id });
+        const newProductResult = await db.insert(products).values({ price, featured, categoryId }).returning({ insertedId: products.id });
         const newProductId = newProductResult[0]?.insertedId;
         if (!newProductId) throw new Error("Failed to create product.");
         await db.insert(productTranslations).values({ productId: newProductId, language: lang, name, description });
@@ -597,8 +739,20 @@ app.post('/api/products', authMiddleware, async (c) => {
 
 app.get('/api/products/categories', async (c) => {
     const db = drizzle(c.env.DB, { schema });
-    const categories = await db.selectDistinct({ category: products.category }).from(products);
-    return c.json(categories.map(c => c.category));
+    const lang = c.req.query('lang') || 'en';
+    
+    const categoriesData = await db.query.categories.findMany({
+        with: {
+            translations: { where: eq(categoryTranslations.language, lang) }
+        }
+    });
+    
+    const formattedCategories = categoriesData.map(cat => ({
+        id: cat.id,
+        name: cat.translations[0]?.name || 'Unknown Category'
+    }));
+    
+    return c.json(formattedCategories);
 });
 
 app.get('/api/products/:id', async (c) => {
@@ -606,9 +760,29 @@ app.get('/api/products/:id', async (c) => {
     if (isNaN(id)) return c.json({ error: 'Invalid product ID' }, 400);
     const lang = c.req.query('lang') || 'en';
     const db = drizzle(c.env.DB, { schema });
-    const product = await db.query.products.findFirst({ where: eq(products.id, id), with: { media: { with: { asset: true }, orderBy: [schema.productMedia.displayOrder] }, translations: { where: eq(productTranslations.language, lang) } } });
+    
+    const product = await db.query.products.findFirst({ 
+        where: eq(products.id, id), 
+        with: { 
+            media: { with: { asset: true }, orderBy: [schema.productMedia.displayOrder] }, 
+            translations: { where: eq(productTranslations.language, lang) },
+            category: {
+                with: {
+                    translations: { where: eq(categoryTranslations.language, lang) }
+                }
+            }
+        } 
+    });
+    
     if (!product) return c.json({ error: 'Product not found' }, 404);
-    const p = { ...product, name: product.translations[0]?.name, description: product.translations[0]?.description };
+    
+    const p = { 
+        ...product, 
+        name: product.translations[0]?.name, 
+        description: product.translations[0]?.description,
+        categoryName: product.category?.translations[0]?.name
+    };
+    
     return c.json(p);
 });
 
@@ -619,13 +793,13 @@ app.patch('/api/products/:id', authMiddleware, async (c) => {
     const body = await c.req.json();
     const validation = UpdateProductSchema.safeParse(body);
     if (!validation.success) return c.json({ error: 'Invalid update data', issues: validation.error.issues }, 400);
-    const { price, featured, category, name, description } = validation.data;
+    const { price, featured, categoryId, name, description } = validation.data;
     const db = drizzle(c.env.DB, { schema });
     try {
         const productUpdateData: any = {};
         if (price !== undefined) productUpdateData.price = price;
         if (featured !== undefined) productUpdateData.featured = featured;
-        if (category !== undefined) productUpdateData.category = category;
+        if (categoryId !== undefined) productUpdateData.categoryId = categoryId;
         if (Object.keys(productUpdateData).length > 0) {
             await db.update(products).set(productUpdateData).where(eq(products.id, id));
         }

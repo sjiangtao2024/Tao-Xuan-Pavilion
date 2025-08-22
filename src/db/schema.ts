@@ -8,12 +8,25 @@ export const users = sqliteTable('users', {
     password: text('password').notNull(), // This will store the hashed password
 });
 
+// Categories Table: Stores product categories
+export const categories = sqliteTable('categories', {
+  id: integer('id').primaryKey(),
+});
+
+// Category Translations Table: Stores translated category names
+export const categoryTranslations = sqliteTable('category_translations', {
+  id: integer('id').primaryKey(),
+  categoryId: integer('category_id').notNull().references(() => categories.id, { onDelete: 'cascade' }),
+  language: text('language').notNull(), // Language code (e.g., 'en', 'zh')
+  name: text('name').notNull(), // Translated category name
+});
+
 // Products Table: Stores information about each product available for sale.
 export const products = sqliteTable('products', {
   id: integer('id').primaryKey(), // Unique identifier for the product
   price: real('price').notNull(), // Price of the product
   featured: integer('featured', { mode: 'boolean' }).default(false), // Whether the product is featured on the homepage
-  category: text('category').notNull().default('Uncategorized'), // The original, single-language category field
+  categoryId: integer('category_id').references(() => categories.id), // Foreign key to categories table
 });
 
 // Product Translations Table: Stores translated product information
@@ -102,11 +115,27 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   }),
 }));
 
-export const productsRelations = relations(products, ({ many }) => ({
+export const categoriesRelations = relations(categories, ({ many }) => ({
+    translations: many(categoryTranslations),
+    products: many(products),
+}));
+
+export const categoryTranslationsRelations = relations(categoryTranslations, ({ one }) => ({
+    category: one(categories, {
+        fields: [categoryTranslations.categoryId],
+        references: [categories.id],
+    }),
+}));
+
+export const productsRelations = relations(products, ({ many, one }) => ({
     translations: many(productTranslations),
     orderItems: many(orderItems),
     cartItems: many(cartItems),
     media: many(productMedia),
+    category: one(categories, {
+        fields: [products.categoryId],
+        references: [categories.id],
+    }),
 }));
 
 export const productTranslationsRelations = relations(productTranslations, ({ one }) => ({

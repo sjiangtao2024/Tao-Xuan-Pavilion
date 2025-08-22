@@ -37,6 +37,11 @@
         .carousel-control { position: absolute; top: 50%; transform: translateY(-50%); background-color: rgba(0, 0, 0, 0.5); color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 50%; z-index: 10; font-size: 1.5rem; line-height: 1; }
         .carousel-control.prev { left: 1rem; }
         .carousel-control.next { right: 1rem; }
+        
+        /* 产品网格平滑过渡效果 */
+        #products-grid {
+            transition: opacity 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -1373,6 +1378,8 @@
                 renderAboutPage();
             } else if (pageId === 'contact') {
                 renderContactPage();
+            } else if (pageId === 'shop') {
+                renderShopPage();
             }
             
             document.querySelectorAll('.nav-link').forEach(link => {
@@ -1381,12 +1388,36 @@
             document.querySelector(`[onclick="showPage('${pageId}')"]`)?.classList.add('active');
         }
 
-        async function loadProducts() {
+        async function loadProducts(categoryId = null, skipShopPageRender = false) {
             try {
-                const products = await apiFetch(`/api/products?lang=${currentLang}`);
+                let url = `/api/products?lang=${currentLang}`;
+                if (categoryId) {
+                    url += `&categoryId=${categoryId}`;
+                }
+                const products = await apiFetch(url);
                 allProducts = products;
+                
+                // 总是重新渲染首页
                 renderHomePage();
-                renderShopPage();
+                
+                // 如果当前在shop页面且不跳过渲染，重新渲染shop页面
+                if (getCurrentPage() === 'shop' && !skipShopPageRender) {
+                    setTimeout(() => {
+                        renderShopPage();
+                        // 在渲染后恢复分类选择
+                        if (categoryId !== null) {
+                            setTimeout(() => {
+                                const categoryFilter = document.getElementById('category-filter');
+                                if (categoryFilter) {
+                                    categoryFilter.value = categoryId;
+                                }
+                            }, 100);
+                        }
+                    }, 50);
+                } else if (getCurrentPage() === 'shop' && skipShopPageRender) {
+                    // 只更新产品网格，不重新渲染整个页面
+                    updateProductsGrid(allProducts);
+                }
             } catch (error) {
                 console.error('Failed to load products:', error);
                 showMessage('Failed to load products', 'error');
@@ -1428,6 +1459,9 @@
         }
 
         function renderShopPage() {
+            // 确保有产品数据
+            const productsToShow = allProducts || [];
+            
             document.getElementById('shop-page').innerHTML = `
                 <section class="py-20 px-6">
                     <div class="container mx-auto">
@@ -1442,14 +1476,33 @@
                         </div>
                         
                         <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                            ${allProducts.map(product => renderProductCard(product)).join('')}
+                            ${productsToShow.length > 0 ? productsToShow.map(product => renderProductCard(product)).join('') : '<p class="text-gray-300 text-center col-span-full">正在加载产品...</p>'}
                         </div>
                     </div>
                 </section>
             `;
             
             populateCategoryFilter();
+            
+            // 添加分类过滤事件监听器
             setTimeout(() => {
+                const categoryFilter = document.getElementById('category-filter');
+                if (categoryFilter) {
+                    categoryFilter.addEventListener('change', async (e) => {
+                        const categoryId = e.target.value;
+                        // 使用平滑更新，避免重新渲染整个页面
+                        await loadProducts(categoryId === '' ? null : categoryId, true);
+                    });
+                }
+                
+                // 添加搜索功能事件监听器
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) {
+                    searchInput.addEventListener('input', (e) => {
+                        filterProductsBySearch(e.target.value);
+                    });
+                }
+                
                 document.querySelectorAll('.carousel').forEach(initCarousel);
             }, 100);
         }
@@ -1570,20 +1623,114 @@
             `;
         }
 
+        async function updateShopPageLanguage() {
+            // 获取当前选中的分类
+            const categoryFilter = document.getElementById('category-filter');
+            const currentCategoryId = categoryFilter ? categoryFilter.value : '';
+            
+            // 平滑更新产品数据
+            await loadProducts(currentCategoryId === '' ? null : currentCategoryId, true);
+            
+            // 更新页面标题和搜索框占位符
+            const shopTitle = document.querySelector('#shop-page h1');
+            if (shopTitle) {
+                shopTitle.textContent = translations[currentLang].navShop;
+            }
+            
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.placeholder = translations[currentLang].search;
+            }
+            
+            // 更新分类下拉框
+            await populateCategoryFilter();
+            
+            // 恢复分类选择
+            if (categoryFilter && currentCategoryId) {
+                categoryFilter.value = currentCategoryId;
+            }
+        }
+
+        function updateProductsGrid(products) {
+            const productsGrid = document.getElementById('products-grid');
+            if (productsGrid) {
+                // 添加渐隐效果
+                productsGrid.style.opacity = '0.5';
+                productsGrid.style.transition = 'opacity 0.3s ease';
+                
+                setTimeout(() => {
+                    productsGrid.innerHTML = products.length > 0 
+                        ? products.map(product => renderProductCard(product)).join('') 
+                        : '<p class="text-gray-300 text-center col-span-full">暂无相关产品</p>';
+                    
+                    // 恢复透明度
+                    productsGrid.style.opacity = '1';
+                    
+                    // 重新初始化轮播图
+                    setTimeout(() => {
+                        document.querySelectorAll('.carousel').forEach(initCarousel);
+                    }, 100);
+                }, 150);
+            }
+        }
+
+        function getCurrentPage() {
+            const pages = ['home', 'shop', 'about', 'contact', 'product'];
+            for (const page of pages) {
+                const element = document.getElementById(`${page}-page`);
+                if (element && !element.classList.contains('hidden')) {
+                    return page;
+                }
+            }
+            return 'home'; // 默认返回首页
+        }
+
+        function filterProductsBySearch(searchTerm) {
+            const productsGrid = document.getElementById('products-grid');
+            if (!productsGrid) return;
+            
+            const filteredProducts = searchTerm.trim() === '' 
+                ? allProducts 
+                : allProducts.filter(product => 
+                    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                );
+            
+            // 使用相同的平滑过渡效果
+            updateProductsGrid(filteredProducts);
+        }
+
         async function populateCategoryFilter() {
             try {
-                const categories = await apiFetch('/api/products/categories');
+                const categories = await apiFetch(`/api/products/categories?lang=${currentLang}`);
                 const categoryFilter = document.getElementById('category-filter');
                 if (categoryFilter) {
+                    // 保存当前选中的值
+                    const currentValue = categoryFilter.value;
+                    
+                    // 清空现有选项
+                    categoryFilter.innerHTML = '';
+                    
+                    // 添加"全部分类"选项
+                    const allOption = document.createElement('option');
+                    allOption.value = '';
+                    allOption.textContent = translations[currentLang].allCategories;
+                    categoryFilter.appendChild(allOption);
+                    
+                    // 添加分类选项
                     categories.forEach(category => {
                         const option = document.createElement('option');
-                        option.value = category;
-                        option.textContent = category;
+                        option.value = category.id;
+                        option.textContent = category.name;
                         categoryFilter.appendChild(option);
                     });
+                    
+                    // 恢复之前选中的值
+                    categoryFilter.value = currentValue;
                 }
             } catch (error) {
                 console.error('Failed to fetch categories:', error);
+                showMessage('Could not load categories.');
             }
         }
 
@@ -1617,7 +1764,7 @@
             
             logoutButton.addEventListener('click', logout);
             
-            langZh.addEventListener('click', () => {
+            langZh.addEventListener('click', async () => {
                 currentLang = 'zh';
                 updateLanguage();
                 updateVideoLanguage(); // 更新视频界面语言
@@ -1628,15 +1775,20 @@
                     renderAboutPage();
                 } else if (currentPage === 'contact') {
                     renderContactPage();
+                } else if (currentPage === 'shop') {
+                    // 商店页面使用平滑更新
+                    await updateShopPageLanguage();
+                } else {
+                    // 非商店页面正常加载产品
+                    await loadProducts();
                 }
                 
-                loadProducts();
                 if (currentProductId && !document.getElementById('product-page').classList.contains('hidden')) {
                     showProductDetail(currentProductId);
                 }
             });
             
-            langEn.addEventListener('click', () => {
+            langEn.addEventListener('click', async () => {
                 currentLang = 'en';
                 updateLanguage();
                 updateVideoLanguage(); // 更新视频界面语言
@@ -1647,9 +1799,14 @@
                     renderAboutPage();
                 } else if (currentPage === 'contact') {
                     renderContactPage();
+                } else if (currentPage === 'shop') {
+                    // 商店页面使用平滑更新
+                    await updateShopPageLanguage();
+                } else {
+                    // 非商店页面正常加载产品
+                    await loadProducts();
                 }
                 
-                loadProducts();
                 if (currentProductId && !document.getElementById('product-page').classList.contains('hidden')) {
                     showProductDetail(currentProductId);
                 }
