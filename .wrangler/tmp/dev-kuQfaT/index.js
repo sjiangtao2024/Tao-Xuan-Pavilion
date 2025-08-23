@@ -4648,6 +4648,12 @@ var TransactionRollbackError = class extends DrizzleError {
   }
 };
 
+// node_modules/drizzle-orm/sql/functions/aggregate.js
+function count(expression) {
+  return sql`count(${expression || sql.raw("*")})`.mapWith(Number);
+}
+__name(count, "count");
+
 // node_modules/drizzle-orm/sqlite-core/view-base.js
 var SQLiteViewBase = class extends View {
   static {
@@ -7404,6 +7410,8 @@ __name(drizzle, "drizzle");
 // src/db/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
+  adminLogs: () => adminLogs,
+  adminLogsRelations: () => adminLogsRelations,
   cartItems: () => cartItems,
   cartItemsRelations: () => cartItemsRelations,
   carts: () => carts,
@@ -7424,14 +7432,54 @@ __export(schema_exports, {
   productTranslationsRelations: () => productTranslationsRelations,
   products: () => products,
   productsRelations: () => productsRelations,
+  userAddresses: () => userAddresses,
+  userAddressesRelations: () => userAddressesRelations,
+  userProfiles: () => userProfiles,
+  userProfilesRelations: () => userProfilesRelations,
   users: () => users,
   usersRelations: () => usersRelations
 });
 var users = sqliteTable("users", {
   id: integer("id").primaryKey(),
   email: text("email").notNull().unique(),
-  password: text("password").notNull()
+  password: text("password").notNull(),
   // This will store the hashed password
+  role: text("role", { enum: ["user", "admin", "super_admin", "moderator"] }).default("user"),
+  status: text("status", { enum: ["active", "disabled", "suspended", "deleted"] }).default("active"),
+  lastLoginAt: integer("last_login_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }),
+  updatedAt: integer("updated_at", { mode: "timestamp" }),
+  createdBy: integer("created_by").references(() => users.id)
+});
+var userProfiles = sqliteTable("user_profiles", {
+  id: integer("id").primaryKey(),
+  userId: integer("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  phone: text("phone"),
+  gender: text("gender", { enum: ["male", "female", "other"] }),
+  dateOfBirth: integer("date_of_birth", { mode: "timestamp" }),
+  avatar: text("avatar"),
+  // URL to avatar image
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => /* @__PURE__ */ new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => /* @__PURE__ */ new Date())
+});
+var userAddresses = sqliteTable("user_addresses", {
+  id: integer("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  // e.g., "Home", "Office"
+  recipientName: text("recipient_name").notNull(),
+  recipientPhone: text("recipient_phone").notNull(),
+  country: text("country").notNull(),
+  province: text("province").notNull(),
+  city: text("city").notNull(),
+  district: text("district"),
+  streetAddress: text("street_address").notNull(),
+  postalCode: text("postal_code"),
+  isDefault: integer("is_default", { mode: "boolean" }).default(false),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => /* @__PURE__ */ new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => /* @__PURE__ */ new Date())
 });
 var categories = sqliteTable("categories", {
   id: integer("id").primaryKey()
@@ -7488,8 +7536,19 @@ var orders = sqliteTable("orders", {
   id: integer("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   totalAmount: real("total_amount").notNull(),
-  status: text("status", { enum: ["pending", "paid", "shipped", "cancelled"] }).default("pending"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => /* @__PURE__ */ new Date())
+  status: text("status", { enum: ["pending", "paid", "shipped", "delivered", "cancelled"] }).default("pending"),
+  // Shipping address fields (snapshot of address at time of order)
+  shippingRecipientName: text("shipping_recipient_name"),
+  shippingRecipientPhone: text("shipping_recipient_phone"),
+  shippingCountry: text("shipping_country"),
+  shippingProvince: text("shipping_province"),
+  shippingCity: text("shipping_city"),
+  shippingDistrict: text("shipping_district"),
+  shippingStreetAddress: text("shipping_street_address"),
+  shippingPostalCode: text("shipping_postal_code"),
+  // Timestamps
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => /* @__PURE__ */ new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => /* @__PURE__ */ new Date())
 });
 var orderItems = sqliteTable("order_items", {
   id: integer("id").primaryKey(),
@@ -7510,9 +7569,37 @@ var cartItems = sqliteTable("cart_items", {
   productId: integer("product_id").notNull().references(() => products.id, { onDelete: "restrict" }),
   quantity: integer("quantity").notNull().default(1)
 });
+var adminLogs = sqliteTable("admin_logs", {
+  id: integer("id").primaryKey(),
+  adminId: integer("admin_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(),
+  targetType: text("target_type").notNull(),
+  targetId: integer("target_id"),
+  details: text("details"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull()
+});
 var usersRelations = relations(users, ({ many, one }) => ({
   orders: many(orders),
-  cart: one(carts)
+  cart: one(carts),
+  profile: one(userProfiles),
+  addresses: many(userAddresses),
+  adminLogs: many(adminLogs),
+  createdByUser: one(users, { fields: [users.createdBy], references: [users.id] }),
+  createdUsers: many(users, { foreignKey: users.createdBy })
+}));
+var userProfilesRelations = relations(userProfiles, ({ one }) => ({
+  user: one(users, {
+    fields: [userProfiles.userId],
+    references: [users.id]
+  })
+}));
+var userAddressesRelations = relations(userAddresses, ({ one }) => ({
+  user: one(users, {
+    fields: [userAddresses.userId],
+    references: [users.id]
+  })
 }));
 var ordersRelations = relations(orders, ({ one, many }) => ({
   items: many(orderItems),
@@ -7586,6 +7673,12 @@ var productMediaRelations = relations(productMedia, ({ one }) => ({
 }));
 var mediaAssetsRelations = relations(mediaAssets, ({ many }) => ({
   productLinks: many(productMedia)
+}));
+var adminLogsRelations = relations(adminLogs, ({ one }) => ({
+  admin: one(users, {
+    fields: [adminLogs.adminId],
+    references: [users.id]
+  })
 }));
 
 // node_modules/hono/dist/utils/encode.js
@@ -12040,7 +12133,7 @@ var cors = /* @__PURE__ */ __name((options) => {
 }, "cors");
 
 // src/index.ts
-import html from "./5659320f4b3d54491823e5a4625c583fc90894e8-frontend.html";
+import html from "./bd3858793c64b7bdd72fbd5e01b95a18005f8b4a-frontend.html";
 var RegisterSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8)
@@ -12072,6 +12165,51 @@ var UpdateProductSchema = z.object({
   categoryId: z.number().int().positive().optional(),
   name: z.string().min(1).optional(),
   description: z.string().optional()
+});
+var CreateUserProfileSchema = z.object({
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
+  phone: z.string().optional(),
+  gender: z.enum(["male", "female", "other"]).optional(),
+  dateOfBirth: z.string().datetime().optional(),
+  // ISO 8601 date string
+  avatar: z.string().url().optional()
+});
+var UpdateUserProfileSchema = z.object({
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
+  phone: z.string().optional(),
+  gender: z.enum(["male", "female", "other"]).optional(),
+  dateOfBirth: z.string().datetime().optional(),
+  avatar: z.string().url().optional()
+});
+var CreateAddressSchema = z.object({
+  title: z.string().min(1),
+  recipientName: z.string().min(1),
+  recipientPhone: z.string().min(1),
+  country: z.string().min(1),
+  province: z.string().min(1),
+  city: z.string().min(1),
+  district: z.string().optional(),
+  streetAddress: z.string().min(1),
+  postalCode: z.string().optional(),
+  isDefault: z.boolean().optional().default(false)
+});
+var UpdateAddressSchema = z.object({
+  title: z.string().min(1).optional(),
+  recipientName: z.string().min(1).optional(),
+  recipientPhone: z.string().min(1).optional(),
+  country: z.string().min(1).optional(),
+  province: z.string().min(1).optional(),
+  city: z.string().min(1).optional(),
+  district: z.string().optional(),
+  streetAddress: z.string().min(1).optional(),
+  postalCode: z.string().optional(),
+  isDefault: z.boolean().optional()
+});
+var ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8)
 });
 async function hash(data, algorithm = "SHA-256") {
   const hash2 = await crypto.subtle.digest(algorithm, data);
@@ -12209,6 +12347,118 @@ app.get("/openapi.json", async (c) => {
                     "productId": { "type": "integer" },
                     "quantity": { "type": "integer" },
                     "product": { "$ref": "#/components/schemas/Product" }
+                  }
+                }
+              }
+            }
+          },
+          "UserProfile": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "userId": { "type": "integer" },
+              "firstName": { "type": "string" },
+              "lastName": { "type": "string" },
+              "phone": { "type": "string" },
+              "gender": { "type": "string", "enum": ["male", "female", "other"] },
+              "dateOfBirth": { "type": "string", "format": "date" },
+              "avatar": { "type": "string" },
+              "createdAt": { "type": "string", "format": "date-time" },
+              "updatedAt": { "type": "string", "format": "date-time" }
+            }
+          },
+          "UserAddress": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "userId": { "type": "integer" },
+              "title": { "type": "string" },
+              "recipientName": { "type": "string" },
+              "recipientPhone": { "type": "string" },
+              "country": { "type": "string" },
+              "province": { "type": "string" },
+              "city": { "type": "string" },
+              "district": { "type": "string" },
+              "streetAddress": { "type": "string" },
+              "postalCode": { "type": "string" },
+              "isDefault": { "type": "boolean" },
+              "createdAt": { "type": "string", "format": "date-time" },
+              "updatedAt": { "type": "string", "format": "date-time" }
+            },
+            "required": ["title", "recipientName", "recipientPhone", "country", "province", "city", "streetAddress"]
+          },
+          "Order": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "userId": { "type": "integer" },
+              "totalAmount": { "type": "number" },
+              "status": { "type": "string", "enum": ["pending", "paid", "shipped", "delivered", "cancelled"] },
+              "shippingRecipientName": { "type": "string" },
+              "shippingRecipientPhone": { "type": "string" },
+              "shippingCountry": { "type": "string" },
+              "shippingProvince": { "type": "string" },
+              "shippingCity": { "type": "string" },
+              "shippingDistrict": { "type": "string" },
+              "shippingStreetAddress": { "type": "string" },
+              "shippingPostalCode": { "type": "string" },
+              "createdAt": { "type": "string", "format": "date-time" },
+              "updatedAt": { "type": "string", "format": "date-time" },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "productId": { "type": "integer" },
+                    "quantity": { "type": "integer" },
+                    "pricePerItem": { "type": "number" },
+                    "product": { "$ref": "#/components/schemas/Product" }
+                  }
+                }
+              }
+            }
+          },
+          "AdminUser": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "email": { "type": "string" },
+              "role": { "type": "string", "enum": ["user", "admin", "super_admin", "moderator"] },
+              "status": { "type": "string", "enum": ["active", "disabled", "suspended", "deleted"] },
+              "createdAt": { "type": "string", "format": "date-time" },
+              "lastLoginAt": { "type": "string", "format": "date-time" }
+            }
+          },
+          "AdminLog": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "adminId": { "type": "integer" },
+              "action": { "type": "string" },
+              "targetType": { "type": "string" },
+              "targetId": { "type": "integer" },
+              "details": { "type": "string" },
+              "ipAddress": { "type": "string" },
+              "userAgent": { "type": "string" },
+              "createdAt": { "type": "string", "format": "date-time" },
+              "admin": { "$ref": "#/components/schemas/AdminUser" }
+            }
+          },
+          "DashboardStats": {
+            "type": "object",
+            "properties": {
+              "totalUsers": { "type": "integer" },
+              "totalOrders": { "type": "integer" },
+              "totalProducts": { "type": "integer" },
+              "newUsersThisMonth": { "type": "integer" },
+              "orderStatusStats": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "count": { "type": "integer" }
                   }
                 }
               }
@@ -12643,6 +12893,785 @@ app.get("/openapi.json", async (c) => {
               "401": { "description": "Unauthorized" }
             }
           }
+        },
+        "/profile": {
+          "get": {
+            "summary": "Get user profile",
+            "description": "\u83B7\u53D6\u5F53\u524D\u7528\u6237\u7684\u8BE6\u7EC6\u8D44\u6599\u4FE1\u606F",
+            "security": [{ "BearerAuth": [] }],
+            "responses": {
+              "200": {
+                "description": "User profile information",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "success": { "type": "boolean" },
+                        "profile": { "$ref": "#/components/schemas/UserProfile" }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": { "description": "Unauthorized - \u9700\u8981\u8BA4\u8BC1" },
+              "404": { "description": "Profile not found" }
+            }
+          },
+          "put": {
+            "summary": "Update user profile",
+            "description": "\u66F4\u65B0\u7528\u6237\u8D44\u6599\u4FE1\u606F",
+            "security": [{ "BearerAuth": [] }],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "firstName": { "type": "string" },
+                      "lastName": { "type": "string" },
+                      "phone": { "type": "string" },
+                      "gender": { "type": "string", "enum": ["male", "female", "other"] },
+                      "dateOfBirth": { "type": "string", "format": "date" },
+                      "avatar": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Profile updated successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "success": { "type": "boolean" },
+                        "profile": { "$ref": "#/components/schemas/UserProfile" }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": { "description": "Invalid input data" },
+              "401": { "description": "Unauthorized - \u9700\u8981\u8BA4\u8BC1" }
+            }
+          }
+        },
+        "/addresses": {
+          "get": {
+            "summary": "Get user addresses",
+            "description": "\u83B7\u53D6\u7528\u6237\u7684\u6240\u6709\u6536\u8D27\u5730\u5740",
+            "security": [{ "BearerAuth": [] }],
+            "responses": {
+              "200": {
+                "description": "List of user addresses",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "success": { "type": "boolean" },
+                        "addresses": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/UserAddress" }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": { "description": "Unauthorized - \u9700\u8981\u8BA4\u8BC1" }
+            }
+          },
+          "post": {
+            "summary": "Create new address",
+            "description": "\u521B\u5EFA\u65B0\u7684\u6536\u8D27\u5730\u5740",
+            "security": [{ "BearerAuth": [] }],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "required": ["title", "recipientName", "recipientPhone", "country", "province", "city", "streetAddress"],
+                    "properties": {
+                      "title": { "type": "string", "description": "\u5730\u5740\u6807\u9898\uFF0C\u5982'\u5BB6'\u3001'\u516C\u53F8'" },
+                      "recipientName": { "type": "string", "description": "\u6536\u4EF6\u4EBA\u59D3\u540D" },
+                      "recipientPhone": { "type": "string", "description": "\u6536\u4EF6\u4EBA\u7535\u8BDD" },
+                      "country": { "type": "string", "description": "\u56FD\u5BB6" },
+                      "province": { "type": "string", "description": "\u7701\u4EFD" },
+                      "city": { "type": "string", "description": "\u57CE\u5E02" },
+                      "district": { "type": "string", "description": "\u533A/\u53BF" },
+                      "streetAddress": { "type": "string", "description": "\u8BE6\u7EC6\u5730\u5740" },
+                      "postalCode": { "type": "string", "description": "\u90AE\u653F\u7F16\u7801" },
+                      "isDefault": { "type": "boolean", "description": "\u662F\u5426\u4E3A\u9ED8\u8BA4\u5730\u5740" }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "201": {
+                "description": "Address created successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "success": { "type": "boolean" },
+                        "address": { "$ref": "#/components/schemas/UserAddress" }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": { "description": "Invalid input data" },
+              "401": { "description": "Unauthorized - \u9700\u8981\u8BA4\u8BC1" }
+            }
+          }
+        },
+        "/addresses/{id}": {
+          "put": {
+            "summary": "Update address",
+            "description": "\u66F4\u65B0\u6307\u5B9A\u7684\u6536\u8D27\u5730\u5740",
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+              {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "schema": { "type": "integer" },
+                "description": "\u5730\u5740ID"
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "title": { "type": "string" },
+                      "recipientName": { "type": "string" },
+                      "recipientPhone": { "type": "string" },
+                      "country": { "type": "string" },
+                      "province": { "type": "string" },
+                      "city": { "type": "string" },
+                      "district": { "type": "string" },
+                      "streetAddress": { "type": "string" },
+                      "postalCode": { "type": "string" },
+                      "isDefault": { "type": "boolean" }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Address updated successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "success": { "type": "boolean" },
+                        "address": { "$ref": "#/components/schemas/UserAddress" }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": { "description": "Invalid input data" },
+              "401": { "description": "Unauthorized - \u9700\u8981\u8BA4\u8BC1" },
+              "404": { "description": "Address not found" }
+            }
+          },
+          "delete": {
+            "summary": "Delete address",
+            "description": "\u5220\u9664\u6307\u5B9A\u7684\u6536\u8D27\u5730\u5740",
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+              {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "schema": { "type": "integer" },
+                "description": "\u5730\u5740ID"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Address deleted successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "success": { "type": "boolean" },
+                        "message": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": { "description": "Unauthorized - \u9700\u8981\u8BA4\u8BC1" },
+              "404": { "description": "Address not found" }
+            }
+          }
+        },
+        "/orders": {
+          "get": {
+            "summary": "Get user orders",
+            "description": "\u83B7\u53D6\u7528\u6237\u7684\u8BA2\u5355\u5217\u8868\uFF0C\u652F\u6301\u6309\u72B6\u6001\u7B5B\u9009",
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+              {
+                "name": "status",
+                "in": "query",
+                "description": "\u8BA2\u5355\u72B6\u6001\u7B5B\u9009\uFF1Aactive(\u8FDB\u884C\u4E2D), completed(\u5DF2\u5B8C\u6210), all(\u5168\u90E8)",
+                "schema": { "type": "string", "enum": ["active", "completed", "all"] }
+              },
+              {
+                "name": "page",
+                "in": "query",
+                "description": "\u9875\u7801",
+                "schema": { "type": "integer", "default": 1 }
+              },
+              {
+                "name": "limit",
+                "in": "query",
+                "description": "\u6BCF\u9875\u6570\u91CF",
+                "schema": { "type": "integer", "default": 10 }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "User orders list",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "success": { "type": "boolean" },
+                        "orders": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/Order" }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": { "type": "integer" },
+                            "limit": { "type": "integer" },
+                            "total": { "type": "integer" },
+                            "totalPages": { "type": "integer" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": { "description": "Unauthorized - \u9700\u8981\u8BA4\u8BC1" }
+            }
+          }
+        },
+        "/change-password": {
+          "put": {
+            "summary": "Change user password",
+            "description": "\u4FEE\u6539\u7528\u6237\u5BC6\u7801",
+            "security": [{ "BearerAuth": [] }],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "required": ["currentPassword", "newPassword"],
+                    "properties": {
+                      "currentPassword": { "type": "string", "description": "\u5F53\u524D\u5BC6\u7801" },
+                      "newPassword": { "type": "string", "minLength": 8, "description": "\u65B0\u5BC6\u7801\uFF0C\u81F3\u5C118\u4F4D" }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Password changed successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "success": { "type": "boolean" },
+                        "message": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": { "description": "Invalid input data or current password incorrect" },
+              "401": { "description": "Unauthorized - \u9700\u8981\u8BA4\u8BC1" }
+            }
+          }
+        },
+        "/profile/delete-account": {
+          "delete": {
+            "summary": "Delete user account",
+            "description": "\u5220\u9664\u7528\u6237\u8D26\u6237\uFF0C\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\uFF0C\u5C06\u5220\u9664\u7528\u6237\u6240\u6709\u76F8\u5173\u6570\u636E",
+            "security": [{ "BearerAuth": [] }],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "required": ["password"],
+                    "properties": {
+                      "password": { "type": "string", "description": "\u5F53\u524D\u5BC6\u7801\u7528\u4E8E\u9A8C\u8BC1\u8EAB\u4EFD" }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Account deleted successfully",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "message": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": { "description": "Password is required or incorrect" },
+              "401": { "description": "Unauthorized - \u9700\u8981\u8BA4\u8BC1" },
+              "404": { "description": "User not found" }
+            }
+          }
+        },
+        "/admin/users": {
+          "get": {
+            "summary": "\u83B7\u53D6\u7528\u6237\u5217\u8868",
+            "description": "\u7BA1\u7406\u5458\u83B7\u53D6\u7528\u6237\u5217\u8868\uFF0C\u652F\u6301\u5206\u9875\u3001\u641C\u7D22\u548C\u72B6\u6001\u7B5B\u9009",
+            "tags": ["Admin - User Management"],
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+              {
+                "name": "page",
+                "in": "query",
+                "description": "\u9875\u7801",
+                "schema": { "type": "integer", "default": 1 }
+              },
+              {
+                "name": "limit",
+                "in": "query",
+                "description": "\u6BCF\u9875\u6570\u91CF",
+                "schema": { "type": "integer", "default": 20 }
+              },
+              {
+                "name": "search",
+                "in": "query",
+                "description": "\u641C\u7D22\u90AE\u7BB1",
+                "schema": { "type": "string" }
+              },
+              {
+                "name": "status",
+                "in": "query",
+                "description": "\u7528\u6237\u72B6\u6001\u7B5B\u9009",
+                "schema": { "type": "string", "enum": ["active", "disabled", "suspended", "deleted"] }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "\u7528\u6237\u5217\u8868",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "users": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/AdminUser" }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": { "type": "integer" },
+                            "limit": { "type": "integer" },
+                            "total": { "type": "integer" },
+                            "totalPages": { "type": "integer" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": { "description": "\u672A\u8BA4\u8BC1" },
+              "403": { "description": "\u6743\u9650\u4E0D\u8DB3" }
+            }
+          }
+        },
+        "/admin/users/{id}": {
+          "get": {
+            "summary": "\u83B7\u53D6\u7528\u6237\u8BE6\u60C5",
+            "description": "\u7BA1\u7406\u5458\u83B7\u53D6\u6307\u5B9A\u7528\u6237\u7684\u8BE6\u7EC6\u4FE1\u606F",
+            "tags": ["Admin - User Management"],
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+              {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "description": "\u7528\u6237ID",
+                "schema": { "type": "integer" }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "\u7528\u6237\u8BE6\u60C5",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer" },
+                        "email": { "type": "string" },
+                        "role": { "type": "string" },
+                        "status": { "type": "string" },
+                        "profile": { "$ref": "#/components/schemas/UserProfile" },
+                        "addresses": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/UserAddress" }
+                        },
+                        "orders": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/Order" }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": { "description": "\u672A\u8BA4\u8BC1" },
+              "403": { "description": "\u6743\u9650\u4E0D\u8DB3" },
+              "404": { "description": "\u7528\u6237\u4E0D\u5B58\u5728" }
+            }
+          },
+          "delete": {
+            "summary": "\u5220\u9664\u7528\u6237",
+            "description": "\u8D85\u7EA7\u7BA1\u7406\u5458\u8F6F\u5220\u9664\u6307\u5B9A\u7528\u6237\uFF08\u4E0D\u53EF\u5220\u9664\u7BA1\u7406\u5458\u8D26\u6237\uFF09",
+            "tags": ["Admin - User Management"],
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+              {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "description": "\u7528\u6237ID",
+                "schema": { "type": "integer" }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "\u7528\u6237\u5220\u9664\u6210\u529F",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "success": { "type": "boolean" },
+                        "message": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": { "description": "\u672A\u8BA4\u8BC1" },
+              "403": { "description": "\u6743\u9650\u4E0D\u8DB3\uFF08\u9700\u8981\u8D85\u7EA7\u7BA1\u7406\u5458\u6743\u9650\uFF09" },
+              "404": { "description": "\u7528\u6237\u4E0D\u5B58\u5728" }
+            }
+          }
+        },
+        "/admin/users/{id}/status": {
+          "put": {
+            "summary": "\u4FEE\u6539\u7528\u6237\u72B6\u6001",
+            "description": "\u7BA1\u7406\u5458\u4FEE\u6539\u6307\u5B9A\u7528\u6237\u7684\u72B6\u6001",
+            "tags": ["Admin - User Management"],
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+              {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "description": "\u7528\u6237ID",
+                "schema": { "type": "integer" }
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "required": ["status"],
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": ["active", "disabled", "suspended"],
+                        "description": "\u65B0\u7684\u7528\u6237\u72B6\u6001"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "\u72B6\u6001\u4FEE\u6539\u6210\u529F",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "success": { "type": "boolean" },
+                        "user": { "$ref": "#/components/schemas/AdminUser" }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": { "description": "\u65E0\u6548\u7684\u72B6\u6001\u503C" },
+              "401": { "description": "\u672A\u8BA4\u8BC1" },
+              "403": { "description": "\u6743\u9650\u4E0D\u8DB3" },
+              "404": { "description": "\u7528\u6237\u4E0D\u5B58\u5728" }
+            }
+          }
+        },
+        "/admin/orders": {
+          "get": {
+            "summary": "\u83B7\u53D6\u8BA2\u5355\u5217\u8868",
+            "description": "\u7BA1\u7406\u5458\u83B7\u53D6\u8BA2\u5355\u5217\u8868\uFF0C\u652F\u6301\u591A\u79CD\u7B5B\u9009\u6761\u4EF6",
+            "tags": ["Admin - Order Management"],
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+              {
+                "name": "page",
+                "in": "query",
+                "description": "\u9875\u7801",
+                "schema": { "type": "integer", "default": 1 }
+              },
+              {
+                "name": "limit",
+                "in": "query",
+                "description": "\u6BCF\u9875\u6570\u91CF",
+                "schema": { "type": "integer", "default": 20 }
+              },
+              {
+                "name": "status",
+                "in": "query",
+                "description": "\u8BA2\u5355\u72B6\u6001\u7B5B\u9009",
+                "schema": { "type": "string", "enum": ["pending", "paid", "shipped", "delivered", "cancelled", "refunded"] }
+              },
+              {
+                "name": "userId",
+                "in": "query",
+                "description": "\u7528\u6237ID\u7B5B\u9009",
+                "schema": { "type": "integer" }
+              },
+              {
+                "name": "startDate",
+                "in": "query",
+                "description": "\u5F00\u59CB\u65E5\u671F",
+                "schema": { "type": "string", "format": "date" }
+              },
+              {
+                "name": "endDate",
+                "in": "query",
+                "description": "\u7ED3\u675F\u65E5\u671F",
+                "schema": { "type": "string", "format": "date" }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "\u8BA2\u5355\u5217\u8868",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "orders": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/Order" }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": { "type": "integer" },
+                            "limit": { "type": "integer" },
+                            "total": { "type": "integer" },
+                            "totalPages": { "type": "integer" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": { "description": "\u672A\u8BA4\u8BC1" },
+              "403": { "description": "\u6743\u9650\u4E0D\u8DB3" }
+            }
+          }
+        },
+        "/admin/orders/{id}/status": {
+          "put": {
+            "summary": "\u4FEE\u6539\u8BA2\u5355\u72B6\u6001",
+            "description": "\u7BA1\u7406\u5458\u4FEE\u6539\u6307\u5B9A\u8BA2\u5355\u7684\u72B6\u6001",
+            "tags": ["Admin - Order Management"],
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+              {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "description": "\u8BA2\u5355ID",
+                "schema": { "type": "integer" }
+              }
+            ],
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "required": ["status"],
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": ["pending", "paid", "shipped", "delivered", "cancelled", "refunded"],
+                        "description": "\u65B0\u7684\u8BA2\u5355\u72B6\u6001"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "description": "\u72B6\u6001\u53D8\u66F4\u539F\u56E0"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "\u8BA2\u5355\u72B6\u6001\u4FEE\u6539\u6210\u529F",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "success": { "type": "boolean" },
+                        "order": { "$ref": "#/components/schemas/Order" }
+                      }
+                    }
+                  }
+                }
+              },
+              "400": { "description": "\u65E0\u6548\u7684\u8BA2\u5355\u72B6\u6001" },
+              "401": { "description": "\u672A\u8BA4\u8BC1" },
+              "403": { "description": "\u6743\u9650\u4E0D\u8DB3" },
+              "404": { "description": "\u8BA2\u5355\u4E0D\u5B58\u5728" }
+            }
+          }
+        },
+        "/admin/logs": {
+          "get": {
+            "summary": "\u83B7\u53D6\u7BA1\u7406\u5458\u64CD\u4F5C\u65E5\u5FD7",
+            "description": "\u7BA1\u7406\u5458\u67E5\u770B\u64CD\u4F5C\u5BA1\u8BA1\u65E5\u5FD7",
+            "tags": ["Admin - System Management"],
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+              {
+                "name": "page",
+                "in": "query",
+                "description": "\u9875\u7801",
+                "schema": { "type": "integer", "default": 1 }
+              },
+              {
+                "name": "limit",
+                "in": "query",
+                "description": "\u6BCF\u9875\u6570\u91CF",
+                "schema": { "type": "integer", "default": 20 }
+              },
+              {
+                "name": "action",
+                "in": "query",
+                "description": "\u64CD\u4F5C\u7C7B\u578B\u7B5B\u9009",
+                "schema": { "type": "string" }
+              },
+              {
+                "name": "adminId",
+                "in": "query",
+                "description": "\u7BA1\u7406\u5458ID\u7B5B\u9009",
+                "schema": { "type": "integer" }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "\u64CD\u4F5C\u65E5\u5FD7\u5217\u8868",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "logs": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/AdminLog" }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": { "type": "integer" },
+                            "limit": { "type": "integer" },
+                            "total": { "type": "integer" },
+                            "totalPages": { "type": "integer" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "401": { "description": "\u672A\u8BA4\u8BC1" },
+              "403": { "description": "\u6743\u9650\u4E0D\u8DB3" }
+            }
+          }
+        },
+        "/admin/dashboard": {
+          "get": {
+            "summary": "\u83B7\u53D6\u7BA1\u7406\u5458\u4EEA\u8868\u677F\u6570\u636E",
+            "description": "\u7BA1\u7406\u5458\u67E5\u770B\u7CFB\u7EDF\u7EDF\u8BA1\u6570\u636E\u548C\u6982\u89C8\u4FE1\u606F",
+            "tags": ["Admin - System Management"],
+            "security": [{ "BearerAuth": [] }],
+            "responses": {
+              "200": {
+                "description": "\u4EEA\u8868\u677F\u7EDF\u8BA1\u6570\u636E",
+                "content": {
+                  "application/json": {
+                    "schema": { "$ref": "#/components/schemas/DashboardStats" }
+                  }
+                }
+              },
+              "401": { "description": "\u672A\u8BA4\u8BC1" },
+              "403": { "description": "\u6743\u9650\u4E0D\u8DB3" }
+            }
+          }
         }
       }
     };
@@ -12680,6 +13709,51 @@ var authMiddleware = /* @__PURE__ */ __name(async (c, next) => {
     return c.json({ error: "Invalid token" }, 401);
   }
 }, "authMiddleware");
+var adminMiddleware = /* @__PURE__ */ __name(async (c, next) => {
+  const userId = c.get("userId");
+  if (!userId) {
+    return c.json({ error: "Authentication required" }, 401);
+  }
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    columns: { id: true, email: true, role: true, status: true }
+  });
+  if (!user || !["admin", "super_admin", "moderator"].includes(user.role)) {
+    return c.json({ error: "Admin access required" }, 403);
+  }
+  if (user.status !== "active") {
+    return c.json({ error: "Account disabled" }, 403);
+  }
+  c.set("adminUser", user);
+  const action = `${c.req.method} ${c.req.path}`;
+  await logAdminAction(db, user.id, action, c.req.header("CF-Connecting-IP"), c.req.header("User-Agent"));
+  await next();
+}, "adminMiddleware");
+var superAdminMiddleware = /* @__PURE__ */ __name(async (c, next) => {
+  const adminUser = c.get("adminUser");
+  if (!adminUser || adminUser.role !== "super_admin") {
+    return c.json({ error: "Super admin access required" }, 403);
+  }
+  await next();
+}, "superAdminMiddleware");
+async function logAdminAction(db, adminId, action, ipAddress, userAgent, targetType, targetId, details) {
+  try {
+    await db.insert(adminLogs).values({
+      adminId,
+      action,
+      targetType: targetType || "system",
+      targetId: targetId || null,
+      details: details ? JSON.stringify(details) : null,
+      ipAddress: ipAddress || "unknown",
+      userAgent: userAgent || "unknown",
+      createdAt: /* @__PURE__ */ new Date()
+    });
+  } catch (error) {
+    console.error("Failed to log admin action:", error);
+  }
+}
+__name(logAdminAction, "logAdminAction");
 app.get("/api/products", async (c) => {
   const db = drizzle(c.env.DB, { schema: schema_exports });
   const lang = c.req.query("lang") || "en";
@@ -12949,6 +14023,435 @@ app.get("/api/auth/me", authMiddleware, async (c) => {
   }
   return c.json(user);
 });
+app.get("/api/profile", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { id: true, email: true },
+      with: {
+        profile: true
+      }
+    });
+    if (!user) {
+      return c.json({ error: "User not found" }, 404);
+    }
+    return c.json({
+      id: user.id,
+      email: user.email,
+      profile: user.profile
+    });
+  } catch (error) {
+    return c.json({ error: "Failed to get user profile", details: error.message }, 500);
+  }
+});
+app.post("/api/profile", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const body = await c.req.json();
+  const validation = CreateUserProfileSchema.safeParse(body);
+  if (!validation.success) {
+    return c.json({ error: "Invalid profile data", issues: validation.error.issues }, 400);
+  }
+  const profileData = validation.data;
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const existingProfile = await db.query.userProfiles.findFirst({
+      where: eq(userProfiles.userId, userId)
+    });
+    if (existingProfile) {
+      return c.json({ error: "Profile already exists. Use PUT to update." }, 409);
+    }
+    const insertData = { userId, ...profileData };
+    if (profileData.dateOfBirth) {
+      insertData.dateOfBirth = new Date(profileData.dateOfBirth);
+    }
+    const result = await db.insert(userProfiles).values(insertData).returning();
+    return c.json(result[0], 201);
+  } catch (error) {
+    return c.json({ error: "Failed to create user profile", details: error.message }, 500);
+  }
+});
+app.put("/api/profile", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const body = await c.req.json();
+  const validation = UpdateUserProfileSchema.safeParse(body);
+  if (!validation.success) {
+    return c.json({ error: "Invalid profile data", issues: validation.error.issues }, 400);
+  }
+  const profileData = validation.data;
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const existingProfile = await db.query.userProfiles.findFirst({
+      where: eq(userProfiles.userId, userId)
+    });
+    if (!existingProfile) {
+      return c.json({ error: "Profile not found. Use POST to create." }, 404);
+    }
+    const updateData = { ...profileData, updatedAt: /* @__PURE__ */ new Date() };
+    if (profileData.dateOfBirth) {
+      updateData.dateOfBirth = new Date(profileData.dateOfBirth);
+    }
+    const result = await db.update(userProfiles).set(updateData).where(eq(userProfiles.userId, userId)).returning();
+    return c.json(result[0]);
+  } catch (error) {
+    return c.json({ error: "Failed to update user profile", details: error.message }, 500);
+  }
+});
+app.put("/api/profile/change-password", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const body = await c.req.json();
+  const validation = ChangePasswordSchema.safeParse(body);
+  if (!validation.success) {
+    return c.json({ error: "Invalid password data", issues: validation.error.issues }, 400);
+  }
+  const { currentPassword, newPassword } = validation.data;
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId)
+    });
+    if (!user) {
+      return c.json({ error: "User not found" }, 404);
+    }
+    const currentPasswordHash = await hashPassword(currentPassword);
+    if (currentPasswordHash !== user.password) {
+      return c.json({ error: "Current password is incorrect" }, 400);
+    }
+    const newPasswordHash = await hashPassword(newPassword);
+    await db.update(users).set({ password: newPasswordHash }).where(eq(users.id, userId));
+    return c.json({ message: "Password changed successfully" });
+  } catch (error) {
+    return c.json({ error: "Failed to change password", details: error.message }, 500);
+  }
+});
+app.delete("/api/profile/delete-account", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const body = await c.req.json();
+  const { password } = body;
+  if (!password) {
+    return c.json({ error: "Password is required to delete account" }, 400);
+  }
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId)
+    });
+    if (!user) {
+      return c.json({ error: "User not found" }, 404);
+    }
+    const passwordHash = await hashPassword(password);
+    if (passwordHash !== user.password) {
+      return c.json({ error: "Password is incorrect" }, 400);
+    }
+    await db.delete(users).where(eq(users.id, userId));
+    return c.json({ message: "Account deleted successfully" });
+  } catch (error) {
+    return c.json({ error: "Failed to delete account", details: error.message }, 500);
+  }
+});
+app.get("/api/addresses", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const addresses = await db.query.userAddresses.findMany({
+      where: eq(userAddresses.userId, userId),
+      orderBy: [desc(userAddresses.isDefault), desc(userAddresses.createdAt)]
+    });
+    return c.json(addresses);
+  } catch (error) {
+    return c.json({ error: "Failed to get addresses", details: error.message }, 500);
+  }
+});
+app.post("/api/addresses", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const body = await c.req.json();
+  const validation = CreateAddressSchema.safeParse(body);
+  if (!validation.success) {
+    return c.json({ error: "Invalid address data", issues: validation.error.issues }, 400);
+  }
+  const addressData = validation.data;
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    if (addressData.isDefault) {
+      await db.update(userAddresses).set({ isDefault: false }).where(eq(userAddresses.userId, userId));
+    }
+    const result = await db.insert(userAddresses).values({ userId, ...addressData }).returning();
+    return c.json(result[0], 201);
+  } catch (error) {
+    return c.json({ error: "Failed to create address", details: error.message }, 500);
+  }
+});
+app.put("/api/addresses/:id", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const addressId = Number(c.req.param("id"));
+  const body = await c.req.json();
+  const validation = UpdateAddressSchema.safeParse(body);
+  if (isNaN(addressId)) {
+    return c.json({ error: "Invalid address ID" }, 400);
+  }
+  if (!validation.success) {
+    return c.json({ error: "Invalid address data", issues: validation.error.issues }, 400);
+  }
+  const addressData = validation.data;
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const existingAddress = await db.query.userAddresses.findFirst({
+      where: and(eq(userAddresses.id, addressId), eq(userAddresses.userId, userId))
+    });
+    if (!existingAddress) {
+      return c.json({ error: "Address not found or unauthorized" }, 404);
+    }
+    if (addressData.isDefault) {
+      await db.update(userAddresses).set({ isDefault: false }).where(eq(userAddresses.userId, userId));
+    }
+    const result = await db.update(userAddresses).set({ ...addressData, updatedAt: /* @__PURE__ */ new Date() }).where(and(eq(userAddresses.id, addressId), eq(userAddresses.userId, userId))).returning();
+    return c.json(result[0]);
+  } catch (error) {
+    return c.json({ error: "Failed to update address", details: error.message }, 500);
+  }
+});
+app.delete("/api/addresses/:id", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const addressId = Number(c.req.param("id"));
+  if (isNaN(addressId)) {
+    return c.json({ error: "Invalid address ID" }, 400);
+  }
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const existingAddress = await db.query.userAddresses.findFirst({
+      where: and(eq(userAddresses.id, addressId), eq(userAddresses.userId, userId))
+    });
+    if (!existingAddress) {
+      return c.json({ error: "Address not found or unauthorized" }, 404);
+    }
+    await db.delete(userAddresses).where(and(eq(userAddresses.id, addressId), eq(userAddresses.userId, userId)));
+    return c.json({ message: "Address deleted successfully" });
+  } catch (error) {
+    return c.json({ error: "Failed to delete address", details: error.message }, 500);
+  }
+});
+app.post("/api/addresses/:id/set-default", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const addressId = Number(c.req.param("id"));
+  if (isNaN(addressId)) {
+    return c.json({ error: "Invalid address ID" }, 400);
+  }
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const existingAddress = await db.query.userAddresses.findFirst({
+      where: and(eq(userAddresses.id, addressId), eq(userAddresses.userId, userId))
+    });
+    if (!existingAddress) {
+      return c.json({ error: "Address not found or unauthorized" }, 404);
+    }
+    await db.update(userAddresses).set({ isDefault: false }).where(eq(userAddresses.userId, userId));
+    const result = await db.update(userAddresses).set({ isDefault: true, updatedAt: /* @__PURE__ */ new Date() }).where(and(eq(userAddresses.id, addressId), eq(userAddresses.userId, userId))).returning();
+    return c.json(result[0]);
+  } catch (error) {
+    return c.json({ error: "Failed to set default address", details: error.message }, 500);
+  }
+});
+app.get("/api/orders", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  const lang = c.req.query("lang") || "en";
+  const status = c.req.query("status");
+  const page = Number(c.req.query("page")) || 1;
+  const limit = Number(c.req.query("limit")) || 10;
+  const offset = (page - 1) * limit;
+  try {
+    let whereCondition = eq(orders.userId, userId);
+    if (status && ["pending", "paid", "shipped", "delivered", "cancelled"].includes(status)) {
+      whereCondition = and(whereCondition, eq(orders.status, status));
+    }
+    const userOrders = await db.query.orders.findMany({
+      where: whereCondition,
+      with: {
+        items: {
+          with: {
+            product: {
+              with: {
+                translations: { where: eq(productTranslations.language, lang) },
+                media: {
+                  with: { asset: true },
+                  limit: 1,
+                  // 只获取第一张图片作为缩略图
+                  orderBy: [productMedia.displayOrder]
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: [desc(orders.createdAt)],
+      limit,
+      offset
+    });
+    const formattedOrders = userOrders.map((order) => ({
+      id: order.id,
+      totalAmount: order.totalAmount,
+      status: order.status,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      shippingAddress: {
+        recipientName: order.shippingRecipientName,
+        recipientPhone: order.shippingRecipientPhone,
+        country: order.shippingCountry,
+        province: order.shippingProvince,
+        city: order.shippingCity,
+        district: order.shippingDistrict,
+        streetAddress: order.shippingStreetAddress,
+        postalCode: order.shippingPostalCode
+      },
+      items: order.items.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        pricePerItem: item.pricePerItem,
+        product: {
+          id: item.product.id,
+          name: item.product.translations[0]?.name || "Unknown Product",
+          price: item.product.price,
+          thumbnail: item.product.media[0]?.asset?.url || null
+        }
+      }))
+    }));
+    const totalCountResult = await db.select({ count: count() }).from(orders).where(whereCondition);
+    const totalCount = totalCountResult[0]?.count || 0;
+    return c.json({
+      orders: formattedOrders,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
+  } catch (error) {
+    return c.json({ error: "Failed to get orders", details: error.message }, 500);
+  }
+});
+app.get("/api/orders/:id", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const orderId = Number(c.req.param("id"));
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  const lang = c.req.query("lang") || "en";
+  if (isNaN(orderId)) {
+    return c.json({ error: "Invalid order ID" }, 400);
+  }
+  try {
+    const order = await db.query.orders.findFirst({
+      where: and(eq(orders.id, orderId), eq(orders.userId, userId)),
+      with: {
+        items: {
+          with: {
+            product: {
+              with: {
+                translations: { where: eq(productTranslations.language, lang) },
+                media: {
+                  with: { asset: true },
+                  orderBy: [productMedia.displayOrder]
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+    if (!order) {
+      return c.json({ error: "Order not found or unauthorized" }, 404);
+    }
+    const formattedOrder = {
+      id: order.id,
+      totalAmount: order.totalAmount,
+      status: order.status,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      shippingAddress: {
+        recipientName: order.shippingRecipientName,
+        recipientPhone: order.shippingRecipientPhone,
+        country: order.shippingCountry,
+        province: order.shippingProvince,
+        city: order.shippingCity,
+        district: order.shippingDistrict,
+        streetAddress: order.shippingStreetAddress,
+        postalCode: order.shippingPostalCode
+      },
+      items: order.items.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        pricePerItem: item.pricePerItem,
+        subtotal: item.quantity * item.pricePerItem,
+        product: {
+          id: item.product.id,
+          name: item.product.translations[0]?.name || "Unknown Product",
+          price: item.product.price,
+          media: item.product.media.map((m) => ({
+            id: m.asset.id,
+            url: m.asset.url,
+            mediaType: m.asset.mediaType
+          }))
+        }
+      }))
+    };
+    return c.json(formattedOrder);
+  } catch (error) {
+    return c.json({ error: "Failed to get order details", details: error.message }, 500);
+  }
+});
+app.get("/api/orders/active", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  const lang = c.req.query("lang") || "en";
+  try {
+    const activeOrdersCondition = and(
+      eq(orders.userId, userId),
+      // 进行中的订单：pending, paid, shipped
+      or(
+        eq(orders.status, "pending"),
+        eq(orders.status, "paid"),
+        eq(orders.status, "shipped")
+      )
+    );
+    const activeOrders = await db.query.orders.findMany({
+      where: activeOrdersCondition,
+      with: {
+        items: {
+          with: {
+            product: {
+              with: {
+                translations: { where: eq(productTranslations.language, lang) },
+                media: {
+                  with: { asset: true },
+                  limit: 1,
+                  orderBy: [productMedia.displayOrder]
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: [desc(orders.createdAt)]
+    });
+    const formattedOrders = activeOrders.map((order) => ({
+      id: order.id,
+      totalAmount: order.totalAmount,
+      status: order.status,
+      createdAt: order.createdAt,
+      itemCount: order.items.length,
+      firstItem: order.items[0] ? {
+        product: {
+          name: order.items[0].product.translations[0]?.name || "Unknown Product",
+          thumbnail: order.items[0].product.media[0]?.asset?.url || null
+        },
+        quantity: order.items[0].quantity
+      } : null
+    }));
+    return c.json(formattedOrders);
+  } catch (error) {
+    return c.json({ error: "Failed to get active orders", details: error.message }, 500);
+  }
+});
 app.get("/api/cart", authMiddleware, async (c) => {
   const userId = c.get("userId");
   const lang = c.req.query("lang") || "en";
@@ -13095,6 +14598,300 @@ app.delete("/api/cart/items/:itemId", authMiddleware, async (c) => {
     return c.json({ error: "Failed to remove cart item", details: error.message }, 500);
   }
 });
+app.get("/api/admin/users", authMiddleware, adminMiddleware, async (c) => {
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  const page = Number(c.req.query("page")) || 1;
+  const limit = Number(c.req.query("limit")) || 20;
+  const search = c.req.query("search") || "";
+  const status = c.req.query("status") || "";
+  const offset = (page - 1) * limit;
+  try {
+    let whereConditions = [];
+    if (search) {
+      whereConditions.push(eq(users.email, `%${search}%`));
+    }
+    if (status) {
+      whereConditions.push(eq(users.status, status));
+    }
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : void 0;
+    const userList = await db.query.users.findMany({
+      where: whereClause,
+      columns: {
+        id: true,
+        email: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        lastLoginAt: true
+      },
+      limit,
+      offset,
+      orderBy: [desc(users.createdAt)]
+    });
+    const totalCountResult = await db.select({ count: count() }).from(users).where(whereClause);
+    const totalCount = totalCountResult[0]?.count || 0;
+    return c.json({
+      users: userList,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
+  } catch (error) {
+    return c.json({ error: "Failed to get users", details: error.message }, 500);
+  }
+});
+app.get("/api/admin/users/:id", authMiddleware, adminMiddleware, async (c) => {
+  const userId = Number(c.req.param("id"));
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      with: {
+        profile: true,
+        addresses: true,
+        orders: {
+          limit: 10,
+          orderBy: [desc(orders.createdAt)]
+        }
+      }
+    });
+    if (!user) {
+      return c.json({ error: "User not found" }, 404);
+    }
+    return c.json(user);
+  } catch (error) {
+    return c.json({ error: "Failed to get user details", details: error.message }, 500);
+  }
+});
+app.put("/api/admin/users/:id/status", authMiddleware, adminMiddleware, async (c) => {
+  const userId = Number(c.req.param("id"));
+  const { status } = await c.req.json();
+  const adminUser = c.get("adminUser");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  if (!["active", "disabled", "suspended"].includes(status)) {
+    return c.json({ error: "Invalid status" }, 400);
+  }
+  try {
+    const updatedUser = await db.update(users).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, userId)).returning();
+    if (updatedUser.length === 0) {
+      return c.json({ error: "User not found" }, 404);
+    }
+    await logAdminAction(
+      db,
+      adminUser.id,
+      "update_user_status",
+      c.req.header("CF-Connecting-IP"),
+      c.req.header("User-Agent"),
+      "user",
+      userId,
+      { oldStatus: "unknown", newStatus: status }
+    );
+    return c.json({ success: true, user: updatedUser[0] });
+  } catch (error) {
+    return c.json({ error: "Failed to update user status", details: error.message }, 500);
+  }
+});
+app.delete("/api/admin/users/:id", authMiddleware, superAdminMiddleware, async (c) => {
+  const userId = Number(c.req.param("id"));
+  const adminUser = c.get("adminUser");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId)
+    });
+    if (!user) {
+      return c.json({ error: "User not found" }, 404);
+    }
+    if (["admin", "super_admin", "moderator"].includes(user.role)) {
+      return c.json({ error: "Cannot delete admin accounts" }, 403);
+    }
+    await db.update(users).set({ status: "deleted", updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, userId));
+    await logAdminAction(
+      db,
+      adminUser.id,
+      "delete_user",
+      c.req.header("CF-Connecting-IP"),
+      c.req.header("User-Agent"),
+      "user",
+      userId,
+      { email: user.email }
+    );
+    return c.json({ success: true, message: "User deleted successfully" });
+  } catch (error) {
+    return c.json({ error: "Failed to delete user", details: error.message }, 500);
+  }
+});
+app.get("/api/admin/orders", authMiddleware, adminMiddleware, async (c) => {
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  const page = Number(c.req.query("page")) || 1;
+  const limit = Number(c.req.query("limit")) || 20;
+  const status = c.req.query("status") || "";
+  const userId = c.req.query("userId") || "";
+  const startDate = c.req.query("startDate") || "";
+  const endDate = c.req.query("endDate") || "";
+  const offset = (page - 1) * limit;
+  try {
+    let whereConditions = [];
+    if (status) {
+      whereConditions.push(eq(orders.status, status));
+    }
+    if (userId) {
+      whereConditions.push(eq(orders.userId, Number(userId)));
+    }
+    if (startDate) {
+      whereConditions.push(eq(orders.createdAt, new Date(startDate)));
+    }
+    if (endDate) {
+      whereConditions.push(eq(orders.createdAt, new Date(endDate)));
+    }
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : void 0;
+    const orderList = await db.query.orders.findMany({
+      where: whereClause,
+      with: {
+        user: {
+          columns: { id: true, email: true }
+        },
+        items: {
+          with: {
+            product: {
+              columns: { id: true, name: true, price: true },
+              with: {
+                translations: { where: eq(productTranslations.language, "en") }
+              }
+            }
+          }
+        }
+      },
+      limit,
+      offset,
+      orderBy: [desc(orders.createdAt)]
+    });
+    const formattedOrders = orderList.map((order) => ({
+      ...order,
+      items: order.items.map((item) => ({
+        ...item,
+        product: {
+          ...item.product,
+          name: item.product.translations[0]?.name || "Unknown Product"
+        }
+      }))
+    }));
+    const totalCountResult = await db.select({ count: count() }).from(orders).where(whereClause);
+    const totalCount = totalCountResult[0]?.count || 0;
+    return c.json({
+      orders: formattedOrders,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
+  } catch (error) {
+    return c.json({ error: "Failed to get orders", details: error.message }, 500);
+  }
+});
+app.put("/api/admin/orders/:id/status", authMiddleware, adminMiddleware, async (c) => {
+  const orderId = Number(c.req.param("id"));
+  const { status, reason } = await c.req.json();
+  const adminUser = c.get("adminUser");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  if (!["pending", "paid", "shipped", "delivered", "cancelled", "refunded"].includes(status)) {
+    return c.json({ error: "Invalid status" }, 400);
+  }
+  try {
+    const order = await db.query.orders.findFirst({
+      where: eq(orders.id, orderId)
+    });
+    if (!order) {
+      return c.json({ error: "Order not found" }, 404);
+    }
+    const updatedOrder = await db.update(orders).set({ status, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orders.id, orderId)).returning();
+    await logAdminAction(
+      db,
+      adminUser.id,
+      "update_order_status",
+      c.req.header("CF-Connecting-IP"),
+      c.req.header("User-Agent"),
+      "order",
+      orderId,
+      { oldStatus: order.status, newStatus: status, reason }
+    );
+    return c.json({ success: true, order: updatedOrder[0] });
+  } catch (error) {
+    return c.json({ error: "Failed to update order status", details: error.message }, 500);
+  }
+});
+app.get("/api/admin/logs", authMiddleware, adminMiddleware, async (c) => {
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  const page = Number(c.req.query("page")) || 1;
+  const limit = Number(c.req.query("limit")) || 20;
+  const action = c.req.query("action") || "";
+  const adminId = c.req.query("adminId") || "";
+  const offset = (page - 1) * limit;
+  try {
+    let whereConditions = [];
+    if (action) {
+      whereConditions.push(eq(adminLogs.action, action));
+    }
+    if (adminId) {
+      whereConditions.push(eq(adminLogs.adminId, Number(adminId)));
+    }
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : void 0;
+    const logList = await db.query.adminLogs.findMany({
+      where: whereClause,
+      with: {
+        admin: {
+          columns: { id: true, email: true, role: true }
+        }
+      },
+      limit,
+      offset,
+      orderBy: [desc(adminLogs.createdAt)]
+    });
+    const totalCountResult = await db.select({ count: count() }).from(adminLogs).where(whereClause);
+    const totalCount = totalCountResult[0]?.count || 0;
+    return c.json({
+      logs: logList,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
+  } catch (error) {
+    return c.json({ error: "Failed to get admin logs", details: error.message }, 500);
+  }
+});
+app.get("/api/admin/dashboard", authMiddleware, adminMiddleware, async (c) => {
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const totalUsers = await db.select({ count: count() }).from(users);
+    const totalOrders = await db.select({ count: count() }).from(orders);
+    const totalProducts = await db.select({ count: count() }).from(products);
+    const thisMonth = /* @__PURE__ */ new Date();
+    thisMonth.setDate(1);
+    thisMonth.setHours(0, 0, 0, 0);
+    const newUsersThisMonth = await db.select({ count: count() }).from(users).where(eq(users.createdAt, thisMonth));
+    const orderStatusStats = await db.select({
+      status: orders.status,
+      count: count()
+    }).from(orders).groupBy(orders.status);
+    return c.json({
+      totalUsers: totalUsers[0]?.count || 0,
+      totalOrders: totalOrders[0]?.count || 0,
+      totalProducts: totalProducts[0]?.count || 0,
+      newUsersThisMonth: newUsersThisMonth[0]?.count || 0,
+      orderStatusStats
+    });
+  } catch (error) {
+    return c.json({ error: "Failed to get dashboard data", details: error.message }, 500);
+  }
+});
 var src_default = app;
 
 // node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
@@ -13138,7 +14935,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-iAFklb/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-JieaHX/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -13170,7 +14967,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-iAFklb/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-JieaHX/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

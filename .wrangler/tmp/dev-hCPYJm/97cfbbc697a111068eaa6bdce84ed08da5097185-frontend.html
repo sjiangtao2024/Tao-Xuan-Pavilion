@@ -64,7 +64,10 @@
                 <div id="auth-container">
                     <button id="login-button" class="btn-primary px-4 py-2 rounded-md text-sm" data-lang-key="login">Login</button>
                     <div id="user-profile" class="hidden items-center space-x-2">
-                        <span id="user-email" class="text-sm text-gold"></span>
+                        <span id="user-email" class="text-gold text-sm"></span>
+                        <span class="text-gray-400">|</span>
+                        <button id="profile-button" class="text-gold hover:text-primary text-sm" onclick="showPage('profile')" data-lang-key="profile">Profile</button>
+                        <span class="text-gray-400">|</span>
                         <button id="logout-button" class="text-gray-400 hover:text-white text-sm" data-lang-key="logout">Logout</button>
                     </div>
                 </div>
@@ -80,6 +83,7 @@
         <div id="home-page" class="page"></div>
         <div id="shop-page" class="page hidden"></div>
         <div id="product-page" class="page hidden"></div>
+        <div id="profile-page" class="page hidden"></div>
         <div id="about-page" class="page hidden"></div>
         <div id="contact-page" class="page hidden"></div>
     </main>
@@ -208,7 +212,72 @@
                 footerCopyright: '© 2024 Tao Xuan Pavilion. All rights reserved.',
                 footerPrivacy: 'Privacy Policy',
                 footerTerms: 'Terms of Service',
-                footerReturns: 'Return Policy'
+                footerReturns: 'Return Policy',
+                // 用户资料相关
+                profile: 'Profile',
+                profileTitle: 'User Profile',
+                profileInfo: 'Profile Information',
+                personalInfo: 'Personal Information',
+                firstName: 'First Name',
+                lastName: 'Last Name',
+                phone: 'Phone Number',
+                gender: 'Gender',
+                dateOfBirth: 'Date of Birth',
+                avatar: 'Avatar',
+                male: 'Male',
+                female: 'Female',
+                other: 'Other',
+                save: 'Save',
+                cancel: 'Cancel',
+                edit: 'Edit',
+                // 地址管理
+                addresses: 'Addresses',
+                addAddress: 'Add New Address',
+                editAddress: 'Edit Address',
+                addressTitle: 'Address Title',
+                recipientName: 'Recipient Name',
+                recipientPhone: 'Recipient Phone',
+                country: 'Country',
+                province: 'Province',
+                city: 'City',
+                district: 'District',
+                streetAddress: 'Street Address',
+                postalCode: 'Postal Code',
+                isDefault: 'Set as Default',
+                defaultAddress: 'Default',
+                setDefault: 'Set Default',
+                deleteAddress: 'Delete',
+                confirmDeleteAddress: 'Are you sure you want to delete this address?',
+                // 订单管理
+                orders: 'Orders',
+                myOrders: 'My Orders',
+                orderHistory: 'Order History',
+                activeOrders: 'Active Orders',
+                orderDetails: 'Order Details',
+                orderNumber: 'Order Number',
+                orderDate: 'Order Date',
+                orderStatus: 'Status',
+                orderTotal: 'Total Amount',
+                orderItems: 'Items',
+                shippingAddress: 'Shipping Address',
+                pending: 'Pending',
+                paid: 'Paid',
+                shipped: 'Shipped',
+                delivered: 'Delivered',
+                cancelled: 'Cancelled',
+                viewOrder: 'View Order',
+                noOrders: 'No orders found',
+                // 账户安全
+                security: 'Security',
+                changePassword: 'Change Password',
+                currentPassword: 'Current Password',
+                newPassword: 'New Password',
+                confirmNewPassword: 'Confirm New Password',
+                passwordChanged: 'Password changed successfully',
+                passwordChangeError: 'Failed to change password',
+                deleteAccount: 'Delete Account',
+                deleteAccountConfirm: 'Are you sure you want to delete your account? This action cannot be undone.',
+                accountDeleted: 'Account deleted successfully'
             },
             zh: {
                 siteName: '道玄阁',
@@ -283,7 +352,72 @@
                 footerCopyright: '© 2024 道玄阁。保留所有权利。',
                 footerPrivacy: '隐私政策',
                 footerTerms: '服务条款',
-                footerReturns: '退换货政策'
+                footerReturns: '退换货政策',
+                // 用户资料相关
+                profile: '个人中心',
+                profileTitle: '用户资料',
+                profileInfo: '资料信息',
+                personalInfo: '个人信息',
+                firstName: '名字',
+                lastName: '姓氏',
+                phone: '手机号码',
+                gender: '性别',
+                dateOfBirth: '生日',
+                avatar: '头像',
+                male: '男',
+                female: '女',
+                other: '其他',
+                save: '保存',
+                cancel: '取消',
+                edit: '编辑',
+                // 地址管理
+                addresses: '收货地址',
+                addAddress: '添加新地址',
+                editAddress: '编辑地址',
+                addressTitle: '地址标题',
+                recipientName: '收货人姓名',
+                recipientPhone: '收货人手机',
+                country: '国家',
+                province: '省份',
+                city: '城市',
+                district: '区县',
+                streetAddress: '详细地址',
+                postalCode: '邮政编码',
+                isDefault: '设为默认',
+                defaultAddress: '默认地址',
+                setDefault: '设为默认',
+                deleteAddress: '删除',
+                confirmDeleteAddress: '确定要删除这个地址吗？',
+                // 订单管理
+                orders: '订单管理',
+                myOrders: '我的订单',
+                orderHistory: '历史订单',
+                activeOrders: '进行中订单',
+                orderDetails: '订单详情',
+                orderNumber: '订单号',
+                orderDate: '下单时间',
+                orderStatus: '订单状态',
+                orderTotal: '订单金额',
+                orderItems: '商品列表',
+                shippingAddress: '配送地址',
+                pending: '待处理',
+                paid: '已付款',
+                shipped: '已发货',
+                delivered: '已送达',
+                cancelled: '已取消',
+                viewOrder: '查看订单',
+                noOrders: '暂无订单',
+                // 账户安全
+                security: '账户安全',
+                changePassword: '修改密码',
+                currentPassword: '当前密码',
+                newPassword: '新密码',
+                confirmNewPassword: '确认新密码',
+                passwordChanged: '密码修改成功',
+                passwordChangeError: '密码修改失败',
+                deleteAccount: '注销账户',
+                deleteAccountConfirm: '确定要注销您的账户吗？此操作不可撤销。',
+                accountDeleted: '账户注销成功'
             }
         };
 
@@ -403,9 +537,15 @@
                 user = data.user || { email: email };
                 updateAuthUI();
                 
-                const cartData = await apiFetch('/api/cart');
-                cart = cartData || { items: [] };
-                updateCart();
+                try {
+                    const cartData = await apiFetch('/api/cart');
+                    cart = cartData || { items: [] };
+                    updateCart();
+                } catch (cartError) {
+                    console.warn('获取购物车数据失败，使用空购物车:', cartError);
+                    cart = { items: [] };
+                    updateCart();
+                }
                 
                 closeModal(loginModal);
                 showMessage(translations[currentLang].loginSuccess);
@@ -513,10 +653,55 @@
             return 'Unnamed Product';
         }
         
-        // 辅助函数 - 获取商品价格
-        function getProductPrice(product) {
+        // 汇率缓存和转换功能
+        let exchangeRate = null;
+        let exchangeRateLastUpdate = null;
+        const EXCHANGE_RATE_CACHE_DURATION = 30 * 60 * 1000; // 30分钟缓存
+
+        // 获取汇率
+        async function getExchangeRate() {
+            const now = new Date().getTime();
+            
+            // 检查缓存是否有效
+            if (exchangeRate && exchangeRateLastUpdate && (now - exchangeRateLastUpdate) < EXCHANGE_RATE_CACHE_DURATION) {
+                return exchangeRate;
+            }
+            
+            try {
+                // 使用免费的汇率API
+                const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const data = await response.json();
+                
+                if (data && data.rates && data.rates.CNY) {
+                    exchangeRate = data.rates.CNY;
+                    exchangeRateLastUpdate = now;
+                    console.log(`Updated exchange rate: 1 USD = ${exchangeRate} CNY`);
+                    return exchangeRate;
+                }
+            } catch (error) {
+                console.warn('Failed to fetch exchange rate, using fallback:', error);
+            }
+            
+            // 备用汇率
+            exchangeRate = 7.17;
+            exchangeRateLastUpdate = now;
+            console.log(`Using fallback exchange rate: 1 USD = ${exchangeRate} CNY`);
+            return exchangeRate;
+        }
+
+        // 辅助函数 - 获取商品价格（根据语言转换货币）
+        async function getProductPrice(product) {
             if (!product) return 0;
-            return parseFloat(product.price) || 0;
+            const basePrice = parseFloat(product.price) || 0;
+            
+            if (currentLang === 'zh') {
+                // 中文模式：转换为人民币
+                const rate = await getExchangeRate();
+                return basePrice * rate;
+            } else {
+                // 英文模式：保持美元价格
+                return basePrice;
+            }
         }
 
         // 购物车管理
@@ -701,7 +886,21 @@
             });
         }
 
-        function renderCartModal() {
+        async function renderCartModal() {
+            // 异步计算所有商品价格
+            const cartItemsWithPrices = await Promise.all(
+                cart.items.map(async (item) => {
+                    const price = await getProductPrice(item.product);
+                    return {
+                        ...item,
+                        convertedPrice: price
+                    };
+                })
+            );
+            
+            // 计算总价
+            const totalPrice = cartItemsWithPrices.reduce((sum, item) => sum + item.convertedPrice * item.quantity, 0);
+            
             const cartContent = `
                 <div class="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col" style="background-color: var(--bg-talisman-yellow); color: var(--text-on-light);">
                     <div class="p-6 border-b border-gray-200">
@@ -721,7 +920,7 @@
                             </div>
                         ` : `
                             <div class="space-y-4">
-                                ${cart.items.map(item => {
+                                ${cartItemsWithPrices.map(item => {
                                     // 调试日志
                                     console.log('Cart item data:', item);
                                     console.log('Product data:', item.product);
@@ -729,7 +928,7 @@
                                     // 获取商品缩略图
                                     const thumbnailUrl = getThumbnailUrl(item.product);
                                     const productName = getProductName(item.product);
-                                    const productPrice = getProductPrice(item.product);
+                                    const productPrice = item.convertedPrice;
                                     
                                     console.log('Processed values:', { thumbnailUrl, productName, productPrice });
                                     
@@ -738,7 +937,7 @@
                                             <img src="${thumbnailUrl}" alt="${productName}" class="w-16 h-16 object-cover rounded" onerror="this.src='/placeholder.jpg'">
                                             <div class="flex-1">
                                                 <h3 class="font-semibold">${productName}</h3>
-                                                <p class="text-gray-600">${translations[currentLang].currencySymbol}${productPrice}</p>
+                                                <p class="text-gray-600">${translations[currentLang].currencySymbol}${productPrice.toFixed(2)}</p>
                                             </div>
                                             <div class="flex items-center space-x-2">
                                                 <button onclick="changeCartQuantity(${item.id}, ${item.quantity - 1})" 
@@ -763,7 +962,7 @@
                             <div class="mt-6 pt-4 border-t border-gray-200">
                                 <div class="flex justify-between items-center mb-4">
                                     <span class="text-lg font-semibold">${translations[currentLang].total}:</span>
-                                    <span class="text-2xl font-bold text-primary">${translations[currentLang].currencySymbol}${cart.items.reduce((sum, item) => sum + getProductPrice(item.product) * item.quantity, 0).toFixed(2)}</span>
+                                    <span class="text-2xl font-bold text-primary">${translations[currentLang].currencySymbol}${totalPrice.toFixed(2)}</span>
                                 </div>
                                 <button class="w-full btn-primary py-3 rounded-lg text-lg font-semibold">
                                     ${translations[currentLang].checkout}
@@ -796,7 +995,7 @@
                 }
                 
                 updateCart();
-                renderCartModal(); // 重新渲染购物车
+                await renderCartModal(); // 重新渲染购物车
                 
                 console.log(`Cart item ${itemId} quantity updated to ${newQuantity}`);
             } catch (error) {
@@ -815,7 +1014,7 @@
                 cart.items = cart.items.filter(item => item.id !== itemId);
                 
                 updateCart();
-                renderCartModal(); // 重新渲染购物车
+                await renderCartModal(); // 重新渲染购物车
                 
                 showMessage('商品已从购物车中移除');
                 console.log(`Cart item ${itemId} removed`);
@@ -979,7 +1178,7 @@
                         <p class="text-gray-600 mb-4 text-sm h-20 overflow-hidden">${product.description || 'No description available'}</p>
                     </div>
                     <div class="flex justify-between items-center mt-auto">
-                        <span class="text-2xl font-bold text-primary">${translations[currentLang].currencySymbol}${product.price}</span>
+                        <span class="text-2xl font-bold text-primary">${translations[currentLang].currencySymbol}${product.displayPrice || product.price}</span>
                         <div class="flex space-x-2">
                             <button onclick="addToCart(${product.id})" class="btn-primary px-3 py-2 rounded-md text-sm whitespace-nowrap">
                                 ${translations[currentLang].addToCart}
@@ -1328,6 +1527,15 @@
             try {
                 showMessage('Loading product details...');
                 const product = await apiFetch(`/api/products/${productId}?lang=${currentLang}`);
+                
+                // 预计算价格
+                const rate = await getExchangeRate();
+                if (currentLang === 'zh') {
+                    product.displayPrice = (product.price * rate).toFixed(2);
+                } else {
+                    product.displayPrice = product.price.toFixed(2);
+                }
+                
                 const productPage = document.getElementById('product-page');
 
                 productPage.innerHTML = `
@@ -1339,7 +1547,7 @@
                                 <div>
                                     <h1 class="text-4xl font-serif-sc font-bold mb-4 text-gold">${product.name}</h1>
                                     <p class="text-gray-400 mb-6 leading-relaxed">${product.description}</p>
-                                    <div class="text-4xl font-bold text-primary mb-8">${translations[currentLang].currencySymbol}${product.price}</div>
+                                    <div class="text-4xl font-bold text-primary mb-8">${translations[currentLang].currencySymbol}${product.displayPrice}</div>
                                     <button onclick="addToCart(${product.id})" class="btn-primary w-full py-4 text-lg rounded-lg font-semibold transform hover:scale-105 transition-transform">
                                         ${translations[currentLang].addToCart}
                                     </button>
@@ -1388,6 +1596,8 @@
                 renderContactPage();
             } else if (pageId === 'shop') {
                 renderShopPage();
+            } else if (pageId === 'profile') {
+                renderProfilePage();
             }
             
             document.querySelectorAll('.nav-link').forEach(link => {
@@ -1403,6 +1613,18 @@
                     url += `&categoryId=${categoryId}`;
                 }
                 const products = await apiFetch(url);
+                
+                // 为每个产品预计算转换后的价格
+                const rate = await getExchangeRate();
+                for (const product of products) {
+                    product.originalPrice = product.price; // 保存原始美元价格
+                    if (currentLang === 'zh') {
+                        product.displayPrice = (product.price * rate).toFixed(2);
+                    } else {
+                        product.displayPrice = product.price.toFixed(2);
+                    }
+                }
+                
                 allProducts = products;
                 
                 // 总是重新渲染首页
@@ -1754,6 +1976,417 @@
             event.target.reset();
         }
 
+        // 渲染用户资料页面
+        function renderProfilePage() {
+            if (!user) {
+                // 如果未登录，跳转到登录页面
+                openModal(loginModal);
+                renderLoginModal();
+                showPage('home');
+                return;
+            }
+            
+            document.getElementById('profile-page').innerHTML = `
+                <section class="py-20 px-6">
+                    <div class="container mx-auto max-w-6xl">
+                        <h1 class="text-4xl font-serif-sc font-bold text-center mb-12 text-gold">${translations[currentLang].profileTitle}</h1>
+                        
+                        <div class="grid lg:grid-cols-4 gap-8">
+                            <!-- 左侧导航 -->
+                            <div class="lg:col-span-1">
+                                <nav class="bg-black bg-opacity-40 rounded-lg p-6 border border-gold/20">
+                                    <ul class="space-y-2">
+                                        <li>
+                                            <button onclick="showProfileSection('personal')" 
+                                                    class="profile-nav-btn w-full text-left px-4 py-3 rounded-lg transition-colors hover:bg-gold/20 text-white" 
+                                                    data-section="personal">
+                                                <i class="w-5 h-5 inline-block mr-3">👤</i>
+                                                ${translations[currentLang].personalInfo}
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button onclick="showProfileSection('addresses')" 
+                                                    class="profile-nav-btn w-full text-left px-4 py-3 rounded-lg transition-colors hover:bg-gold/20 text-gray-300" 
+                                                    data-section="addresses">
+                                                <i class="w-5 h-5 inline-block mr-3">📍</i>
+                                                ${translations[currentLang].addresses}
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button onclick="showProfileSection('orders')" 
+                                                    class="profile-nav-btn w-full text-left px-4 py-3 rounded-lg transition-colors hover:bg-gold/20 text-gray-300" 
+                                                    data-section="orders">
+                                                <i class="w-5 h-5 inline-block mr-3">📦</i>
+                                                ${translations[currentLang].orders}
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button onclick="showProfileSection('security')" 
+                                                    class="profile-nav-btn w-full text-left px-4 py-3 rounded-lg transition-colors hover:bg-gold/20 text-gray-300" 
+                                                    data-section="security">
+                                                <i class="w-5 h-5 inline-block mr-3">🔒</i>
+                                                ${translations[currentLang].security}
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                            
+                            <!-- 右侧内容区 -->
+                            <div class="lg:col-span-3">
+                                <div id="profile-content" class="bg-black bg-opacity-40 rounded-lg border border-gold/20">
+                                    <!-- 内容将通过JS动态加载 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            `;
+            
+            // 默认显示个人信息
+            showProfileSection('personal');
+        }
+
+        // 用户资料页面导航切换
+        function showProfileSection(section) {
+            // 更新导航按钮样式
+            document.querySelectorAll('.profile-nav-btn').forEach(btn => {
+                btn.classList.remove('text-white', 'bg-gold/30');
+                btn.classList.add('text-gray-300');
+            });
+            
+            const activeBtn = document.querySelector(`[data-section="${section}"]`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-gray-300');
+                activeBtn.classList.add('text-white', 'bg-gold/30');
+            }
+            
+            // 渲染对应内容
+            switch(section) {
+                case 'personal':
+                    renderPersonalInfo();
+                    break;
+                case 'addresses':
+                    renderAddresses();
+                    break;
+                case 'orders':
+                    renderOrders();
+                    break;
+                case 'security':
+                    renderSecurity();
+                    break;
+            }
+        }
+
+        // 渲染个人信息编辑界面
+        async function renderPersonalInfo() {
+            try {
+                const response = await apiFetch('/api/profile');
+                const profileData = response.profile || {};
+                
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="p-8">
+                        <h2 class="text-2xl font-bold text-gold mb-6">${translations[currentLang].personalInfo}</h2>
+                        <div id="personal-info-display">
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].firstName}</label>
+                                    <div class="text-white bg-black bg-opacity-40 px-4 py-3 rounded-lg border border-gold/30">
+                                        ${profileData.firstName || '-'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].lastName}</label>
+                                    <div class="text-white bg-black bg-opacity-40 px-4 py-3 rounded-lg border border-gold/30">
+                                        ${profileData.lastName || '-'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].email}</label>
+                                    <div class="text-white bg-black bg-opacity-40 px-4 py-3 rounded-lg border border-gold/30">
+                                        ${user.email}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].phone}</label>
+                                    <div class="text-white bg-black bg-opacity-40 px-4 py-3 rounded-lg border border-gold/30">
+                                        ${profileData.phone || '-'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6">
+                                <button id="edit-profile-btn" class="btn-primary px-6 py-3 rounded-lg">
+                                    ${translations[currentLang].edit}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // 绑定编辑按钮事件
+                document.getElementById('edit-profile-btn').addEventListener('click', () => {
+                    showEditPersonalInfo(profileData);
+                });
+                
+            } catch (error) {
+                console.error('Failed to load profile:', error);
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="p-8 text-center">
+                        <p class="text-gray-300">无法加载用户资料</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染收货地址管理界面
+        async function renderAddresses() {
+            try {
+                const addresses = await apiFetch('/api/addresses');
+                
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="p-8">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-gold">${translations[currentLang].addresses}</h2>
+                            <button id="add-address-btn" class="btn-primary px-4 py-2 rounded-lg text-sm">
+                                ${translations[currentLang].addAddress}
+                            </button>
+                        </div>
+                        
+                        <div id="addresses-list" class="space-y-4">
+                            ${addresses.length > 0 ? addresses.map(address => `
+                                <div class="address-card bg-black bg-opacity-40 rounded-lg p-6 border border-gold/30 relative">
+                                    ${address.isDefault ? `<span class="absolute top-4 right-4 bg-gold text-black px-2 py-1 rounded text-xs font-semibold">${translations[currentLang].defaultAddress}</span>` : ''}
+                                    
+                                    <div class="grid md:grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-white mb-2">${address.title}</h3>
+                                            <p class="text-gray-300">${address.recipientName}</p>
+                                            <p class="text-gray-300">${address.recipientPhone}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-300">
+                                                ${address.country} ${address.province} ${address.city}
+                                                ${address.district ? address.district : ''}
+                                            </p>
+                                            <p class="text-gray-300">${address.streetAddress}</p>
+                                            ${address.postalCode ? `<p class="text-gray-300">${address.postalCode}</p>` : ''}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex gap-2">
+                                        <button onclick="editAddress(${address.id})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                                            ${translations[currentLang].edit}
+                                        </button>
+                                        ${!address.isDefault ? `
+                                            <button onclick="setDefaultAddress(${address.id})" class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">
+                                                ${translations[currentLang].setDefault}
+                                            </button>
+                                        ` : ''}
+                                        <button onclick="deleteAddress(${address.id})" class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
+                                            ${translations[currentLang].deleteAddress}
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('') : `
+                                <div class="text-center text-gray-300 py-8">
+                                    <p>暂无收货地址</p>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+                
+                // 绑定添加地址按钮事件
+                document.getElementById('add-address-btn').addEventListener('click', () => {
+                    showAddressForm();
+                });
+                
+            } catch (error) {
+                console.error('Failed to load addresses:', error);
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="p-8 text-center">
+                        <p class="text-gray-300">无法加载地址信息</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染订单管理界面
+        async function renderOrders() {
+            try {
+                const response = await apiFetch('/api/orders?page=1&limit=10');
+                const orders = response.orders || [];
+                
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="p-8">
+                        <h2 class="text-2xl font-bold text-gold mb-6">${translations[currentLang].orders}</h2>
+                        
+                        <div class="mb-6">
+                            <div class="flex gap-4">
+                                <button onclick="filterOrders('')" class="order-filter-btn px-4 py-2 rounded-lg bg-gold text-black font-semibold" data-status="">
+                                    全部订单
+                                </button>
+                                <button onclick="filterOrders('pending')" class="order-filter-btn px-4 py-2 rounded-lg bg-gray-600 text-white" data-status="pending">
+                                    ${translations[currentLang].pending}
+                                </button>
+                                <button onclick="filterOrders('paid')" class="order-filter-btn px-4 py-2 rounded-lg bg-gray-600 text-white" data-status="paid">
+                                    ${translations[currentLang].paid}
+                                </button>
+                                <button onclick="filterOrders('shipped')" class="order-filter-btn px-4 py-2 rounded-lg bg-gray-600 text-white" data-status="shipped">
+                                    ${translations[currentLang].shipped}
+                                </button>
+                                <button onclick="filterOrders('delivered')" class="order-filter-btn px-4 py-2 rounded-lg bg-gray-600 text-white" data-status="delivered">
+                                    ${translations[currentLang].delivered}
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="orders-list" class="space-y-4">
+                            ${orders.length > 0 ? orders.map(order => `
+                                <div class="order-card bg-black bg-opacity-40 rounded-lg p-6 border border-gold/30">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-white">${translations[currentLang].orderNumber}: #${order.id}</h3>
+                                            <p class="text-gray-300 text-sm">${new Date(order.createdAt).toLocaleDateString()}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                                                order.status === 'pending' ? 'bg-yellow-600 text-white' :
+                                                order.status === 'paid' ? 'bg-green-600 text-white' :
+                                                order.status === 'shipped' ? 'bg-blue-600 text-white' :
+                                                order.status === 'delivered' ? 'bg-gray-600 text-white' :
+                                                'bg-red-600 text-white'
+                                            }">
+                                                ${translations[currentLang][order.status]}
+                                            </span>
+                                            <p class="text-gold font-semibold mt-2">${translations[currentLang].currencySymbol}${order.totalAmount}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="border-t border-gold/20 pt-4">
+                                        <div class="grid md:grid-cols-2 gap-4">
+                                            <div>
+                                                <h4 class="text-sm font-semibold text-gray-300 mb-2">${translations[currentLang].orderItems}</h4>
+                                                <div class="space-y-1">
+                                                    ${order.items.slice(0, 2).map(item => `
+                                                        <p class="text-sm text-white">${item.product.name} × ${item.quantity}</p>
+                                                    `).join('')}
+                                                    ${order.items.length > 2 ? `<p class="text-sm text-gray-400">等${order.items.length}件商品</p>` : ''}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-sm font-semibold text-gray-300 mb-2">${translations[currentLang].shippingAddress}</h4>
+                                                <div class="text-sm text-white">
+                                                    <p>${order.shippingAddress.recipientName}</p>
+                                                    <p>${order.shippingAddress.country} ${order.shippingAddress.province} ${order.shippingAddress.city}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-4 text-right">
+                                            <button onclick="viewOrderDetails(${order.id})" class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                                                ${translations[currentLang].viewOrder}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('') : `
+                                <div class="text-center text-gray-300 py-8">
+                                    <p>${translations[currentLang].noOrders}</p>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Failed to load orders:', error);
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="p-8 text-center">
+                        <p class="text-gray-300">无法加载订单信息</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染账户安全设置界面
+        function renderSecurity() {
+            document.getElementById('profile-content').innerHTML = `
+                <div class="p-8">
+                    <h2 class="text-2xl font-bold text-gold mb-6">${translations[currentLang].security}</h2>
+                    
+                    <div class="space-y-8">
+                        <!-- 修改密码 -->
+                        <div class="bg-black bg-opacity-40 rounded-lg p-6 border border-gold/30">
+                            <h3 class="text-lg font-semibold text-white mb-4">${translations[currentLang].changePassword}</h3>
+                            <form id="change-password-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].currentPassword}</label>
+                                    <input type="password" name="currentPassword" required 
+                                           class="w-full px-4 py-3 bg-black bg-opacity-40 border border-gold/30 rounded-lg text-white focus:border-gold focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].newPassword}</label>
+                                    <input type="password" name="newPassword" required minlength="8" 
+                                           class="w-full px-4 py-3 bg-black bg-opacity-40 border border-gold/30 rounded-lg text-white focus:border-gold focus:outline-none">
+                                    <p class="text-xs text-gray-400 mt-1">${translations[currentLang].passwordHint}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].confirmNewPassword}</label>
+                                    <input type="password" name="confirmNewPassword" required minlength="8" 
+                                           class="w-full px-4 py-3 bg-black bg-opacity-40 border border-gold/30 rounded-lg text-white focus:border-gold focus:outline-none">
+                                </div>
+                                <button type="submit" class="btn-primary px-6 py-3 rounded-lg">
+                                    ${translations[currentLang].changePassword}
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- 删除账户 -->
+                        <div class="bg-red-900 bg-opacity-30 rounded-lg p-6 border border-red-500/30">
+                            <h3 class="text-lg font-semibold text-red-300 mb-4">${translations[currentLang].deleteAccount}</h3>
+                            <p class="text-gray-300 mb-4">删除账户将永久清除您的所有数据，包括订单历史和个人信息。此操作不可撤销。</p>
+                            <button id="delete-account-btn" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                                ${translations[currentLang].deleteAccount}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 绑定修改密码表单事件
+            document.getElementById('change-password-form').addEventListener('submit', handlePasswordChange);
+            
+            // 绑定删除账户按钮事件
+            document.getElementById('delete-account-btn').addEventListener('click', handleDeleteAccount);
+        }
+
+        // 密码修改处理
+        async function handlePasswordChange(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const currentPassword = formData.get('currentPassword');
+            const newPassword = formData.get('newPassword');
+            const confirmNewPassword = formData.get('confirmNewPassword');
+            
+            if (newPassword !== confirmNewPassword) {
+                showMessage(translations[currentLang].passwordMismatch, 'error');
+                return;
+            }
+            
+            try {
+                await apiFetch('/api/profile/change-password', {
+                    method: 'PUT',
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+                
+                showMessage(translations[currentLang].passwordChanged);
+                event.target.reset();
+            } catch (error) {
+                showMessage(translations[currentLang].passwordChangeError, 'error');
+            }
+        }
+
         // 初始化应用
         async function initApp() {
             // 检查视频格式支持
@@ -1765,8 +2398,8 @@
                 renderLoginModal();
             });
             
-            cartButton.addEventListener('click', () => {
-                renderCartModal();
+            cartButton.addEventListener('click', async () => {
+                await renderCartModal();
                 openModal(cartModal);
             });
             

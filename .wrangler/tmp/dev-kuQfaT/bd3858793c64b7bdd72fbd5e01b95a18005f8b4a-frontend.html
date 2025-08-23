@@ -1,0 +1,2475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tao Xuan Pavilion - Find Taoist Artifacts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-mystic-black: #1C1C1C;
+            --bg-talisman-yellow: #EAE0C8;
+            --text-on-dark: #EAE0C8;
+            --text-on-light: #1C1C1C;
+            --primary-cinnabar-red: #B83B1D;
+            --primary-cinnabar-red-hover: #d14f31;
+            --accent-gilded-gold: #A88F5A;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-mystic-black); color: var(--text-on-dark); }
+        .font-serif-sc { font-family: 'Noto Serif SC', serif; }
+        .product-card { transition: transform 0.3s ease, box-shadow 0.3s ease; background-color: var(--bg-talisman-yellow); color: var(--text-on-light); border: 1px solid var(--accent-gilded-gold); }
+        .product-card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); }
+        .btn-primary { background-color: var(--primary-cinnabar-red); color: var(--text-on-dark); transition: background-color 0.3s ease; font-weight: bold; }
+        .btn-primary:hover { background-color: var(--primary-cinnabar-red-hover); }
+        .nav-link { position: relative; transition: color 0.3s ease; color: var(--text-on-dark); }
+        .nav-link:hover { color: var(--accent-gilded-gold); }
+        .nav-link::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -4px; left: 50%; transform: translateX(-50%); background-color: var(--primary-cinnabar-red); transition: width 0.3s ease; }
+        .nav-link:hover::after, .nav-link.active::after { width: 100%; }
+        .lang-switcher button.active { color: var(--primary-cinnabar-red); font-weight: bold; }
+        .text-primary { color: var(--primary-cinnabar-red); }
+        .text-gold { color: var(--accent-gilded-gold); }
+        .focus-ring-primary:focus { --tw-ring-color: var(--primary-cinnabar-red); border-color: var(--primary-cinnabar-red); }
+        .carousel { position: relative; width: 100%; overflow: hidden; max-width: 600px; margin: 0 auto; }
+        .carousel-inner { display: flex; transition: transform 0.5s ease; }
+        .carousel-item { min-width: 100%; box-sizing: border-box; }
+        .carousel-item img, .carousel-item video { width: 100%; display: block; border-radius: 0.5rem; }
+        .carousel-control { position: absolute; top: 50%; transform: translateY(-50%); background-color: rgba(0, 0, 0, 0.5); color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 50%; z-index: 10; font-size: 1.5rem; line-height: 1; }
+        .carousel-control.prev { left: 1rem; }
+        .carousel-control.next { right: 1rem; }
+        
+        /* 产品网格平滑过渡效果 */
+        #products-grid {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="bg-black bg-opacity-60 backdrop-blur-sm sticky top-0 z-50 shadow-lg shadow-black/30 border-b border-white/10">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-serif-sc font-bold tracking-wider text-gold" data-lang-key="siteName">Tao Xuan Pavilion</h1>
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#home" class="nav-link text-lg active" onclick="showPage('home')" data-lang-key="navHome">Home</a>
+                <a href="#shop" class="nav-link text-lg" onclick="showPage('shop')" data-lang-key="navShop">All Artifacts</a>
+                <a href="#about" class="nav-link text-lg" onclick="showPage('about')" data-lang-key="navAbout">About Us</a>
+                <a href="#contact" class="nav-link text-lg" onclick="showPage('contact')" data-lang-key="navContact">Contact Us</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <div class="lang-switcher text-gray-300 text-sm">
+                    <button id="lang-zh" class="hover:text-white transition">中文</button>
+                    <span>/</span>
+                    <button id="lang-en" class="hover:text-white transition">English</button>
+                </div>
+                <div id="auth-container">
+                    <button id="login-button" class="btn-primary px-4 py-2 rounded-md text-sm" data-lang-key="login">Login</button>
+                    <div id="user-profile" class="hidden items-center space-x-2">
+                        <button id="profile-button" class="text-gold hover:text-primary text-sm" onclick="showPage('profile')" data-lang-key="profile">Profile</button>
+                        <span class="text-gray-400">|</span>
+                        <button id="logout-button" class="text-gray-400 hover:text-white text-sm" data-lang-key="logout">Logout</button>
+                    </div>
+                </div>
+                <button id="cart-button" class="relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-gray-300 hover:text-gold transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    <span id="cart-count" class="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="app-content">
+        <div id="home-page" class="page"></div>
+        <div id="shop-page" class="page hidden"></div>
+        <div id="product-page" class="page hidden"></div>
+        <div id="profile-page" class="page hidden"></div>
+        <div id="about-page" class="page hidden"></div>
+        <div id="contact-page" class="page hidden"></div>
+    </main>
+
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center"></div>
+    <div id="register-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center"></div>
+    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center"></div>
+    <div id="message-modal" class="fixed top-20 right-5 text-white py-3 px-6 rounded-lg shadow-lg z-50 transform translate-x-[120%] transition-transform duration-500"><p id="message-text"></p></div>
+
+    <!-- 页脚 -->
+    <footer class="bg-black bg-opacity-80 backdrop-blur-sm border-t border-white/10 mt-auto">
+        <div class="container mx-auto px-6 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-serif-sc font-bold text-gold mb-4" data-lang-key="siteName">Tao Xuan Pavilion</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        <span data-lang-key="aboutMissionText">Discover ancient artifacts imbued with mystical powers</span>
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-4" data-lang-key="navContact">Contact Us</h4>
+                    <div class="text-gray-400 text-sm space-y-2">
+                        <p data-lang-key="contactEmail">Email: support@taoxuan.com</p>
+                        <p data-lang-key="contactPhone">Phone: +86 400-888-0000</p>
+                        <p data-lang-key="contactHours">Business Hours: 9:00 AM - 6:00 PM (UTC+8)</p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-4">Links</h4>
+                    <div class="text-gray-400 text-sm space-y-2">
+                        <a href="#about" class="block hover:text-gold transition" onclick="showPage('about')" data-lang-key="navAbout">About Us</a>
+                        <a href="#contact" class="block hover:text-gold transition" onclick="showPage('contact')" data-lang-key="navContact">Contact Us</a>
+                        <a href="#" class="block hover:text-gold transition" data-lang-key="footerPrivacy">Privacy Policy</a>
+                        <a href="#" class="block hover:text-gold transition" data-lang-key="footerTerms">Terms of Service</a>
+                        <a href="#" class="block hover:text-gold transition" data-lang-key="footerReturns">Return Policy</a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-white/10 mt-8 pt-8 text-center">
+                <p class="text-gray-500 text-sm" data-lang-key="footerCopyright">&copy; 2024 Tao Xuan Pavilion. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 全局变量
+        const API_BASE_URL = window.location.origin;
+        let user = null;
+        let cart = { items: [] };
+        let allProducts = [];
+        let currentLang = 'en';
+        let currentProductId = null;
+        
+        // 翻译数据
+        const translations = {
+            en: {
+                siteName: 'Tao Xuan Pavilion',
+                navHome: 'Home',
+                navShop: 'All Artifacts',
+                login: 'Login',
+                logout: 'Logout',
+                loginSuccess: 'Login successful!',
+                loginFailed: 'Login failed. Please check your credentials.',
+                registerSuccess: 'Registration successful! Please login.',
+                registerFailed: 'Registration failed. Please try again.',
+                email: 'Email',
+                password: 'Password',
+                confirmPassword: 'Confirm Password',
+                passwordHint: 'Password must be at least 8 characters long',
+                passwordMismatch: 'Passwords do not match',
+                passwordTooShort: 'Password must be at least 8 characters long',
+                invalidEmail: 'Please enter a valid email address',
+                register: 'Register',
+                addToCart: 'Add to Cart',
+                viewDetails: 'View Details',
+                cartEmpty: 'Your cart is empty',
+                removeFromCart: 'Remove',
+                quantity: 'Quantity',
+                total: 'Total',
+                checkout: 'Checkout',
+                allCategories: 'All Categories',
+                search: 'Search artifacts...',
+                close: 'Close',
+                currencySymbol: '$',
+                // 视频相关文本
+                videoLoading: 'Loading...',
+                videoPortrait: 'Portrait video',
+                videoWidescreen: 'Widescreen video', 
+                videoStandard: 'Standard video',
+                containerOptimized: 'container optimized to',
+                fullWidthDisplay: 'full width display',
+                videoModeFit: 'Fit',
+                videoModeFill: 'Fill',
+                videomodeOriginal: 'Original',
+                fitMode: 'Fit mode',
+                fillMode: 'Fill mode - full container width',
+                originalMode: 'Original size mode',
+                widthAbbr: 'w',
+                // 购物车相关文本
+                cart: 'Cart',
+                cartTitle: 'Shopping Cart',
+                // 导航和页面
+                navAbout: 'About Us',
+                navContact: 'Contact Us',
+                aboutTitle: 'About Tao Xuan Pavilion',
+                contactTitle: 'Contact Us',
+                // 关于我们页面
+                aboutMission: 'Our Mission',
+                aboutMissionText: 'Tao Xuan Pavilion is dedicated to preserving and sharing the ancient wisdom of Taoist artifacts. Each piece in our collection has been carefully selected for its authentic spiritual energy and historical significance.',
+                aboutCraftsmanship: 'Master Craftsmanship',
+                aboutCraftsmanshipText: 'Our artifacts are created by master craftsmen who have inherited centuries-old techniques. Every piece undergoes rigorous authentication to ensure its spiritual authenticity and cultural value.',
+                aboutValues: 'Our Values',
+                aboutValuesText: 'We believe in the power of ancient wisdom to bring peace, protection, and prosperity to modern life. Our commitment is to provide authentic Taoist artifacts that connect you with the spiritual heritage of the East.',
+                // 联系我们页面
+                contactInfo: 'Contact Information',
+                contactEmail: 'Email: support@taoxuan.com',
+                contactPhone: 'Phone: +86 400-888-0000',
+                contactHours: 'Business Hours: 9:00 AM - 6:00 PM (UTC+8)',
+                contactAddress: 'Address: 1234 Taoist Temple Street, Ancient City District',
+                contactForm: 'Send us a Message',
+                contactName: 'Your Name',
+                contactEmailField: 'Your Email',
+                contactMessage: 'Your Message',
+                contactSend: 'Send Message',
+                // 页脚
+                footerCopyright: '© 2024 Tao Xuan Pavilion. All rights reserved.',
+                footerPrivacy: 'Privacy Policy',
+                footerTerms: 'Terms of Service',
+                footerReturns: 'Return Policy',
+                // 用户资料相关
+                profile: 'Profile',
+                profileTitle: 'User Profile',
+                profileInfo: 'Profile Information',
+                personalInfo: 'Personal Information',
+                firstName: 'First Name',
+                lastName: 'Last Name',
+                phone: 'Phone Number',
+                gender: 'Gender',
+                dateOfBirth: 'Date of Birth',
+                avatar: 'Avatar',
+                male: 'Male',
+                female: 'Female',
+                other: 'Other',
+                save: 'Save',
+                cancel: 'Cancel',
+                edit: 'Edit',
+                // 地址管理
+                addresses: 'Addresses',
+                addAddress: 'Add New Address',
+                editAddress: 'Edit Address',
+                addressTitle: 'Address Title',
+                recipientName: 'Recipient Name',
+                recipientPhone: 'Recipient Phone',
+                country: 'Country',
+                province: 'Province',
+                city: 'City',
+                district: 'District',
+                streetAddress: 'Street Address',
+                postalCode: 'Postal Code',
+                isDefault: 'Set as Default',
+                defaultAddress: 'Default',
+                setDefault: 'Set Default',
+                deleteAddress: 'Delete',
+                confirmDeleteAddress: 'Are you sure you want to delete this address?',
+                // 订单管理
+                orders: 'Orders',
+                myOrders: 'My Orders',
+                orderHistory: 'Order History',
+                activeOrders: 'Active Orders',
+                orderDetails: 'Order Details',
+                orderNumber: 'Order Number',
+                orderDate: 'Order Date',
+                orderStatus: 'Status',
+                orderTotal: 'Total Amount',
+                orderItems: 'Items',
+                shippingAddress: 'Shipping Address',
+                pending: 'Pending',
+                paid: 'Paid',
+                shipped: 'Shipped',
+                delivered: 'Delivered',
+                cancelled: 'Cancelled',
+                viewOrder: 'View Order',
+                noOrders: 'No orders found',
+                // 账户安全
+                security: 'Security',
+                changePassword: 'Change Password',
+                currentPassword: 'Current Password',
+                newPassword: 'New Password',
+                confirmNewPassword: 'Confirm New Password',
+                passwordChanged: 'Password changed successfully',
+                passwordChangeError: 'Failed to change password',
+                deleteAccount: 'Delete Account',
+                deleteAccountConfirm: 'Are you sure you want to delete your account? This action cannot be undone.',
+                accountDeleted: 'Account deleted successfully'
+            },
+            zh: {
+                siteName: '道玄阁',
+                navHome: '首页',
+                navShop: '全部法器',
+                login: '登录',
+                logout: '退出',
+                loginSuccess: '登录成功！',
+                loginFailed: '登录失败，请检查您的凭据。',
+                registerSuccess: '注册成功！请登录。',
+                registerFailed: '注册失败，请重试。',
+                email: '邮箱',
+                password: '密码',
+                confirmPassword: '确认密码',
+                passwordHint: '密码必须至少8个字符',
+                passwordMismatch: '密码不匹配',
+                passwordTooShort: '密码必须至少8个字符',
+                invalidEmail: '请输入有效的邮箱地址',
+                register: '注册',
+                addToCart: '加入购物车',
+                viewDetails: '查看详情',
+                cartEmpty: '您的购物车为空',
+                removeFromCart: '移除',
+                quantity: '数量',
+                total: '总计',
+                checkout: '结账',
+                allCategories: '全部分类',
+                search: '搜索法器...',
+                close: '关闭',
+                currencySymbol: '¥',
+                // 视频相关文本
+                videoLoading: '加载中...',
+                videoPortrait: '竖屏视频',
+                videoWidescreen: '宽屏视频',
+                videoStandard: '标准视频',
+                containerOptimized: '容器宽度优化为',
+                fullWidthDisplay: '全宽显示',
+                videoModeFit: '适应',
+                videoModeFill: '填充', 
+                videomodeOriginal: '原始',
+                fitMode: '适应模式',
+                fillMode: '填充模式 - 占满容器宽度',
+                originalMode: '原始尺寸模式',
+                widthAbbr: '宽',
+                // 购物车相关文本
+                cart: '购物车',
+                cartTitle: '购物车',
+                // 导航和页面
+                navAbout: '关于我们',
+                navContact: '联系我们',
+                aboutTitle: '关于道玄阁',
+                contactTitle: '联系我们',
+                // 关于我们页面
+                aboutMission: '我们的使命',
+                aboutMissionText: '道玄阁致力于保存和传承道教法器的古老智慧。我们收藏的每一件法器都经过精心挑选，具有真实的灵性能量和深厚的历史底蕴。',
+                aboutCraftsmanship: '大师工艺',
+                aboutCraftsmanshipText: '我们的法器由传承了世代技艺的大师工匠精心制作。每一件作品都经过严格的真伪识别，确保其灵性真实性和文化价值。',
+                aboutValues: '我们的价值观',
+                aboutValuesText: '我们相信古老智慧的力量能为现代生活带来平静、保护和繁荣。我们的承诺是提供正宗的道教法器，让您与东方的精神文化遗产相连。',
+                // 联系我们页面
+                contactInfo: '联系方式',
+                contactEmail: '邮箱：support@taoxuan.com',
+                contactPhone: '电话：+86 400-888-0000',
+                contactHours: '营业时间：上午8:00 - 下午6:00 (北京时间)',
+                contactAddress: '地址：古城区道观街1234号',
+                contactForm: '给我们留言',
+                contactName: '您的姓名',
+                contactEmailField: '您的邮箱',
+                contactMessage: '您的留言',
+                contactSend: '发送消息',
+                // 页脚
+                footerCopyright: '© 2024 道玄阁。保留所有权利。',
+                footerPrivacy: '隐私政策',
+                footerTerms: '服务条款',
+                footerReturns: '退换货政策',
+                // 用户资料相关
+                profile: '个人中心',
+                profileTitle: '用户资料',
+                profileInfo: '资料信息',
+                personalInfo: '个人信息',
+                firstName: '名字',
+                lastName: '姓氏',
+                phone: '手机号码',
+                gender: '性别',
+                dateOfBirth: '生日',
+                avatar: '头像',
+                male: '男',
+                female: '女',
+                other: '其他',
+                save: '保存',
+                cancel: '取消',
+                edit: '编辑',
+                // 地址管理
+                addresses: '收货地址',
+                addAddress: '添加新地址',
+                editAddress: '编辑地址',
+                addressTitle: '地址标题',
+                recipientName: '收货人姓名',
+                recipientPhone: '收货人手机',
+                country: '国家',
+                province: '省份',
+                city: '城市',
+                district: '区县',
+                streetAddress: '详细地址',
+                postalCode: '邮政编码',
+                isDefault: '设为默认',
+                defaultAddress: '默认地址',
+                setDefault: '设为默认',
+                deleteAddress: '删除',
+                confirmDeleteAddress: '确定要删除这个地址吗？',
+                // 订单管理
+                orders: '订单管理',
+                myOrders: '我的订单',
+                orderHistory: '历史订单',
+                activeOrders: '进行中订单',
+                orderDetails: '订单详情',
+                orderNumber: '订单号',
+                orderDate: '下单时间',
+                orderStatus: '订单状态',
+                orderTotal: '订单金额',
+                orderItems: '商品列表',
+                shippingAddress: '配送地址',
+                pending: '待处理',
+                paid: '已付款',
+                shipped: '已发货',
+                delivered: '已送达',
+                cancelled: '已取消',
+                viewOrder: '查看订单',
+                noOrders: '暂无订单',
+                // 账户安全
+                security: '账户安全',
+                changePassword: '修改密码',
+                currentPassword: '当前密码',
+                newPassword: '新密码',
+                confirmNewPassword: '确认新密码',
+                passwordChanged: '密码修改成功',
+                passwordChangeError: '密码修改失败',
+                deleteAccount: '注销账户',
+                deleteAccountConfirm: '确定要注销您的账户吗？此操作不可撤销。',
+                accountDeleted: '账户注销成功'
+            }
+        };
+
+        // DOM 元素引用
+        const loginModal = document.getElementById('login-modal');
+        const registerModal = document.getElementById('register-modal');
+        const cartModal = document.getElementById('cart-modal');
+        const messageModal = document.getElementById('message-modal');
+        const messageText = document.getElementById('message-text');
+        const cartButton = document.getElementById('cart-button');
+        const cartCount = document.getElementById('cart-count');
+        const loginButton = document.getElementById('login-button');
+        const userProfile = document.getElementById('user-profile');
+        const userEmail = document.getElementById('user-email');
+        const logoutButton = document.getElementById('logout-button');
+        const langZh = document.getElementById('lang-zh');
+        const langEn = document.getElementById('lang-en');
+
+        // API 请求封装
+        async function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('taoistShopToken');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            let fullUrl = `${API_BASE_URL}${url}`;
+            
+            // 为产品相关API添加语言参数
+            if (url.startsWith('/api/products/') && !url.includes('/media') && !url.includes('/categories')) {
+                const productIdMatch = url.match(/\/api\/products\/(\d+)/);
+                if (productIdMatch) {
+                    const separator = url.includes('?') ? '&' : '?';
+                    fullUrl = `${API_BASE_URL}${url}${separator}lang=${currentLang}`;
+                }
+            }
+            
+            // 为购物车API添加语言参数
+            if (url.startsWith('/api/cart')) {
+                const separator = url.includes('?') ? '&' : '?';
+                fullUrl = `${API_BASE_URL}${url}${separator}lang=${currentLang}`;
+            }
+            
+            const response = await fetch(fullUrl, { ...options, headers });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+            
+            if (response.status === 204) {
+                return null;
+            }
+            
+            return response.json();
+        }
+
+        // 消息显示
+        function showMessage(message, type = 'success') {
+            messageText.textContent = message;
+            messageModal.className = `fixed top-20 right-5 text-white py-3 px-6 rounded-lg shadow-lg z-50 transform transition-transform duration-500 ${
+                type === 'error' ? 'bg-red-600' : 'bg-green-600'
+            } translate-x-0`;
+            
+            if (messageModal.hideTimer) {
+                clearTimeout(messageModal.hideTimer);
+            }
+            
+            messageModal.hideTimer = setTimeout(() => {
+                messageModal.className = messageModal.className.replace('translate-x-0', 'translate-x-[120%]');
+                
+                setTimeout(() => {
+                    messageModal.className = 'fixed top-20 right-5 text-white py-3 px-6 rounded-lg shadow-lg z-50 transform translate-x-[120%] transition-transform duration-500';
+                    messageText.textContent = '';
+                }, 500);
+            }, 3000);
+        }
+
+        // 模态框管理
+        function openModal(modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal(modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // 语言切换
+        function updateLanguage() {
+            document.querySelectorAll('[data-lang-key]').forEach(element => {
+                const key = element.getAttribute('data-lang-key');
+                if (translations[currentLang][key]) {
+                    element.textContent = translations[currentLang][key];
+                }
+            });
+            
+            langZh.classList.toggle('active', currentLang === 'zh');
+            langEn.classList.toggle('active', currentLang === 'en');
+        }
+
+        // 用户认证相关
+        async function login(email, password) {
+            try {
+                console.log('开始登录请求...');
+                const data = await apiFetch('/api/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password }),
+                });
+                
+                console.log('登录API响应:', data);
+                localStorage.setItem('taoistShopToken', data.token);
+                
+                user = data.user || { email: email };
+                updateAuthUI();
+                
+                console.log('开始获取购物车数据...');
+                try {
+                    const cartData = await apiFetch('/api/cart');
+                    cart = cartData || { items: [] };
+                    updateCart();
+                    console.log('购物车数据获取成功:', cartData);
+                } catch (cartError) {
+                    console.warn('获取购物车数据失败，使用空购物车:', cartError);
+                    cart = { items: [] };
+                    updateCart();
+                }
+                
+                closeModal(loginModal);
+                showMessage(translations[currentLang].loginSuccess);
+                console.log('登录流程完成');
+            } catch (error) {
+                console.error('登录失败详细信息:', error);
+                console.error('错误类型:', typeof error);
+                console.error('错误消息:', error.message);
+                showMessage(translations[currentLang].loginFailed, 'error');
+            }
+        }
+
+        async function register(email, password) {
+            try {
+                await apiFetch('/api/auth/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password }),
+                });
+                
+                closeModal(registerModal);
+                showMessage(translations[currentLang].registerSuccess);
+            } catch (error) {
+                showMessage(translations[currentLang].registerFailed, 'error');
+                console.error('注册失败:', error);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('taoistShopToken');
+            user = null;
+            cart = { items: [] };
+            updateAuthUI();
+            updateCart();
+        }
+
+        async function checkUserStatus() {
+            const token = localStorage.getItem('taoistShopToken');
+            if (token) {
+                try {
+                    const [userData, cartData] = await Promise.all([
+                        apiFetch('/api/auth/me'),
+                        apiFetch('/api/cart')
+                    ]);
+                    
+                    user = userData;
+                    cart = cartData || { items: [] };
+                    
+                    updateAuthUI();
+                    updateCart();
+
+                } catch (error) {
+                    console.error('Token validation failed, logging out.', error);
+                    logout();
+                }
+            } else {
+                updateAuthUI();
+                updateCart();
+            }
+        }
+
+        function updateAuthUI() {
+            if (user) {
+                loginButton.classList.add('hidden');
+                userProfile.classList.remove('hidden');
+                userProfile.classList.add('flex');
+                userEmail.textContent = user.email;
+            } else {
+                loginButton.classList.remove('hidden');
+                userProfile.classList.add('hidden');
+                userProfile.classList.remove('flex');
+            }
+        }
+
+        // 辅助函数 - 获取商品缩略图
+        function getThumbnailUrl(product) {
+            if (!product) return '/placeholder.jpg';
+            
+            // 情况 1: 后端返回的 imageUrl 字段（购物车 API）
+            if (product.imageUrl) {
+                return product.imageUrl;
+            }
+            
+            // 情况 2: 传统的 media 数组结构
+            if (product.media && product.media.length > 0) {
+                const firstImage = product.media.find(m => m.asset && m.asset.mediaType === 'image');
+                if (firstImage && firstImage.asset && firstImage.asset.url) {
+                    return firstImage.asset.url;
+                }
+            }
+            
+            return '/placeholder.jpg';
+        }
+        
+        // 辅助函数 - 获取商品名称
+        function getProductName(product) {
+            if (!product) return 'Unknown Product';
+            
+            // 首先检查是否有翻译数据
+            if (product.translations && product.translations.length > 0) {
+                return product.translations[0].name || 'Unnamed Product';
+            }
+            
+            // 备用：直接使用 name 字段
+            if (product.name) {
+                return product.name;
+            }
+            
+            return 'Unnamed Product';
+        }
+        
+        // 汇率缓存和转换功能
+        let exchangeRate = null;
+        let exchangeRateLastUpdate = null;
+        const EXCHANGE_RATE_CACHE_DURATION = 30 * 60 * 1000; // 30分钟缓存
+
+        // 获取汇率
+        async function getExchangeRate() {
+            const now = new Date().getTime();
+            
+            // 检查缓存是否有效
+            if (exchangeRate && exchangeRateLastUpdate && (now - exchangeRateLastUpdate) < EXCHANGE_RATE_CACHE_DURATION) {
+                return exchangeRate;
+            }
+            
+            try {
+                // 使用免费的汇率API
+                const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const data = await response.json();
+                
+                if (data && data.rates && data.rates.CNY) {
+                    exchangeRate = data.rates.CNY;
+                    exchangeRateLastUpdate = now;
+                    console.log(`Updated exchange rate: 1 USD = ${exchangeRate} CNY`);
+                    return exchangeRate;
+                }
+            } catch (error) {
+                console.warn('Failed to fetch exchange rate, using fallback:', error);
+            }
+            
+            // 备用汇率
+            exchangeRate = 7.17;
+            exchangeRateLastUpdate = now;
+            console.log(`Using fallback exchange rate: 1 USD = ${exchangeRate} CNY`);
+            return exchangeRate;
+        }
+
+        // 辅助函数 - 获取商品价格（根据语言转换货币）
+        async function getProductPrice(product) {
+            if (!product) return 0;
+            const basePrice = parseFloat(product.price) || 0;
+            
+            if (currentLang === 'zh') {
+                // 中文模式：转换为人民币
+                const rate = await getExchangeRate();
+                return basePrice * rate;
+            } else {
+                // 英文模式：保持美元价格
+                return basePrice;
+            }
+        }
+
+        // 购物车管理
+        async function addToCart(productId, quantity = 1) {
+            if (!user) {
+                showMessage('Please login first', 'error');
+                openModal(loginModal);
+                return;
+            }
+
+            try {
+                const updatedCart = await apiFetch('/api/cart/items', {
+                    method: 'POST',
+                    body: JSON.stringify({ productId, quantity }),
+                });
+                
+                cart = updatedCart;
+                updateCart();
+                showMessage('Item added to cart successfully!');
+            } catch (error) {
+                showMessage('Failed to add item to cart', 'error');
+                console.error('添加购物车失败:', error);
+            }
+        }
+
+        async function updateCartQuantityOld(itemId, quantity) {
+            try {
+                await apiFetch(`/api/cart/items/${itemId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ quantity }),
+                });
+                
+                const item = cart.items.find(item => item.id === itemId);
+                if (item) {
+                    item.quantity = quantity;
+                }
+                updateCart();
+            } catch (error) {
+                showMessage('Failed to update cart', 'error');
+                console.error('更新购物车失败:', error);
+            }
+        }
+
+        async function removeFromCartOld(itemId) {
+            try {
+                await apiFetch(`/api/cart/items/${itemId}`, {
+                    method: 'DELETE',
+                });
+                
+                cart.items = cart.items.filter(item => item.id !== itemId);
+                updateCart();
+                showMessage('Item removed from cart');
+            } catch (error) {
+                showMessage('Failed to remove item', 'error');
+                console.error('移除购物车商品失败:', error);
+            }
+        }
+
+        function updateCart() {
+            const totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+            cartCount.textContent = totalItems;
+            
+            if (totalItems > 0) {
+                cartCount.classList.remove('hidden');
+            } else {
+                cartCount.classList.add('hidden');
+            }
+        }
+
+        // 模态框内容渲染
+        function renderLoginModal() {
+            loginModal.innerHTML = `
+                <div class="bg-white rounded-lg max-w-md w-full mx-4" style="background-color: var(--bg-talisman-yellow); color: var(--text-on-light);">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold text-primary">${translations[currentLang].login}</h2>
+                            <button onclick="closeModal(loginModal)" class="text-gray-500 hover:text-gray-700">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <form id="login-form" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">${translations[currentLang].email}</label>
+                                <input type="email" id="login-email" required class="w-full px-3 py-2 border border-gray-300 rounded-md" style="color: var(--text-on-light);">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">${translations[currentLang].password}</label>
+                                <input type="password" id="login-password" required class="w-full px-3 py-2 border border-gray-300 rounded-md" style="color: var(--text-on-light);">
+                            </div>
+                            <button type="submit" class="w-full btn-primary py-2 rounded-md">${translations[currentLang].login}</button>
+                            <p class="text-center text-sm">
+                                Don't have an account? 
+                                <button type="button" onclick="closeModal(loginModal); openModal(registerModal); renderRegisterModal();" class="text-primary hover:underline">
+                                    ${translations[currentLang].register}
+                                </button>
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                await login(email, password);
+            });
+        }
+
+        function renderRegisterModal() {
+            registerModal.innerHTML = `
+                <div class="bg-white rounded-lg max-w-md w-full mx-4" style="background-color: var(--bg-talisman-yellow); color: var(--text-on-light);">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold text-primary">${translations[currentLang].register}</h2>
+                            <button onclick="closeModal(registerModal)" class="text-gray-500 hover:text-gray-700">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <form id="register-form" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">${translations[currentLang].email}</label>
+                                <input type="email" id="register-email" required class="w-full px-3 py-2 border border-gray-300 rounded-md" style="color: var(--text-on-light);">
+                                <div id="email-error" class="text-red-600 text-xs mt-1 hidden"></div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">${translations[currentLang].password}</label>
+                                <input type="password" id="register-password" required minlength="8" class="w-full px-3 py-2 border border-gray-300 rounded-md" style="color: var(--text-on-light);">
+                                <div id="password-error" class="text-red-600 text-xs mt-1 hidden"></div>
+                                <div class="text-gray-500 text-xs mt-1">${translations[currentLang].passwordHint}</div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">${translations[currentLang].confirmPassword}</label>
+                                <input type="password" id="register-confirm-password" required minlength="8" class="w-full px-3 py-2 border border-gray-300 rounded-md" style="color: var(--text-on-light);">
+                                <div id="confirm-password-error" class="text-red-600 text-xs mt-1 hidden"></div>
+                            </div>
+                            <div id="register-error" class="text-red-600 text-sm hidden"></div>
+                            <button type="submit" class="w-full btn-primary py-2 rounded-md">${translations[currentLang].register}</button>
+                            <p class="text-center text-sm">
+                                Already have an account? 
+                                <button type="button" onclick="closeModal(registerModal); openModal(loginModal); renderLoginModal();" class="text-primary hover:underline">
+                                    ${translations[currentLang].login}
+                                </button>
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('register-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                clearRegisterErrors();
+                
+                const email = document.getElementById('register-email').value;
+                const password = document.getElementById('register-password').value;
+                const confirmPassword = document.getElementById('register-confirm-password').value;
+                
+                if (validateRegisterForm(email, password, confirmPassword)) {
+                    await register(email, password);
+                }
+            });
+            
+            document.getElementById('register-email').addEventListener('blur', () => {
+                const email = document.getElementById('register-email').value;
+                validateEmail(email);
+            });
+            
+            document.getElementById('register-password').addEventListener('input', () => {
+                const password = document.getElementById('register-password').value;
+                validatePassword(password);
+            });
+            
+            document.getElementById('register-confirm-password').addEventListener('input', () => {
+                const password = document.getElementById('register-password').value;
+                const confirmPassword = document.getElementById('register-confirm-password').value;
+                validatePasswordConfirm(password, confirmPassword);
+            });
+        }
+
+        async function renderCartModal() {
+            // 异步计算所有商品价格
+            const cartItemsWithPrices = await Promise.all(
+                cart.items.map(async (item) => {
+                    const price = await getProductPrice(item.product);
+                    return {
+                        ...item,
+                        convertedPrice: price
+                    };
+                })
+            );
+            
+            // 计算总价
+            const totalPrice = cartItemsWithPrices.reduce((sum, item) => sum + item.convertedPrice * item.quantity, 0);
+            
+            const cartContent = `
+                <div class="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col" style="background-color: var(--bg-talisman-yellow); color: var(--text-on-light);">
+                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-2xl font-bold text-primary">${translations[currentLang].cartTitle}</h2>
+                            <button onclick="closeModal(cartModal)" class="text-gray-500 hover:text-gray-700">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-6">
+                        ${cart.items.length === 0 ? `
+                            <div class="text-center py-8">
+                                <p class="text-gray-500">${translations[currentLang].cartEmpty}</p>
+                            </div>
+                        ` : `
+                            <div class="space-y-4">
+                                ${cartItemsWithPrices.map(item => {
+                                    // 调试日志
+                                    console.log('Cart item data:', item);
+                                    console.log('Product data:', item.product);
+                                    
+                                    // 获取商品缩略图
+                                    const thumbnailUrl = getThumbnailUrl(item.product);
+                                    const productName = getProductName(item.product);
+                                    const productPrice = item.convertedPrice;
+                                    
+                                    console.log('Processed values:', { thumbnailUrl, productName, productPrice });
+                                    
+                                    return `
+                                        <div class="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
+                                            <img src="${thumbnailUrl}" alt="${productName}" class="w-16 h-16 object-cover rounded" onerror="this.src='/placeholder.jpg'">
+                                            <div class="flex-1">
+                                                <h3 class="font-semibold">${productName}</h3>
+                                                <p class="text-gray-600">${translations[currentLang].currencySymbol}${productPrice.toFixed(2)}</p>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <button onclick="changeCartQuantity(${item.id}, ${item.quantity - 1})" 
+                                                        ${item.quantity <= 1 ? 'disabled' : ''} 
+                                                        class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                    -
+                                                </button>
+                                                <span class="w-8 text-center">${item.quantity}</span>
+                                                <button onclick="changeCartQuantity(${item.id}, ${item.quantity + 1})" 
+                                                        class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-sm hover:bg-gray-100">
+                                                    +
+                                                </button>
+                                            </div>
+                                            <button onclick="removeCartItem(${item.id})" 
+                                                    class="text-red-600 hover:text-red-800 px-2 py-1 text-sm hover:bg-red-50 rounded">
+                                                ${translations[currentLang].removeFromCart}
+                                            </button>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-200">
+                                <div class="flex justify-between items-center mb-4">
+                                    <span class="text-lg font-semibold">${translations[currentLang].total}:</span>
+                                    <span class="text-2xl font-bold text-primary">${translations[currentLang].currencySymbol}${totalPrice.toFixed(2)}</span>
+                                </div>
+                                <button class="w-full btn-primary py-3 rounded-lg text-lg font-semibold">
+                                    ${translations[currentLang].checkout}
+                                </button>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+            cartModal.innerHTML = cartContent;
+        }
+
+        // 修复后的购物车操作函数
+        async function changeCartQuantity(itemId, newQuantity) {
+            if (newQuantity < 1) {
+                await removeCartItem(itemId);
+                return;
+            }
+            
+            try {
+                await apiFetch(`/api/cart/items/${itemId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ quantity: newQuantity }),
+                });
+                
+                // 更新本地数据
+                const item = cart.items.find(item => item.id === itemId);
+                if (item) {
+                    item.quantity = newQuantity;
+                }
+                
+                updateCart();
+                await renderCartModal(); // 重新渲染购物车
+                
+                console.log(`Cart item ${itemId} quantity updated to ${newQuantity}`);
+            } catch (error) {
+                showMessage('更新购物车失败', 'error');
+                console.error('更新购物车失败:', error);
+            }
+        }
+
+        async function removeCartItem(itemId) {
+            try {
+                await apiFetch(`/api/cart/items/${itemId}`, {
+                    method: 'DELETE',
+                });
+                
+                // 更新本地数据
+                cart.items = cart.items.filter(item => item.id !== itemId);
+                
+                updateCart();
+                await renderCartModal(); // 重新渲染购物车
+                
+                showMessage('商品已从购物车中移除');
+                console.log(`Cart item ${itemId} removed`);
+            } catch (error) {
+                showMessage('移除商品失败', 'error');
+                console.error('移除购物车商品失败:', error);
+            }
+        }
+
+        // 表单验证函数
+        function validateEmail(email) {
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            const emailError = document.getElementById('email-error');
+            
+            if (!email) return true;
+            
+            if (!emailRegex.test(email)) {
+                emailError.textContent = translations[currentLang].invalidEmail;
+                emailError.classList.remove('hidden');
+                return false;
+            } else {
+                emailError.classList.add('hidden');
+                return true;
+            }
+        }
+        
+        function validatePassword(password) {
+            const passwordError = document.getElementById('password-error');
+            
+            if (!password) return true;
+            
+            if (password.length < 8) {
+                passwordError.textContent = translations[currentLang].passwordTooShort;
+                passwordError.classList.remove('hidden');
+                return false;
+            } else {
+                passwordError.classList.add('hidden');
+                return true;
+            }
+        }
+        
+        function validatePasswordConfirm(password, confirmPassword) {
+            const confirmPasswordError = document.getElementById('confirm-password-error');
+            
+            if (!confirmPassword) return true;
+            
+            if (password !== confirmPassword) {
+                confirmPasswordError.textContent = translations[currentLang].passwordMismatch;
+                confirmPasswordError.classList.remove('hidden');
+                return false;
+            } else {
+                confirmPasswordError.classList.add('hidden');
+                return true;
+            }
+        }
+        
+        function validateRegisterForm(email, password, confirmPassword) {
+            let isValid = true;
+            if (!validateEmail(email)) isValid = false;
+            if (!validatePassword(password)) isValid = false;
+            if (!validatePasswordConfirm(password, confirmPassword)) isValid = false;
+            return isValid;
+        }
+        
+        function clearRegisterErrors() {
+            ['email-error', 'password-error', 'confirm-password-error', 'register-error'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.classList.add('hidden');
+                    element.textContent = '';
+                }
+            });
+        }
+
+        // 媒体渲染
+        function renderProductMedia(media, containerId) {
+            const container = document.getElementById(containerId);
+            if (!media || media.length === 0) {
+                container.innerHTML = '<img src="/placeholder.jpg" alt="Product Image" class="w-full h-full object-cover rounded-lg">';
+                return;
+            }
+
+            const images = media.filter(m => m.asset.mediaType === 'image');
+            const videos = media.filter(m => m.asset.mediaType === 'video');
+
+            let mediaHtml = '';
+
+            if (images.length > 0) {
+                mediaHtml += `
+                    <div class="carousel relative w-full overflow-hidden rounded-lg shadow-lg mb-4">
+                        <div class="carousel-inner flex transition-transform duration-500 ease-in-out">
+                            ${images.map(imgLink => `
+                                <div class="carousel-item min-w-full">
+                                    <img src="${imgLink.asset.url}" alt="Product Image" class="w-full h-auto object-contain" style="max-height: 500px;">
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${images.length > 1 ? `
+                            <button class="carousel-control prev absolute top-1/2 left-2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full z-10">‹</button>
+                            <button class="carousel-control next absolute top-1/2 right-2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full z-10">›</button>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            if (videos.length > 0) {
+                // 为视频创建与图片相同的容器结构，确保对齐一致
+                const videoGridClass = videos.length === 1 ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2';
+                mediaHtml += `<div class="${videos.length > 0 && images.length > 0 ? 'mt-4' : ''} grid ${videoGridClass} gap-4">`;
+                videos.forEach((vidLink, index) => {
+                    mediaHtml += `
+                        <div id="video-container-${index}" style="background-color: #000; border-radius: 0.5rem; padding: 0; margin-bottom: 1rem; display: flex; justify-content: center; align-items: center; min-height: 280px;">
+                            <video 
+                                id="video-${index}"
+                                controls 
+                                preload="auto"
+                                style="max-height: 500px; max-width: 100%; height: auto; width: auto; border-radius: 0.5rem;"
+                                onloadeddata="console.log('Video data loaded successfully')"
+                                oncanplay="console.log('Video is ready to play')"
+                                onplay="console.log('Video started playing')"
+                                onerror="console.error('Video failed to load:', this.error)"
+                                onloadedmetadata="optimizeVideoDisplay(this, ${index})"
+                            >
+                                <source src="${vidLink.asset.url}" type="video/mp4">
+                                <p style="color: white; padding: 20px;">Your browser does not support the video tag.</p>
+                            </video>
+                        </div>
+                        <!-- 调试信息显示 -->
+                        <div id="video-debug-${index}" style="color: white; font-size: 12px; padding: 5px; background: rgba(255,255,255,0.1); margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span id="video-info-${index}">${translations[currentLang].videoLoading}</span>
+                                <div>
+                                    <button onclick="toggleVideoSize(${index}, 'fit')" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 4px 8px; margin: 0 2px; border-radius: 3px; font-size: 10px; cursor: pointer;">${translations[currentLang].videoModeFit}</button>
+                                    <button onclick="toggleVideoSize(${index}, 'fill')" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 4px 8px; margin: 0 2px; border-radius: 3px; font-size: 10px; cursor: pointer;">${translations[currentLang].videoModeFill}</button>
+                                    <button onclick="toggleVideoSize(${index}, 'original')" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 4px 8px; margin: 0 2px; border-radius: 3px; font-size: 10px; cursor: pointer;">${translations[currentLang].videomodeOriginal}</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                mediaHtml += '</div>';
+            }
+
+            // 使用一致的容器约束，确保图片和视频都在相同的对齐框架内
+            container.innerHTML = `<div class="max-w-[600px] mx-auto">${mediaHtml}</div>`;
+            if (images.length > 1) {
+                initCarousel(container.querySelector('.carousel'));
+            }
+        }
+
+        function renderProductCard(product) {
+            const thumbnailUrl = (product.media && product.media.length > 0) 
+                ? product.media[0].asset.url 
+                : '/placeholder.jpg';
+
+            return `
+                <div class="product-card rounded-lg p-4 shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
+                    <div class="mb-4">
+                        <img src="${thumbnailUrl}" alt="${product.name || 'Product Image'}" class="w-full h-64 object-cover rounded-md mb-4">
+                        <h3 class="text-xl font-bold mb-2 truncate">${product.name || 'Unnamed Product'}</h3>
+                        <p class="text-gray-600 mb-4 text-sm h-20 overflow-hidden">${product.description || 'No description available'}</p>
+                    </div>
+                    <div class="flex justify-between items-center mt-auto">
+                        <span class="text-2xl font-bold text-primary">${translations[currentLang].currencySymbol}${product.displayPrice || product.price}</span>
+                        <div class="flex space-x-2">
+                            <button onclick="addToCart(${product.id})" class="btn-primary px-3 py-2 rounded-md text-sm whitespace-nowrap">
+                                ${translations[currentLang].addToCart}
+                            </button>
+                            <button onclick="showProductDetail(${product.id})" class="border border-gray-300 px-3 py-2 rounded-md text-sm hover:bg-gray-50 whitespace-nowrap">
+                                ${translations[currentLang].viewDetails}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 轮播功能
+        function initCarousel(carousel) {
+            if (!carousel) return;
+
+            const inner = carousel.querySelector('.carousel-inner');
+            const items = carousel.querySelectorAll('.carousel-item');
+            const prevBtn = carousel.querySelector('.carousel-control.prev');
+            const nextBtn = carousel.querySelector('.carousel-control.next');
+            
+            if (items.length <= 1) {
+                if (prevBtn) prevBtn.style.display = 'none';
+                if (nextBtn) nextBtn.style.display = 'none';
+                return;
+            }
+
+            let currentIndex = 0;
+            let intervalId = null;
+
+            function updateCarousel() {
+                const translateX = -currentIndex * 100;
+                inner.style.transform = `translateX(${translateX}%)`;
+            }
+
+            function nextSlide() {
+                currentIndex = (currentIndex + 1) % items.length;
+                updateCarousel();
+            }
+
+            function prevSlide() {
+                currentIndex = (currentIndex - 1 + items.length) % items.length;
+                updateCarousel();
+            }
+
+            function startAutoplay() {
+                stopAutoplay();
+                intervalId = setInterval(nextSlide, 5000);
+            }
+
+            function stopAutoplay() {
+                clearInterval(intervalId);
+            }
+
+            if (prevBtn) prevBtn.addEventListener('click', () => { prevSlide(); stopAutoplay(); });
+            if (nextBtn) nextBtn.addEventListener('click', () => { nextSlide(); stopAutoplay(); });
+
+            startAutoplay();
+        }
+
+        // 视频显示优化函数
+        function adjustVideoDisplay(video) {
+            if (!video.videoWidth || !video.videoHeight) {
+                console.log('Video dimensions not available yet');
+                return;
+            }
+            
+            console.log(`Video dimensions: ${video.videoWidth}x${video.videoHeight}`);
+            console.log('Video loaded successfully');
+            
+            // 隐藏加载指示器
+            const loadingIndicator = video.parentElement.querySelector('.video-loading');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+            
+            // 强制重绘视频元素以解决渲染问题
+            video.style.visibility = 'hidden';
+            video.offsetHeight; // 触发重排
+            video.style.visibility = 'visible';
+            
+            // 确保视频在正确的层级
+            video.style.position = 'relative';
+            video.style.zIndex = '1';
+            
+            console.log('Video display adjusted - using default sizing');
+        }
+
+        // 处理视频错误
+        function handleVideoError(video) {
+            console.error('Video error:', video.error);
+            const container = video.closest('.video-container');
+            const errorIndicator = container.querySelector('.video-error');
+            const loadingIndicator = container.querySelector('.video-loading');
+            
+            // 隐藏加载指示器，显示错误指示器
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            if (errorIndicator) errorIndicator.style.display = 'flex';
+            
+            // 尝试检测视频格式并提供建议
+            const videoUrl = video.src || (video.querySelector('source') && video.querySelector('source').src);
+            console.log('Failed video URL:', videoUrl);
+            
+            // 检查是否是CORS问题
+            if (video.error && video.error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+                console.warn('Video format not supported or CORS issue');
+            }
+        }
+
+        // 重试加载视频
+        function retryVideo(button) {
+            const container = button.closest('.video-container');
+            const video = container.querySelector('video');
+            const errorIndicator = container.querySelector('.video-error');
+            const loadingIndicator = container.querySelector('.video-loading');
+            
+            // 显示加载指示器，隐藏错误指示器
+            if (errorIndicator) errorIndicator.style.display = 'none';
+            if (loadingIndicator) loadingIndicator.style.display = 'flex';
+            
+            console.log('Retrying video load...');
+            
+            // 重新加载视频
+            video.load();
+            
+            // 添加超时处理
+            setTimeout(() => {
+                if (video.readyState < 2) { // HAVE_CURRENT_DATA
+                    console.warn('Video still not loading after retry');
+                    handleVideoError(video);
+                }
+            }, 10000); // 10秒超时
+        }
+
+        // 切换视频显示模式
+        function toggleVideoMode(button) {
+            const video = button.closest('.video-container').querySelector('video');
+            const currentMode = video.style.objectFit || 'fill'; // 默认使用 fill
+            
+            if (currentMode === 'fill' || currentMode === '') {
+                // 切换到 contain 模式（完整显示，可能有黑边）
+                video.style.objectFit = 'contain';
+                video.style.backgroundColor = '#000';
+                button.title = '切换到填充模式';
+                console.log('Switched to contain mode');
+            } else {
+                // 切换回默认模式
+                video.style.objectFit = 'fill';
+                video.style.backgroundColor = 'transparent';
+                button.title = '切换到适应模式';
+                console.log('Switched to fill mode');
+            }
+        }
+
+        // 智能视频显示优化函数
+        function optimizeVideoDisplay(video, index) {
+            if (!video.videoWidth || !video.videoHeight) {
+                console.log('Video dimensions not available yet');
+                return;
+            }
+            
+            const aspectRatio = video.videoWidth / video.videoHeight;
+            const container = document.getElementById(`video-container-${index}`);
+            const debugElement = document.getElementById(`video-debug-${index}`);
+            
+            console.log(`Video ${index} - Dimensions: ${video.videoWidth}x${video.videoHeight}, Aspect Ratio: ${aspectRatio.toFixed(2)}`);
+            
+            // 根据宽高比优化容器
+            if (aspectRatio < 0.8) {
+                // 竖屏视频 (手机拍摄等)
+                const maxWidth = Math.min(400, video.videoWidth);
+                container.style.maxWidth = maxWidth + 'px';
+                container.style.margin = '0 auto 1rem auto';
+                video.style.width = '100%';
+                video.style.height = 'auto';
+                
+                if (debugElement) {
+                    const infoSpan = debugElement.querySelector(`#video-info-${index}`);
+                    if (infoSpan) infoSpan.textContent = `${translations[currentLang].videoPortrait} (${video.videoWidth}x${video.videoHeight}) - ${translations[currentLang].containerOptimized} ${maxWidth}px`;
+                }
+                console.log(`Optimized for portrait video: container max-width set to ${maxWidth}px`);
+                
+            } else if (aspectRatio > 1.8) {
+                // 宽屏视频
+                container.style.maxWidth = '100%';
+                container.style.margin = '0 0 1rem 0';
+                video.style.width = '100%';
+                video.style.height = 'auto';
+                
+                if (debugElement) {
+                    const infoSpan = debugElement.querySelector(`#video-info-${index}`);
+                    if (infoSpan) infoSpan.textContent = `${translations[currentLang].videoWidescreen} (${video.videoWidth}x${video.videoHeight}) - ${translations[currentLang].fullWidthDisplay}`;
+                }
+                console.log('Optimized for widescreen video: full width display');
+                
+            } else {
+                // 标准比例视频
+                const optimalWidth = Math.min(600, video.videoWidth);
+                container.style.maxWidth = optimalWidth + 'px';
+                container.style.margin = '0 auto 1rem auto';
+                video.style.width = '100%';
+                video.style.height = 'auto';
+                
+                if (debugElement) {
+                    const infoSpan = debugElement.querySelector(`#video-info-${index}`);
+                    if (infoSpan) infoSpan.textContent = `${translations[currentLang].videoStandard} (${video.videoWidth}x${video.videoHeight}) - ${translations[currentLang].containerOptimized} ${optimalWidth}px`;
+                }
+                console.log(`Optimized for standard video: container max-width set to ${optimalWidth}px`);
+            }
+            
+            // 移除容器的固定高度限制
+            container.style.minHeight = 'auto';
+            
+            // 确保视频居中显示
+            container.style.display = 'flex';
+            container.style.justifyContent = 'center';
+            container.style.alignItems = 'center';
+            
+            console.log('Video display optimized successfully');
+        }
+
+        // 用户可控的视频尺寸切换函数
+        function toggleVideoSize(index, mode) {
+            const video = document.getElementById(`video-${index}`);
+            const container = document.getElementById(`video-container-${index}`);
+            const debugElement = document.getElementById(`video-debug-${index}`);
+            
+            if (!video || !container) return;
+            
+            console.log(`Switching video ${index} to ${mode} mode`);
+            
+            switch(mode) {
+                case 'fit':
+                    // 适应模式 - 智能调整容器大小
+                    optimizeVideoDisplay(video, index);
+                    break;
+                    
+                case 'fill':
+                    // 填充模式 - 占满可用宽度
+                    container.style.maxWidth = '100%';
+                    container.style.margin = '0 0 1rem 0';
+                    video.style.width = '100%';
+                    video.style.height = 'auto';
+                    if (debugElement) {
+                        const infoSpan = debugElement.querySelector(`#video-info-${index}`);
+                        if (infoSpan) infoSpan.textContent = translations[currentLang].fillMode;
+                    }
+                    break;
+                    
+                case 'original':
+                    // 原始尺寸模式
+                    if (video.videoWidth && video.videoHeight) {
+                        const originalWidth = Math.min(video.videoWidth, 800); // 限制最大宽度
+                        container.style.maxWidth = originalWidth + 'px';
+                        container.style.margin = '0 auto 1rem auto';
+                        video.style.width = originalWidth + 'px';
+                        video.style.height = 'auto';
+                        if (debugElement) {
+                            const infoSpan = debugElement.querySelector(`#video-info-${index}`);
+                            if (infoSpan) infoSpan.textContent = `${translations[currentLang].originalMode} - ${originalWidth}px ${translations[currentLang].widthAbbr}`;
+                        }
+                    }
+                    break;
+            }
+        }
+
+        // 视频诊断函数
+        function diagnoseVideo(video) {
+            console.log('=== 视频诊断信息 ===');
+            console.log('Video URL:', video.src || video.currentSrc);
+            console.log('Video dimensions:', video.videoWidth + 'x' + video.videoHeight);
+            console.log('Video readyState:', video.readyState);
+            console.log('Video networkState:', video.networkState);
+            console.log('Video paused:', video.paused);
+            console.log('Video ended:', video.ended);
+            console.log('Video currentTime:', video.currentTime);
+            console.log('Video duration:', video.duration);
+            console.log('Video error:', video.error);
+            
+            // 检查容器信息
+            const container = video.parentElement;
+            const containerRect = container.getBoundingClientRect();
+            const videoRect = video.getBoundingClientRect();
+            
+            console.log('Container size:', containerRect.width + 'x' + containerRect.height);
+            console.log('Video element size:', videoRect.width + 'x' + videoRect.height);
+            console.log('Video computed style:', window.getComputedStyle(video));
+            
+            // 显示调试信息
+            const debugElement = document.querySelector(`#video-debug-${Array.from(container.parentElement.children).indexOf(container)}`);
+            if (debugElement) {
+                debugElement.innerHTML = `
+                    尺寸: ${video.videoWidth}x${video.videoHeight} | 
+                    状态: ${video.readyState} | 
+                    网络: ${video.networkState} | 
+                    时长: ${video.duration?.toFixed(2)}s
+                `;
+            }
+            
+            // 尝试强制显示视频
+            setTimeout(() => {
+                if (video.videoWidth > 0 && video.videoHeight > 0) {
+                    console.log('视频尺寸正常，尝试触发重绘');
+                    video.style.opacity = '0.99';
+                    setTimeout(() => { video.style.opacity = '1'; }, 50);
+                }
+            }, 100);
+        }
+
+        // 检查视频兼容性
+        function checkVideoSupport() {
+            const video = document.createElement('video');
+            const formats = {
+                mp4: video.canPlayType('video/mp4'),
+                webm: video.canPlayType('video/webm'),
+                ogg: video.canPlayType('video/ogg')
+            };
+            console.log('Supported video formats:', formats);
+            return formats;
+        }
+
+        // 更新视频界面语言
+        function updateVideoLanguage() {
+            // 更新所有视频调试信息的按钮文本
+            document.querySelectorAll('[id^="video-debug-"]').forEach((debugElement, index) => {
+                const buttons = debugElement.querySelectorAll('button');
+                if (buttons.length >= 3) {
+                    buttons[0].textContent = translations[currentLang].videoModeFit;
+                    buttons[1].textContent = translations[currentLang].videoModeFill;
+                    buttons[2].textContent = translations[currentLang].videomodeOriginal;
+                }
+                
+                // 如果有视频信息，重新生成
+                const infoSpan = debugElement.querySelector(`[id^="video-info-"]`);
+                const videoElement = document.getElementById(`video-${index}`);
+                if (infoSpan && videoElement && videoElement.videoWidth && videoElement.videoHeight) {
+                    // 重新调用优化函数以更新显示文本
+                    optimizeVideoDisplay(videoElement, index);
+                }
+            });
+        }
+
+        async function showProductDetail(productId) {
+            currentProductId = productId;
+            try {
+                showMessage('Loading product details...');
+                const product = await apiFetch(`/api/products/${productId}?lang=${currentLang}`);
+                
+                // 预计算价格
+                const rate = await getExchangeRate();
+                if (currentLang === 'zh') {
+                    product.displayPrice = (product.price * rate).toFixed(2);
+                } else {
+                    product.displayPrice = product.price.toFixed(2);
+                }
+                
+                const productPage = document.getElementById('product-page');
+
+                productPage.innerHTML = `
+                    <section class="py-12 px-4">
+                        <div class="container mx-auto">
+                            <button onclick="showPage('shop')" class="mb-8 text-gold hover:text-primary">&larr; Back to All Artifacts</button>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                                <div id="product-media-container"></div>
+                                <div>
+                                    <h1 class="text-4xl font-serif-sc font-bold mb-4 text-gold">${product.name}</h1>
+                                    <p class="text-gray-400 mb-6 leading-relaxed">${product.description}</p>
+                                    <div class="text-4xl font-bold text-primary mb-8">${translations[currentLang].currencySymbol}${product.displayPrice}</div>
+                                    <button onclick="addToCart(${product.id})" class="btn-primary w-full py-4 text-lg rounded-lg font-semibold transform hover:scale-105 transition-transform">
+                                        ${translations[currentLang].addToCart}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `;
+
+                renderProductMedia(product.media, 'product-media-container');
+                showPage('product');
+                window.scrollTo(0, 0);
+                showMessage('Product loaded.', false);
+            } catch (error) {
+                console.error('Failed to show product detail:', error);
+                showMessage('Could not load product details.', true);
+            }
+        }
+
+        // 获取当前显示的页面
+        function getCurrentPage() {
+            const pages = ['home', 'shop', 'product', 'about', 'contact'];
+            for (const pageId of pages) {
+                const pageElement = document.getElementById(`${pageId}-page`);
+                if (pageElement && !pageElement.classList.contains('hidden')) {
+                    return pageId;
+                }
+            }
+            return 'home'; // 默认返回首页
+        }
+
+        // 页面管理
+        function showPage(pageId) {
+            if (pageId !== 'product') {
+                currentProductId = null;
+            }
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.add('hidden');
+            });
+            document.getElementById(`${pageId}-page`).classList.remove('hidden');
+            
+            // 渲染对应页面内容
+            if (pageId === 'about') {
+                renderAboutPage();
+            } else if (pageId === 'contact') {
+                renderContactPage();
+            } else if (pageId === 'shop') {
+                renderShopPage();
+            } else if (pageId === 'profile') {
+                renderProfilePage();
+            }
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[onclick="showPage('${pageId}')"]`)?.classList.add('active');
+        }
+
+        async function loadProducts(categoryId = null, skipShopPageRender = false) {
+            try {
+                let url = `/api/products?lang=${currentLang}`;
+                if (categoryId) {
+                    url += `&categoryId=${categoryId}`;
+                }
+                const products = await apiFetch(url);
+                
+                // 为每个产品预计算转换后的价格
+                const rate = await getExchangeRate();
+                for (const product of products) {
+                    product.originalPrice = product.price; // 保存原始美元价格
+                    if (currentLang === 'zh') {
+                        product.displayPrice = (product.price * rate).toFixed(2);
+                    } else {
+                        product.displayPrice = product.price.toFixed(2);
+                    }
+                }
+                
+                allProducts = products;
+                
+                // 总是重新渲染首页
+                renderHomePage();
+                
+                // 如果当前在shop页面且不跳过渲染，重新渲染shop页面
+                if (getCurrentPage() === 'shop' && !skipShopPageRender) {
+                    setTimeout(() => {
+                        renderShopPage();
+                        // 在渲染后恢复分类选择
+                        if (categoryId !== null) {
+                            setTimeout(() => {
+                                const categoryFilter = document.getElementById('category-filter');
+                                if (categoryFilter) {
+                                    categoryFilter.value = categoryId;
+                                }
+                            }, 100);
+                        }
+                    }, 50);
+                } else if (getCurrentPage() === 'shop' && skipShopPageRender) {
+                    // 只更新产品网格，不重新渲染整个页面
+                    updateProductsGrid(allProducts);
+                }
+            } catch (error) {
+                console.error('Failed to load products:', error);
+                showMessage('Failed to load products', 'error');
+            }
+        }
+
+        function renderHomePage() {
+            const featuredProducts = allProducts.filter(p => p.featured).slice(0, 6);
+            
+            document.getElementById('home-page').innerHTML = `
+                <section class="relative h-screen flex items-center justify-center text-center bg-gradient-to-b from-black via-gray-900 to-black">
+                    <div class="absolute inset-0 bg-black opacity-60"></div>
+                    <div class="relative z-10 max-w-4xl mx-auto px-6">
+                        <h1 class="text-6xl md:text-8xl font-serif-sc font-bold mb-6 text-gold tracking-wider">
+                            ${translations[currentLang].siteName}
+                        </h1>
+                        <p class="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed">
+                            Discover ancient artifacts imbued with mystical powers
+                        </p>
+                        <button onclick="showPage('shop')" class="btn-primary px-8 py-4 text-lg rounded-lg font-semibold transform hover:scale-105 transition-all duration-300">
+                            Explore Artifacts
+                        </button>
+                    </div>
+                </section>
+
+                <section class="py-20 px-6">
+                    <div class="container mx-auto">
+                        <h2 class="text-4xl font-serif-sc font-bold text-center mb-12 text-gold">Featured Artifacts</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            ${featuredProducts.map(product => renderProductCard(product)).join('')}
+                        </div>
+                    </div>
+                </section>
+            `;
+            
+            setTimeout(() => {
+                document.querySelectorAll('.carousel').forEach(initCarousel);
+            }, 100);
+        }
+
+        function renderShopPage() {
+            // 确保有产品数据
+            const productsToShow = allProducts || [];
+            
+            document.getElementById('shop-page').innerHTML = `
+                <section class="py-20 px-6">
+                    <div class="container mx-auto">
+                        <h1 class="text-4xl font-serif-sc font-bold text-center mb-12 text-gold">${translations[currentLang].navShop}</h1>
+                        
+                        <div class="mb-8 flex flex-wrap gap-4 justify-center items-center">
+                            <input type="text" id="search-input" placeholder="${translations[currentLang].search}" 
+                                   class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-black" style="min-width: 250px;">
+                            <select id="category-filter" class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-black">
+                                <option value="">${translations[currentLang].allCategories}</option>
+                            </select>
+                        </div>
+                        
+                        <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            ${productsToShow.length > 0 ? productsToShow.map(product => renderProductCard(product)).join('') : '<p class="text-gray-300 text-center col-span-full">正在加载产品...</p>'}
+                        </div>
+                    </div>
+                </section>
+            `;
+            
+            populateCategoryFilter();
+            
+            // 添加分类过滤事件监听器
+            setTimeout(() => {
+                const categoryFilter = document.getElementById('category-filter');
+                if (categoryFilter) {
+                    categoryFilter.addEventListener('change', async (e) => {
+                        const categoryId = e.target.value;
+                        // 使用平滑更新，避免重新渲染整个页面
+                        await loadProducts(categoryId === '' ? null : categoryId, true);
+                    });
+                }
+                
+                // 添加搜索功能事件监听器
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) {
+                    searchInput.addEventListener('input', (e) => {
+                        filterProductsBySearch(e.target.value);
+                    });
+                }
+                
+                document.querySelectorAll('.carousel').forEach(initCarousel);
+            }, 100);
+        }
+
+        function renderAboutPage() {
+            document.getElementById('about-page').innerHTML = `
+                <section class="py-20 px-6">
+                    <div class="container mx-auto max-w-4xl">
+                        <h1 class="text-4xl font-serif-sc font-bold text-center mb-12 text-gold">${translations[currentLang].aboutTitle}</h1>
+                        
+                        <div class="space-y-12">
+                            <div class="text-center">
+                                <div class="w-32 h-32 mx-auto mb-6 bg-white rounded-full flex items-center justify-center border-4 border-gold shadow-lg">
+                                    <svg class="w-24 h-24" viewBox="0 0 100 100">
+                                        <!-- 阴阳鱼太极图 -->
+                                        <circle cx="50" cy="50" r="46" fill="#fff" stroke="#A88F5A" stroke-width="4"/>
+                                        <path d="M50 4 A46 46 0 0 1 50 96 A23 23 0 0 1 50 50 A23 23 0 0 0 50 4 Z" fill="#000"/>
+                                        <circle cx="50" cy="27" r="7" fill="#000"/>
+                                        <circle cx="50" cy="73" r="7" fill="#fff"/>
+                                    </svg>
+                                </div>
+                                <h2 class="text-2xl font-bold text-gold mb-4">${translations[currentLang].aboutMission}</h2>
+                                <p class="text-gray-300 leading-relaxed">${translations[currentLang].aboutMissionText}</p>
+                            </div>
+                            
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <div class="bg-black bg-opacity-40 p-6 rounded-lg border border-gold/20">
+                                    <div class="w-16 h-16 mb-4 bg-gold rounded-full flex items-center justify-center shadow-lg border-2 border-yellow-400">
+                                        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                            <!-- 简化的工匠工具图标 -->
+                                            <path stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                                            <circle cx="8" cy="8" r="2" fill="currentColor"/>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-gold mb-3">${translations[currentLang].aboutCraftsmanship}</h3>
+                                    <p class="text-gray-300">${translations[currentLang].aboutCraftsmanshipText}</p>
+                                </div>
+                                
+                                <div class="bg-black bg-opacity-40 p-6 rounded-lg border border-gold/20">
+                                    <div class="w-16 h-16 mb-4 bg-gold rounded-full flex items-center justify-center shadow-lg border-2 border-yellow-400">
+                                        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                            <!-- 简化的心形宝石图标 -->
+                                            <path stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                            <circle cx="12" cy="10" r="1.5" fill="currentColor"/>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-gold mb-3">${translations[currentLang].aboutValues}</h3>
+                                    <p class="text-gray-300">${translations[currentLang].aboutValuesText}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            `;
+        }
+
+        function renderContactPage() {
+            document.getElementById('contact-page').innerHTML = `
+                <section class="py-20 px-6">
+                    <div class="container mx-auto max-w-4xl">
+                        <h1 class="text-4xl font-serif-sc font-bold text-center mb-12 text-gold">${translations[currentLang].contactTitle}</h1>
+                        
+                        <div class="grid md:grid-cols-2 gap-12">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gold mb-6">${translations[currentLang].contactInfo}</h2>
+                                <div class="space-y-4">
+                                    <div class="flex items-center space-x-3">
+                                        <svg class="w-6 h-6 text-gold" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                                        </svg>
+                                        <span class="text-gray-300">${translations[currentLang].contactEmail}</span>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <svg class="w-6 h-6 text-gold" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                                        </svg>
+                                        <span class="text-gray-300">${translations[currentLang].contactPhone}</span>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <svg class="w-6 h-6 text-gold" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                                            <path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                                        </svg>
+                                        <span class="text-gray-300">${translations[currentLang].contactHours}</span>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <svg class="w-6 h-6 text-gold" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                        </svg>
+                                        <span class="text-gray-300">${translations[currentLang].contactAddress}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h2 class="text-2xl font-bold text-gold mb-6">${translations[currentLang].contactForm}</h2>
+                                <form class="space-y-4" onsubmit="handleContactForm(event)">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].contactName}</label>
+                                        <input type="text" required class="w-full px-4 py-2 bg-black bg-opacity-40 border border-gold/30 rounded-lg text-white focus:border-gold focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].contactEmailField}</label>
+                                        <input type="email" required class="w-full px-4 py-2 bg-black bg-opacity-40 border border-gold/30 rounded-lg text-white focus:border-gold focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].contactMessage}</label>
+                                        <textarea required rows="4" class="w-full px-4 py-2 bg-black bg-opacity-40 border border-gold/30 rounded-lg text-white focus:border-gold focus:outline-none resize-none"></textarea>
+                                    </div>
+                                    <button type="submit" class="w-full btn-primary py-3 rounded-lg text-lg font-semibold">
+                                        ${translations[currentLang].contactSend}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            `;
+        }
+
+        async function updateShopPageLanguage() {
+            // 获取当前选中的分类
+            const categoryFilter = document.getElementById('category-filter');
+            const currentCategoryId = categoryFilter ? categoryFilter.value : '';
+            
+            // 平滑更新产品数据
+            await loadProducts(currentCategoryId === '' ? null : currentCategoryId, true);
+            
+            // 更新页面标题和搜索框占位符
+            const shopTitle = document.querySelector('#shop-page h1');
+            if (shopTitle) {
+                shopTitle.textContent = translations[currentLang].navShop;
+            }
+            
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.placeholder = translations[currentLang].search;
+            }
+            
+            // 更新分类下拉框
+            await populateCategoryFilter();
+            
+            // 恢复分类选择
+            if (categoryFilter && currentCategoryId) {
+                categoryFilter.value = currentCategoryId;
+            }
+        }
+
+        function updateProductsGrid(products) {
+            const productsGrid = document.getElementById('products-grid');
+            if (productsGrid) {
+                // 添加渐隐效果
+                productsGrid.style.opacity = '0.5';
+                productsGrid.style.transition = 'opacity 0.3s ease';
+                
+                setTimeout(() => {
+                    productsGrid.innerHTML = products.length > 0 
+                        ? products.map(product => renderProductCard(product)).join('') 
+                        : '<p class="text-gray-300 text-center col-span-full">暂无相关产品</p>';
+                    
+                    // 恢复透明度
+                    productsGrid.style.opacity = '1';
+                    
+                    // 重新初始化轮播图
+                    setTimeout(() => {
+                        document.querySelectorAll('.carousel').forEach(initCarousel);
+                    }, 100);
+                }, 150);
+            }
+        }
+
+        function getCurrentPage() {
+            const pages = ['home', 'shop', 'about', 'contact', 'product'];
+            for (const page of pages) {
+                const element = document.getElementById(`${page}-page`);
+                if (element && !element.classList.contains('hidden')) {
+                    return page;
+                }
+            }
+            return 'home'; // 默认返回首页
+        }
+
+        function filterProductsBySearch(searchTerm) {
+            const productsGrid = document.getElementById('products-grid');
+            if (!productsGrid) return;
+            
+            const filteredProducts = searchTerm.trim() === '' 
+                ? allProducts 
+                : allProducts.filter(product => 
+                    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                );
+            
+            // 使用相同的平滑过渡效果
+            updateProductsGrid(filteredProducts);
+        }
+
+        async function populateCategoryFilter() {
+            try {
+                const categories = await apiFetch(`/api/products/categories?lang=${currentLang}`);
+                const categoryFilter = document.getElementById('category-filter');
+                if (categoryFilter) {
+                    // 保存当前选中的值
+                    const currentValue = categoryFilter.value;
+                    
+                    // 清空现有选项
+                    categoryFilter.innerHTML = '';
+                    
+                    // 添加"全部分类"选项
+                    const allOption = document.createElement('option');
+                    allOption.value = '';
+                    allOption.textContent = translations[currentLang].allCategories;
+                    categoryFilter.appendChild(allOption);
+                    
+                    // 添加分类选项
+                    categories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id;
+                        option.textContent = category.name;
+                        categoryFilter.appendChild(option);
+                    });
+                    
+                    // 恢复之前选中的值
+                    categoryFilter.value = currentValue;
+                }
+            } catch (error) {
+                console.error('Failed to fetch categories:', error);
+                showMessage('Could not load categories.');
+            }
+        }
+
+        // 联系表单处理
+        function handleContactForm(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            // 这里可以添加实际的表单提交逻辑
+            // 例如发送到后端API或第三方服务
+            
+            showMessage('感谢您的留言！我们会尽快回复您。');
+            event.target.reset();
+        }
+
+        // 渲染用户资料页面
+        function renderProfilePage() {
+            if (!user) {
+                // 如果未登录，跳转到登录页面
+                openModal(loginModal);
+                renderLoginModal();
+                showPage('home');
+                return;
+            }
+            
+            document.getElementById('profile-page').innerHTML = `
+                <section class="py-20 px-6">
+                    <div class="container mx-auto max-w-6xl">
+                        <h1 class="text-4xl font-serif-sc font-bold text-center mb-12 text-gold">${translations[currentLang].profileTitle}</h1>
+                        
+                        <div class="grid lg:grid-cols-4 gap-8">
+                            <!-- 左侧导航 -->
+                            <div class="lg:col-span-1">
+                                <nav class="bg-black bg-opacity-40 rounded-lg p-6 border border-gold/20">
+                                    <ul class="space-y-2">
+                                        <li>
+                                            <button onclick="showProfileSection('personal')" 
+                                                    class="profile-nav-btn w-full text-left px-4 py-3 rounded-lg transition-colors hover:bg-gold/20 text-white" 
+                                                    data-section="personal">
+                                                <i class="w-5 h-5 inline-block mr-3">👤</i>
+                                                ${translations[currentLang].personalInfo}
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button onclick="showProfileSection('addresses')" 
+                                                    class="profile-nav-btn w-full text-left px-4 py-3 rounded-lg transition-colors hover:bg-gold/20 text-gray-300" 
+                                                    data-section="addresses">
+                                                <i class="w-5 h-5 inline-block mr-3">📍</i>
+                                                ${translations[currentLang].addresses}
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button onclick="showProfileSection('orders')" 
+                                                    class="profile-nav-btn w-full text-left px-4 py-3 rounded-lg transition-colors hover:bg-gold/20 text-gray-300" 
+                                                    data-section="orders">
+                                                <i class="w-5 h-5 inline-block mr-3">📦</i>
+                                                ${translations[currentLang].orders}
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button onclick="showProfileSection('security')" 
+                                                    class="profile-nav-btn w-full text-left px-4 py-3 rounded-lg transition-colors hover:bg-gold/20 text-gray-300" 
+                                                    data-section="security">
+                                                <i class="w-5 h-5 inline-block mr-3">🔒</i>
+                                                ${translations[currentLang].security}
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                            
+                            <!-- 右侧内容区 -->
+                            <div class="lg:col-span-3">
+                                <div id="profile-content" class="bg-black bg-opacity-40 rounded-lg border border-gold/20">
+                                    <!-- 内容将通过JS动态加载 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            `;
+            
+            // 默认显示个人信息
+            showProfileSection('personal');
+        }
+
+        // 用户资料页面导航切换
+        function showProfileSection(section) {
+            // 更新导航按钮样式
+            document.querySelectorAll('.profile-nav-btn').forEach(btn => {
+                btn.classList.remove('text-white', 'bg-gold/30');
+                btn.classList.add('text-gray-300');
+            });
+            
+            const activeBtn = document.querySelector(`[data-section="${section}"]`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-gray-300');
+                activeBtn.classList.add('text-white', 'bg-gold/30');
+            }
+            
+            // 渲染对应内容
+            switch(section) {
+                case 'personal':
+                    renderPersonalInfo();
+                    break;
+                case 'addresses':
+                    renderAddresses();
+                    break;
+                case 'orders':
+                    renderOrders();
+                    break;
+                case 'security':
+                    renderSecurity();
+                    break;
+            }
+        }
+
+        // 渲染个人信息编辑界面
+        async function renderPersonalInfo() {
+            try {
+                const response = await apiFetch('/api/profile');
+                const profileData = response.profile || {};
+                
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="p-8">
+                        <h2 class="text-2xl font-bold text-gold mb-6">${translations[currentLang].personalInfo}</h2>
+                        <div id="personal-info-display">
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].firstName}</label>
+                                    <div class="text-white bg-black bg-opacity-40 px-4 py-3 rounded-lg border border-gold/30">
+                                        ${profileData.firstName || '-'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].lastName}</label>
+                                    <div class="text-white bg-black bg-opacity-40 px-4 py-3 rounded-lg border border-gold/30">
+                                        ${profileData.lastName || '-'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].email}</label>
+                                    <div class="text-white bg-black bg-opacity-40 px-4 py-3 rounded-lg border border-gold/30">
+                                        ${user.email}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].phone}</label>
+                                    <div class="text-white bg-black bg-opacity-40 px-4 py-3 rounded-lg border border-gold/30">
+                                        ${profileData.phone || '-'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6">
+                                <button id="edit-profile-btn" class="btn-primary px-6 py-3 rounded-lg">
+                                    ${translations[currentLang].edit}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // 绑定编辑按钮事件
+                document.getElementById('edit-profile-btn').addEventListener('click', () => {
+                    showEditPersonalInfo(profileData);
+                });
+                
+            } catch (error) {
+                console.error('Failed to load profile:', error);
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="p-8 text-center">
+                        <p class="text-gray-300">无法加载用户资料</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染收货地址管理界面
+        async function renderAddresses() {
+            try {
+                const addresses = await apiFetch('/api/addresses');
+                
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="p-8">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-gold">${translations[currentLang].addresses}</h2>
+                            <button id="add-address-btn" class="btn-primary px-4 py-2 rounded-lg text-sm">
+                                ${translations[currentLang].addAddress}
+                            </button>
+                        </div>
+                        
+                        <div id="addresses-list" class="space-y-4">
+                            ${addresses.length > 0 ? addresses.map(address => `
+                                <div class="address-card bg-black bg-opacity-40 rounded-lg p-6 border border-gold/30 relative">
+                                    ${address.isDefault ? `<span class="absolute top-4 right-4 bg-gold text-black px-2 py-1 rounded text-xs font-semibold">${translations[currentLang].defaultAddress}</span>` : ''}
+                                    
+                                    <div class="grid md:grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-white mb-2">${address.title}</h3>
+                                            <p class="text-gray-300">${address.recipientName}</p>
+                                            <p class="text-gray-300">${address.recipientPhone}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-300">
+                                                ${address.country} ${address.province} ${address.city}
+                                                ${address.district ? address.district : ''}
+                                            </p>
+                                            <p class="text-gray-300">${address.streetAddress}</p>
+                                            ${address.postalCode ? `<p class="text-gray-300">${address.postalCode}</p>` : ''}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex gap-2">
+                                        <button onclick="editAddress(${address.id})" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                                            ${translations[currentLang].edit}
+                                        </button>
+                                        ${!address.isDefault ? `
+                                            <button onclick="setDefaultAddress(${address.id})" class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">
+                                                ${translations[currentLang].setDefault}
+                                            </button>
+                                        ` : ''}
+                                        <button onclick="deleteAddress(${address.id})" class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
+                                            ${translations[currentLang].deleteAddress}
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('') : `
+                                <div class="text-center text-gray-300 py-8">
+                                    <p>暂无收货地址</p>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+                
+                // 绑定添加地址按钮事件
+                document.getElementById('add-address-btn').addEventListener('click', () => {
+                    showAddressForm();
+                });
+                
+            } catch (error) {
+                console.error('Failed to load addresses:', error);
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="p-8 text-center">
+                        <p class="text-gray-300">无法加载地址信息</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染订单管理界面
+        async function renderOrders() {
+            try {
+                const response = await apiFetch('/api/orders?page=1&limit=10');
+                const orders = response.orders || [];
+                
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="p-8">
+                        <h2 class="text-2xl font-bold text-gold mb-6">${translations[currentLang].orders}</h2>
+                        
+                        <div class="mb-6">
+                            <div class="flex gap-4">
+                                <button onclick="filterOrders('')" class="order-filter-btn px-4 py-2 rounded-lg bg-gold text-black font-semibold" data-status="">
+                                    全部订单
+                                </button>
+                                <button onclick="filterOrders('pending')" class="order-filter-btn px-4 py-2 rounded-lg bg-gray-600 text-white" data-status="pending">
+                                    ${translations[currentLang].pending}
+                                </button>
+                                <button onclick="filterOrders('paid')" class="order-filter-btn px-4 py-2 rounded-lg bg-gray-600 text-white" data-status="paid">
+                                    ${translations[currentLang].paid}
+                                </button>
+                                <button onclick="filterOrders('shipped')" class="order-filter-btn px-4 py-2 rounded-lg bg-gray-600 text-white" data-status="shipped">
+                                    ${translations[currentLang].shipped}
+                                </button>
+                                <button onclick="filterOrders('delivered')" class="order-filter-btn px-4 py-2 rounded-lg bg-gray-600 text-white" data-status="delivered">
+                                    ${translations[currentLang].delivered}
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="orders-list" class="space-y-4">
+                            ${orders.length > 0 ? orders.map(order => `
+                                <div class="order-card bg-black bg-opacity-40 rounded-lg p-6 border border-gold/30">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-white">${translations[currentLang].orderNumber}: #${order.id}</h3>
+                                            <p class="text-gray-300 text-sm">${new Date(order.createdAt).toLocaleDateString()}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                                                order.status === 'pending' ? 'bg-yellow-600 text-white' :
+                                                order.status === 'paid' ? 'bg-green-600 text-white' :
+                                                order.status === 'shipped' ? 'bg-blue-600 text-white' :
+                                                order.status === 'delivered' ? 'bg-gray-600 text-white' :
+                                                'bg-red-600 text-white'
+                                            }">
+                                                ${translations[currentLang][order.status]}
+                                            </span>
+                                            <p class="text-gold font-semibold mt-2">${translations[currentLang].currencySymbol}${order.totalAmount}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="border-t border-gold/20 pt-4">
+                                        <div class="grid md:grid-cols-2 gap-4">
+                                            <div>
+                                                <h4 class="text-sm font-semibold text-gray-300 mb-2">${translations[currentLang].orderItems}</h4>
+                                                <div class="space-y-1">
+                                                    ${order.items.slice(0, 2).map(item => `
+                                                        <p class="text-sm text-white">${item.product.name} × ${item.quantity}</p>
+                                                    `).join('')}
+                                                    ${order.items.length > 2 ? `<p class="text-sm text-gray-400">等${order.items.length}件商品</p>` : ''}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-sm font-semibold text-gray-300 mb-2">${translations[currentLang].shippingAddress}</h4>
+                                                <div class="text-sm text-white">
+                                                    <p>${order.shippingAddress.recipientName}</p>
+                                                    <p>${order.shippingAddress.country} ${order.shippingAddress.province} ${order.shippingAddress.city}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-4 text-right">
+                                            <button onclick="viewOrderDetails(${order.id})" class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                                                ${translations[currentLang].viewOrder}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('') : `
+                                <div class="text-center text-gray-300 py-8">
+                                    <p>${translations[currentLang].noOrders}</p>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Failed to load orders:', error);
+                document.getElementById('profile-content').innerHTML = `
+                    <div class="p-8 text-center">
+                        <p class="text-gray-300">无法加载订单信息</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染账户安全设置界面
+        function renderSecurity() {
+            document.getElementById('profile-content').innerHTML = `
+                <div class="p-8">
+                    <h2 class="text-2xl font-bold text-gold mb-6">${translations[currentLang].security}</h2>
+                    
+                    <div class="space-y-8">
+                        <!-- 修改密码 -->
+                        <div class="bg-black bg-opacity-40 rounded-lg p-6 border border-gold/30">
+                            <h3 class="text-lg font-semibold text-white mb-4">${translations[currentLang].changePassword}</h3>
+                            <form id="change-password-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].currentPassword}</label>
+                                    <input type="password" name="currentPassword" required 
+                                           class="w-full px-4 py-3 bg-black bg-opacity-40 border border-gold/30 rounded-lg text-white focus:border-gold focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].newPassword}</label>
+                                    <input type="password" name="newPassword" required minlength="8" 
+                                           class="w-full px-4 py-3 bg-black bg-opacity-40 border border-gold/30 rounded-lg text-white focus:border-gold focus:outline-none">
+                                    <p class="text-xs text-gray-400 mt-1">${translations[currentLang].passwordHint}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">${translations[currentLang].confirmNewPassword}</label>
+                                    <input type="password" name="confirmNewPassword" required minlength="8" 
+                                           class="w-full px-4 py-3 bg-black bg-opacity-40 border border-gold/30 rounded-lg text-white focus:border-gold focus:outline-none">
+                                </div>
+                                <button type="submit" class="btn-primary px-6 py-3 rounded-lg">
+                                    ${translations[currentLang].changePassword}
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- 删除账户 -->
+                        <div class="bg-red-900 bg-opacity-30 rounded-lg p-6 border border-red-500/30">
+                            <h3 class="text-lg font-semibold text-red-300 mb-4">${translations[currentLang].deleteAccount}</h3>
+                            <p class="text-gray-300 mb-4">删除账户将永久清除您的所有数据，包括订单历史和个人信息。此操作不可撤销。</p>
+                            <button id="delete-account-btn" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                                ${translations[currentLang].deleteAccount}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 绑定修改密码表单事件
+            document.getElementById('change-password-form').addEventListener('submit', handlePasswordChange);
+            
+            // 绑定删除账户按钮事件
+            document.getElementById('delete-account-btn').addEventListener('click', handleDeleteAccount);
+        }
+
+        // 密码修改处理
+        async function handlePasswordChange(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const currentPassword = formData.get('currentPassword');
+            const newPassword = formData.get('newPassword');
+            const confirmNewPassword = formData.get('confirmNewPassword');
+            
+            if (newPassword !== confirmNewPassword) {
+                showMessage(translations[currentLang].passwordMismatch, 'error');
+                return;
+            }
+            
+            try {
+                await apiFetch('/api/profile/change-password', {
+                    method: 'PUT',
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+                
+                showMessage(translations[currentLang].passwordChanged);
+                event.target.reset();
+            } catch (error) {
+                showMessage(translations[currentLang].passwordChangeError, 'error');
+            }
+        }
+
+        // 初始化应用
+        async function initApp() {
+            // 检查视频格式支持
+            checkVideoSupport();
+            
+            // 设置事件监听器
+            loginButton.addEventListener('click', () => {
+                openModal(loginModal);
+                renderLoginModal();
+            });
+            
+            cartButton.addEventListener('click', async () => {
+                await renderCartModal();
+                openModal(cartModal);
+            });
+            
+            logoutButton.addEventListener('click', logout);
+            
+            langZh.addEventListener('click', async () => {
+                currentLang = 'zh';
+                updateLanguage();
+                updateVideoLanguage(); // 更新视频界面语言
+                
+                // 重新渲染当前页面内容
+                const currentPage = getCurrentPage();
+                if (currentPage === 'about') {
+                    renderAboutPage();
+                } else if (currentPage === 'contact') {
+                    renderContactPage();
+                } else if (currentPage === 'shop') {
+                    // 商店页面使用平滑更新
+                    await updateShopPageLanguage();
+                } else {
+                    // 非商店页面正常加载产品
+                    await loadProducts();
+                }
+                
+                if (currentProductId && !document.getElementById('product-page').classList.contains('hidden')) {
+                    showProductDetail(currentProductId);
+                }
+            });
+            
+            langEn.addEventListener('click', async () => {
+                currentLang = 'en';
+                updateLanguage();
+                updateVideoLanguage(); // 更新视频界面语言
+                
+                // 重新渲染当前页面内容
+                const currentPage = getCurrentPage();
+                if (currentPage === 'about') {
+                    renderAboutPage();
+                } else if (currentPage === 'contact') {
+                    renderContactPage();
+                } else if (currentPage === 'shop') {
+                    // 商店页面使用平滑更新
+                    await updateShopPageLanguage();
+                } else {
+                    // 非商店页面正常加载产品
+                    await loadProducts();
+                }
+                
+                if (currentProductId && !document.getElementById('product-page').classList.contains('hidden')) {
+                    showProductDetail(currentProductId);
+                }
+            });
+
+            // 初始化语言和用户状态
+            updateLanguage();
+            await checkUserStatus();
+            await loadProducts();
+            
+            // 显示首页
+            showPage('home');
+        }
+
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+    </script>
+</body>
+</html>

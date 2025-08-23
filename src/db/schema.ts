@@ -6,6 +6,44 @@ export const users = sqliteTable('users', {
     id: integer('id').primaryKey(),
     email: text('email').notNull().unique(),
     password: text('password').notNull(), // This will store the hashed password
+    role: text('role', { enum: ['user', 'admin', 'super_admin', 'moderator'] }).default('user'),
+    status: text('status', { enum: ['active', 'disabled', 'suspended', 'deleted'] }).default('active'),
+    lastLoginAt: integer('last_login_at', { mode: 'timestamp' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }),
+    createdBy: integer('created_by').references(() => users.id),
+});
+
+// User Profiles Table: Stores extended user profile information
+export const userProfiles = sqliteTable('user_profiles', {
+    id: integer('id').primaryKey(),
+    userId: integer('user_id').notNull().unique().references(() => users.id, { onDelete: 'cascade' }),
+    firstName: text('first_name'),
+    lastName: text('last_name'),
+    phone: text('phone'),
+    gender: text('gender', { enum: ['male', 'female', 'other'] }),
+    dateOfBirth: integer('date_of_birth', { mode: 'timestamp' }),
+    avatar: text('avatar'), // URL to avatar image
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+});
+
+// User Addresses Table: Stores user shipping addresses
+export const userAddresses = sqliteTable('user_addresses', {
+    id: integer('id').primaryKey(),
+    userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(), // e.g., "Home", "Office"
+    recipientName: text('recipient_name').notNull(),
+    recipientPhone: text('recipient_phone').notNull(),
+    country: text('country').notNull(),
+    province: text('province').notNull(),
+    city: text('city').notNull(),
+    district: text('district'),
+    streetAddress: text('street_address').notNull(),
+    postalCode: text('postal_code'),
+    isDefault: integer('is_default', { mode: 'boolean' }).default(false),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
 // Categories Table: Stores product categories
@@ -63,8 +101,19 @@ export const orders = sqliteTable('orders', {
   id: integer('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   totalAmount: real('total_amount').notNull(),
-  status: text('status', { enum: ['pending', 'paid', 'shipped', 'cancelled'] }).default('pending'),
+  status: text('status', { enum: ['pending', 'paid', 'shipped', 'delivered', 'cancelled'] }).default('pending'),
+  // Shipping address fields (snapshot of address at time of order)
+  shippingRecipientName: text('shipping_recipient_name'),
+  shippingRecipientPhone: text('shipping_recipient_phone'),
+  shippingCountry: text('shipping_country'),
+  shippingProvince: text('shipping_province'),
+  shippingCity: text('shipping_city'),
+  shippingDistrict: text('shipping_district'),
+  shippingStreetAddress: text('shipping_street_address'),
+  shippingPostalCode: text('shipping_postal_code'),
+  // Timestamps
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
 export const orderItems = sqliteTable('order_items', {
@@ -89,11 +138,43 @@ export const cartItems = sqliteTable('cart_items', {
     quantity: integer('quantity').notNull().default(1),
 });
 
+// Admin Logs Table: Stores admin operation audit logs
+export const adminLogs = sqliteTable('admin_logs', {
+    id: integer('id').primaryKey(),
+    adminId: integer('admin_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    action: text('action').notNull(),
+    targetType: text('target_type').notNull(),
+    targetId: integer('target_id'),
+    details: text('details'),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
 
 // --- RELATIONS ---
 export const usersRelations = relations(users, ({ many, one }) => ({
     orders: many(orders),
     cart: one(carts),
+    profile: one(userProfiles),
+    addresses: many(userAddresses),
+    adminLogs: many(adminLogs),
+    createdByUser: one(users, { fields: [users.createdBy], references: [users.id] }),
+    createdUsers: many(users, { foreignKey: users.createdBy }),
+}));
+
+export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
+    user: one(users, {
+        fields: [userProfiles.userId],
+        references: [users.id],
+    }),
+}));
+
+export const userAddressesRelations = relations(userAddresses, ({ one }) => ({
+    user: one(users, {
+        fields: [userAddresses.userId],
+        references: [users.id],
+    }),
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
@@ -177,4 +258,11 @@ export const productMediaRelations = relations(productMedia, ({ one }) => ({
 
 export const mediaAssetsRelations = relations(mediaAssets, ({ many }) => ({
     productLinks: many(productMedia),
+}));
+
+export const adminLogsRelations = relations(adminLogs, ({ one }) => ({
+    admin: one(users, {
+        fields: [adminLogs.adminId],
+        references: [users.id],
+    }),
 }));

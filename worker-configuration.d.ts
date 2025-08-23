@@ -135,4 +135,66 @@ declare global {
     class TextEncoder {
         encode(input?: string): Uint8Array;
     }
+
+    // File API (available in Cloudflare Workers)
+    class File extends Blob {
+        readonly lastModified: number;
+        readonly name: string;
+        readonly webkitRelativePath: string;
+    }
+
+    // Headers API (available in Cloudflare Workers)
+    class Headers {
+        constructor(init?: HeadersInit);
+        append(name: string, value: string): void;
+        delete(name: string): void;
+        get(name: string): string | null;
+        has(name: string): boolean;
+        set(name: string, value: string): void;
+        forEach(callbackfn: (value: string, key: string, parent: Headers) => void, thisArg?: any): void;
+    }
+
+    type HeadersInit = Headers | Record<string, string> | [string, string][];
+
+    // Response API (available in Cloudflare Workers)
+    class Response {
+        constructor(body?: BodyInit | null, init?: ResponseInit);
+        readonly body: ReadableStream<Uint8Array> | null;
+        readonly bodyUsed: boolean;
+        readonly headers: Headers;
+        readonly ok: boolean;
+        readonly redirected: boolean;
+        readonly status: number;
+        readonly statusText: string;
+        readonly type: ResponseType;
+        readonly url: string;
+        clone(): Response;
+        arrayBuffer(): Promise<ArrayBuffer>;
+        blob(): Promise<Blob>;
+        formData(): Promise<FormData>;
+        json(): Promise<any>;
+        text(): Promise<string>;
+        static error(): Response;
+        static redirect(url: string, status?: number): Response;
+    }
+
+    type BodyInit = Blob | BufferSource | FormData | URLSearchParams | ReadableStream<Uint8Array> | string;
+    type ResponseType = "basic" | "cors" | "error" | "opaque" | "opaqueredirect";
+
+    interface ResponseInit {
+        status?: number;
+        statusText?: string;
+        headers?: HeadersInit;
+    }
+
+    // Console API (available in Cloudflare Workers)
+    interface Console {
+        log(...data: any[]): void;
+        error(...data: any[]): void;
+        warn(...data: any[]): void;
+        info(...data: any[]): void;
+        debug(...data: any[]): void;
+    }
+
+    const console: Console;
 }

@@ -8,6 +8,8 @@
 		"lib": ["es2021"],
 		/* Specify what JSX code is generated. */
 		"jsx": "react-jsx",
+		/* TypeScript types for Cloudflare Workers */
+		"types": ["@cloudflare/workers-types"],
 
 		/* Specify what module code is generated. */
 		"module": "es2022",
