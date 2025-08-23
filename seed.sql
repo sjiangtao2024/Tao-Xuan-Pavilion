@@ -19,12 +19,12 @@ INSERT INTO category_translations (category_id, language, name) VALUES
 (3, 'en', 'Protection & Warding'),
 (3, 'zh', '镇宅与辟邪');
 
--- Insert Products (with name and category_id, without the old category column)
-INSERT INTO products (id, price, featured, name, category_id) VALUES
-(1, 88.88, 1, 'Lightning-Struck Jujube Wood Peace Amulet', 1),
-(2, 128.00, 1, 'Hand-Carved Peach Wood Sword', 2),
-(3, 79.99, 0, 'Natural Calabash Gourd for Blessings', 3),
-(4, 258.50, 0, 'Taoist Five Thunders Ritual Seal', 2);
+-- Insert Products (with price_cny, price_usd and category_id)
+INSERT INTO products (id, price_cny, price_usd, featured, category_id) VALUES
+(1, 88.88, 12.25, 1, 1),
+(2, 128.00, 17.65, 1, 2),
+(3, 79.99, 11.03, 0, 3),
+(4, 258.50, 35.66, 0, 2);
 
 -- Insert Product Translations (using product_id as the foreign key column name)
 INSERT INTO product_translations (product_id, language, name, description) VALUES

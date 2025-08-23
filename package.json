@@ -16,7 +16,7 @@
 		"drizzle-kit": "^0.31.4",
 		"typescript": "^5.5.2",
 		"vitest": "~3.2.0",
-		"wrangler": "^4.31.0"
+		"wrangler": "^4.32.0"
 	},
 	"dependencies": {
 		"drizzle-orm": "^0.44.4",

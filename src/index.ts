@@ -43,7 +43,7 @@ const UpdateCartSchema = z.object({
 });
 
 const CreateProductSchema = z.object({
-    price: z.number().positive(),
+    price: z.number().positive(), // Price in USD (base currency)
     featured: z.boolean().optional().default(false),
     categoryId: z.number().int().positive().optional(),
     name: z.string().min(1),
@@ -52,7 +52,7 @@ const CreateProductSchema = z.object({
 });
 
 const UpdateProductSchema = z.object({
-    price: z.number().positive().optional(),
+    price: z.number().positive().optional(), // Price in USD (base currency)
     featured: z.boolean().optional(),
     categoryId: z.number().int().positive().optional(),
     name: z.string().min(1).optional(),
@@ -713,7 +713,8 @@ app.get('/api/products', async (c) => {
         ...p, 
         name: p.translations[0]?.name, 
         description: p.translations[0]?.description,
-        categoryName: p.category?.translations[0]?.name
+        categoryName: p.category?.translations[0]?.name,
+        price: p.price // 保持原始USD价格，前端将根据语言进行转换
     }));
     
     return c.json(formatted);
@@ -724,9 +725,14 @@ app.post('/api/products', authMiddleware, async (c) => {
     const validation = CreateProductSchema.safeParse(body);
     if (!validation.success) return c.json({ error: 'Invalid data', issues: validation.error.issues }, 400);
     const { price, featured, categoryId, name, description, lang } = validation.data;
+    
     const db = drizzle(c.env.DB, { schema });
     try {
-        const newProductResult = await db.insert(products).values({ price, featured, categoryId }).returning({ insertedId: products.id });
+        const newProductResult = await db.insert(products).values({ 
+            price, 
+            featured, 
+            categoryId 
+        }).returning({ insertedId: products.id });
         const newProductId = newProductResult[0]?.insertedId;
         if (!newProductId) throw new Error("Failed to create product.");
         await db.insert(productTranslations).values({ productId: newProductId, language: lang, name, description });
@@ -780,7 +786,8 @@ app.get('/api/products/:id', async (c) => {
         ...product, 
         name: product.translations[0]?.name, 
         description: product.translations[0]?.description,
-        categoryName: product.category?.translations[0]?.name
+        categoryName: product.category?.translations[0]?.name,
+        price: product.price // 保持原始USD价格，前端将根据语言进行转换
     };
     
     return c.json(p);
@@ -1015,6 +1022,7 @@ app.get('/api/auth/me', authMiddleware, async (c) => {
 // 购物车路由
 app.get('/api/cart', authMiddleware, async (c) => {
     const userId = c.get('userId');
+    const lang = c.req.query('lang') || 'en';
     const db = drizzle(c.env.DB, { schema });
     
     try {
@@ -1027,7 +1035,7 @@ app.get('/api/cart', authMiddleware, async (c) => {
                         product: {
                             with: {
                                 media: { with: { asset: true } },
-                                translations: { where: eq(productTranslations.language, 'en') }
+                                translations: { where: eq(productTranslations.language, lang) }
                             }
                         }
                     }
@@ -1053,7 +1061,8 @@ app.get('/api/cart', authMiddleware, async (c) => {
                 product: item.product ? {
                     ...item.product,
                     name: item.product.translations[0]?.name || 'Unknown Product',
-                    description: item.product.translations[0]?.description || ''
+                    description: item.product.translations[0]?.description || '',
+                    price: item.product.price // 保持原始USD价格，前端将根据语言进行转换
                 } : null
             }));
         }
@@ -1066,6 +1075,7 @@ app.get('/api/cart', authMiddleware, async (c) => {
 
 app.post('/api/cart/items', authMiddleware, async (c) => {
     const userId = c.get('userId');
+    const lang = c.req.query('lang') || 'en';
     const body = await c.req.json();
     const validation = AddToCartSchema.safeParse(body);
     if (!validation.success) return c.json({ error: 'Invalid cart item data', issues: validation.error.issues }, 400);
@@ -1110,13 +1120,26 @@ app.post('/api/cart/items', authMiddleware, async (c) => {
                         product: {
                             with: {
                                 media: { with: { asset: true } },
-                                translations: { where: eq(productTranslations.language, 'en') }
+                                translations: { where: eq(productTranslations.language, lang) }
                             }
                         }
                     }
                 }
             }
         });
+        
+        // 格式化产品数据
+        if (updatedCart && updatedCart.items) {
+            (updatedCart as any).items = updatedCart.items.map((item: any) => ({
+                ...item,
+                product: item.product ? {
+                    ...item.product,
+                    name: item.product.translations[0]?.name || 'Unknown Product',
+                    description: item.product.translations[0]?.description || '',
+                    price: item.product.price // 保持原始USD价格，前端将根据语言进行转换
+                } : null
+            }));
+        }
         
         return c.json(updatedCart);
     } catch (error: any) {

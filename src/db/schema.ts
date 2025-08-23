@@ -24,7 +24,7 @@ export const categoryTranslations = sqliteTable('category_translations', {
 // Products Table: Stores information about each product available for sale.
 export const products = sqliteTable('products', {
   id: integer('id').primaryKey(), // Unique identifier for the product
-  price: real('price').notNull(), // Price of the product
+  price: real('price').notNull(), // Price of the product in USD (base currency)
   featured: integer('featured', { mode: 'boolean' }).default(false), // Whether the product is featured on the homepage
   categoryId: integer('category_id').references(() => categories.id), // Foreign key to categories table
 });

@@ -64,6 +64,13 @@
       "when": 1755827086049,
       "tag": "0008_normal_silk_fever",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1755827087049,
+      "tag": "0009_prices_cny_usd",
+      "breakpoints": true
     }
   ]
 }

@@ -104,8 +104,11 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="create-price">Price</label>
+                        <label for="create-price">Price (USD)</label>
                         <input type="number" id="create-price" step="0.01" required>
+                        <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                            * 价格以美元为基准。前端将根据用户语言设置自动转换为相应货币显示。
+                        </small>
                     </div>
                     <div class="form-group">
                         <label for="create-media">Media (Images/Videos)</label>
@@ -165,8 +168,11 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="edit-price">Price</label>
+                            <label for="edit-price">Price (USD)</label>
                             <input type="number" id="edit-price" step="0.01">
+                            <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                                * 价格以美元为基准。前端将根据用户语言设置自动转换为相应货币显示。
+                            </small>
                         </div>
                         <button type="submit" id="update-product-button">Update Product Info</button>
                     </form>
@@ -435,16 +441,22 @@
             button.textContent = 'Updating...';
 
             try {
-                await apiFetch(`/api/products/${productId}`, {
+                // 更新英文版本
+                await apiFetch(`/api/products/${productId}?lang=en`, {
                     method: 'PATCH',
                     body: JSON.stringify({
-                        name_en: document.getElementById('edit-name-en').value,
-                        description_en: document.getElementById('edit-description-en').value,
-                        category_en: document.getElementById('edit-category-en').value,
-                        name_zh: document.getElementById('edit-name-zh').value,
-                        description_zh: document.getElementById('edit-description-zh').value,
-                        category_zh: document.getElementById('edit-category-zh').value,
+                        name: document.getElementById('edit-name-en').value,
+                        description: document.getElementById('edit-description-en').value,
                         price: parseFloat(document.getElementById('edit-price').value),
+                    }),
+                });
+                
+                // 更新中文版本
+                await apiFetch(`/api/products/${productId}?lang=zh`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        name: document.getElementById('edit-name-zh').value,
+                        description: document.getElementById('edit-description-zh').value,
                     }),
                 });
 
@@ -469,22 +481,32 @@
                 const newProduct = await apiFetch('/api/products', {
                     method: 'POST',
                     body: JSON.stringify({
-                        name_en: document.getElementById('create-name-en').value,
-                        description_en: document.getElementById('create-description-en').value,
-                        category_en: document.getElementById('create-category-en').value,
-                        name_zh: document.getElementById('create-name-zh').value,
-                        description_zh: document.getElementById('create-description-zh').value,
-                        category_zh: document.getElementById('create-category-zh').value,
+                        name: document.getElementById('create-name-en').value,
+                        description: document.getElementById('create-description-en').value,
                         price: parseFloat(document.getElementById('create-price').value),
+                        featured: false,
+                        lang: 'en'
                     }),
                 });
                 showStatus(`Step 1/2: Product ${newProduct.id} created.`);
+
+                // 创建中文翻译
+                if (document.getElementById('create-name-zh').value || document.getElementById('create-description-zh').value) {
+                    await apiFetch(`/api/products/${newProduct.id}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({
+                            name: document.getElementById('create-name-zh').value,
+                            description: document.getElementById('create-description-zh').value,
+                            lang: 'zh'
+                        }),
+                    });
+                }
 
                 const mediaFiles = document.getElementById('create-media').files;
                 if (mediaFiles.length > 0) {
                     showStatus(`Step 2/2: Uploading ${mediaFiles.length} media file(s)...`);
                     const formData = new FormData();
-                    for (const file of files) {
+                    for (const file of mediaFiles) {
                         const fieldName = file.type.startsWith('image/') ? 'image' : 'video';
                         formData.append(fieldName, file);
                     }
@@ -506,6 +528,9 @@
                 button.textContent = 'Create Product';
             }
         }
+
+        // 汇率计算功能已被移除，因为现在使用单一USD价格字段
+        // 前端将根据用户语言设置自动调用汇率API进行转换
 
         // --- INITIALIZATION ---
         function initializeApp() {
