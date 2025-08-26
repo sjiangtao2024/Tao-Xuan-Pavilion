@@ -44,7 +44,7 @@ staticRoutes.get('/docs', (c) => {
 });
 
 // 媒体文件服务路由
-staticRoutes.get('/media/:key', async (c) => {
+staticRoutes.get('/:key', async (c) => {
     const key = c.req.param('key');
     
     let object = await c.env.IMAGES_BUCKET.get(key);

@@ -13233,7 +13233,7 @@ staticRoutes.get("/docs", (c) => {
 </html>`;
   return c.html(swaggerUI);
 });
-staticRoutes.get("/media/:key", async (c) => {
+staticRoutes.get("/:key", async (c) => {
   const key = c.req.param("key");
   let object = await c.env.IMAGES_BUCKET.get(key);
   if (object === null) {
