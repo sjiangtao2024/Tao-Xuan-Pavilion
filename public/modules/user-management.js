@@ -619,13 +619,15 @@ window.closeUserModal = closeUserModal;
 window.toggleUserStatus = toggleUserStatus;
 window.resetUserPassword = resetUserPassword;
 
-// ES6 模块导出
-export {
-    initializeUserManagementModule,
-    viewUser,
-    closeUserModal,
-    toggleUserStatus,
-    resetUserPassword
-};
+// CommonJS 模块导出
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        initializeUserManagementModule,
+        viewUser,
+        closeUserModal,
+        toggleUserStatus,
+        resetUserPassword
+    };
+}
 
 console.log('用户管理模块已加载');

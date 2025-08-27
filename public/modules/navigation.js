@@ -201,11 +201,9 @@ window.NavigationModule = {
     navigateToSection: navigateToSection
 };
 
-// ES6 模块导出
-export {
-    initializeNavigationModule,
-    navigateToSection
-};
+// 全局函数暴露
+window.initializeNavigationModule = initializeNavigationModule;
+window.navigateToSection = navigateToSection;
 
 // 为模块系统导出函数
 if (typeof module !== 'undefined' && module.exports) {

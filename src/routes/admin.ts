@@ -1111,16 +1111,21 @@ adminRoutes.get('/categories', authMiddleware, adminMiddleware, async (c) => {
     try {
         const categoriesData = await db.query.categories.findMany({
             with: {
-                translations: { where: eq(categoryTranslations.language, lang) }
+                translations: true // 获取所有翻译
             }
         });
         
-        const formattedCategories = categoriesData.map(cat => ({
-            id: cat.id,
-            name_zh: cat.translations.find(t => t.language === 'zh')?.name || '',
-            name_en: cat.translations.find(t => t.language === 'en')?.name || '',
-            name: cat.translations[0]?.name || 'Unknown Category'
-        }));
+        const formattedCategories = categoriesData.map(cat => {
+            const zhTranslation = cat.translations.find(t => t.language === 'zh');
+            const enTranslation = cat.translations.find(t => t.language === 'en');
+            
+            return {
+                id: cat.id,
+                name_zh: zhTranslation?.name || '',
+                name_en: enTranslation?.name || '',
+                name: (lang === 'en' ? enTranslation?.name : zhTranslation?.name) || 'Unknown Category'
+            };
+        });
         
         return c.json(formattedCategories);
     } catch (error: any) {

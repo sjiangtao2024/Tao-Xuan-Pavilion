@@ -70,9 +70,9 @@ function createCategoryModals() {
                     </div>
                 </form>
                 <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-                    <button id="save-category-btn" onclick="saveCategory()">保存</button>
-                    <button id="delete-category-btn" onclick="deleteCategory()" style="display: none;">删除</button>
-                    <button onclick="closeCategoryModal()">取消</button>
+                    <button id="save-category-btn" onclick="saveCategory()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">保存</button>
+                    <button id="delete-category-btn" onclick="deleteCategory()" style="display: none; padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">删除</button>
+                    <button onclick="closeCategoryModal()" style="padding: 10px 20px; background: #757575; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">取消</button>
                 </div>
             </div>
         </div>
@@ -86,16 +86,27 @@ function createCategoryModals() {
  */
 async function loadCategoryList(language = 'zh') {
     try {
-        const response = await fetch(`/api/products/categories?lang=${language}`, {
+        // 使用管理员API获取分类数据，支持双语言
+        const response = await fetch(`/api/admin/categories?lang=${language}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
         });
         
         if (response.ok) {
             categoryList = await response.json();
+            console.log(`加载分类数据成功 (${language}):`, categoryList);
             renderCategoryList();
+        } else {
+            const error = await response.json();
+            console.error('加载分类失败:', error);
+            throw new Error(error.error || '加载失败');
         }
     } catch (error) {
         console.error('加载分类失败:', error);
+        // 在界面上显示错误信息
+        const container = document.getElementById('category-list-container') || document.getElementById('category-list');
+        if (container) {
+            container.innerHTML = `<div style="text-align: center; padding: 20px; color: #f44336;">加载失败: ${error.message}</div>`;
+        }
     }
 }
 
@@ -103,26 +114,49 @@ async function loadCategoryList(language = 'zh') {
  * 渲染分类列表
  */
 function renderCategoryList() {
-    const container = document.getElementById('category-list');
+    // 支持多个容器：产品管理页面的category-list和分类管理页面的category-list-container
+    let container = document.getElementById('category-list-container') || document.getElementById('category-list');
+    
+    // 如果有全局设置的目标容器，优先使用
+    if (window.categoryListContainerId) {
+        container = document.getElementById(window.categoryListContainerId);
+    }
+    
     if (!container) return;
     
+    // 在分类管理主页面显示语言切换按钮
+    let headerHtml = '';
+    if (container.id === 'category-list-container') {
+        headerHtml = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="margin: 0; color: #fff;">分类列表</h4>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="loadCategoryList('zh')" style="padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;">中文</button>
+                    <button onclick="loadCategoryList('en')" style="padding: 5px 10px; background: #2196F3; color: white; border: none; border-radius: 3px; cursor: pointer;">English</button>
+                </div>
+            </div>
+        `;
+    }
+    
     if (categoryList.length === 0) {
-        container.innerHTML = '<div>暂无分类</div>';
+        container.innerHTML = headerHtml + '<div style="text-align: center; padding: 20px; color: #666;">暂无分类</div>';
         return;
     }
     
     const html = categoryList.map(category => `
-        <div class="category-item" onclick="editCategory(${category.id})">
-            <div class="category-name-zh">${category.name_zh || category.name}</div>
-            <div class="category-name-en">${category.name_en || ''}</div>
-            <div class="category-actions">
-                <button onclick="event.stopPropagation(); editCategory(${category.id})">编辑</button>
-                <button onclick="event.stopPropagation(); confirmDeleteCategory(${category.id})">删除</button>
+        <div class="category-item" onclick="editCategory(${category.id})" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 15px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s;" 
+             onmouseover="this.style.background='rgba(255, 255, 255, 0.15)'" 
+             onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'">
+            <div class="category-name-zh" style="color: #ffffff; font-weight: bold; margin-bottom: 5px;">${category.name_zh || category.name || '未命名'}</div>
+            <div class="category-name-en" style="color: rgba(255, 255, 255, 0.7); font-size: 0.9em; margin-bottom: 10px;">${category.name_en || '暂无英文名称'}</div>
+            <div class="category-actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+                <button onclick="event.stopPropagation(); editCategory(${category.id})" style="padding: 5px 10px; background: #FF9800; color: white; border: none; border-radius: 3px; cursor: pointer;">编辑</button>
+                <button onclick="event.stopPropagation(); confirmDeleteCategory(${category.id})" style="padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;">删除</button>
             </div>
         </div>
     `).join('');
     
-    container.innerHTML = html;
+    container.innerHTML = headerHtml + html;
 }
 
 /**
@@ -281,20 +315,17 @@ if (typeof window !== 'undefined') {
     window.loadCategoryList = loadCategoryList;
 }
 
-// ES6 模块导出
-export {
-    initializeCategoryManagementModule,
-    initializeCategoryManagement,
-    addNewCategory,
-    editCategory,
-    saveCategory,
-    deleteCategory,
-    confirmDeleteCategory,
-    closeCategoryModal,
-    loadCategoryList
-};
-
-// 模块导出
+// 模块导出（仅支持CommonJS格式，避免浏览器兼容性问题）
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { initializeCategoryManagement, loadCategoryList };
+    module.exports = { 
+        initializeCategoryManagement, 
+        initializeCategoryManagementModule,
+        addNewCategory,
+        editCategory,
+        saveCategory,
+        deleteCategory,
+        confirmDeleteCategory,
+        closeCategoryModal,
+        loadCategoryList 
+    };
 }

@@ -1,8 +1,11 @@
 /**
+/**
  * 产品管理模块 - 支持Cloudflare Workers环境
  * 提供双语产品管理和媒体文件管理功能
  * 整合产品表单管理和媒体管理子模块
  */
+
+console.log('=== product-management.js 开始加载 ===');
 
 // 导入子模块（如果在模块环境中）
 if (typeof require !== 'undefined') {
@@ -15,19 +18,33 @@ if (typeof require !== 'undefined') {
     }
 }
 
+console.log('=== require 部分完成 ===');
+
 // 存储当前编辑的产品信息
 let currentProductData = null;
-let isEditMode = false;
+let managementIsEditMode = false; // 重命名避免与product-editor.js中的isEditMode函数冲突
 let moduleInitialized = false;
+
+console.log('=== 全局变量初始化完成 ===');
 
 // 模块初始化函数
 function initializeProductManagementModule() {
+    console.log('=== initializeProductManagementModule 被调用 ===');
+    
     if (moduleInitialized) {
         console.log('产品管理模块已经初始化过');
         return;
     }
     
     console.log('产品管理模块初始化中...');
+    
+    // 检查依赖模块
+    const dependencies = checkDependencies();
+    if (!dependencies.allAvailable) {
+        console.warn('依赖模块未完全加载，将在延迟后重试');
+        setTimeout(() => initializeProductManagementModule(), 500);
+        return;
+    }
     
     // 注入样式
     injectProductManagementStyles();
@@ -40,6 +57,35 @@ function initializeProductManagementModule() {
     
     moduleInitialized = true;
     console.log('产品管理模块初始化完成');
+    
+    // 立即检查函数暴露
+    console.log('验证函数暴露状态:');
+    console.log('addNewProduct:', typeof window.addNewProduct);
+    console.log('viewProduct:', typeof window.viewProduct);
+    console.log('editProductInEditMode:', typeof window.editProductInEditMode);
+}
+
+// 检查依赖模块
+function checkDependencies() {
+    const required = {
+        productForm: typeof window.initializeProductForm === 'function',
+        productMedia: typeof window.initializeProductMedia === 'function',
+        productEditor: typeof window.initializeProductEditor === 'function',
+        openProductEditor: typeof window.openProductEditor === 'function'
+    };
+    
+    const missing = Object.keys(required).filter(key => !required[key]);
+    
+    console.log('依赖检查结果:');
+    Object.keys(required).forEach(key => {
+        console.log(`${key}:`, required[key] ? '✅' : '❌');
+    });
+    
+    return {
+        allAvailable: missing.length === 0,
+        missing: missing,
+        details: required
+    };
 }
 
 // 初始化子模块
@@ -423,7 +469,7 @@ function closeProductModal() {
     // 重置表单和状态
     resetProductForm();
     currentProductData = null;
-    isEditMode = false;
+    managementIsEditMode = false;
     currentProductMedia = [];
 }
 
@@ -868,8 +914,8 @@ async function saveProduct() {
         }
         
         // 发送请求
-        const url = isEditMode ? `/api/admin/products/${currentProductData.id}` : '/api/admin/products';
-        const method = isEditMode ? 'PUT' : 'POST';
+        const url = managementIsEditMode ? `/api/admin/products/${currentProductData.id}` : '/api/admin/products';
+        const method = managementIsEditMode ? 'PUT' : 'POST';
         
         const response = await fetch(url, {
             method: method,
@@ -888,7 +934,7 @@ async function saveProduct() {
         const result = await response.json();
         
         // 成功提示
-        alert(isEditMode ? '产品更新成功！' : '产品创建成功！');
+        alert(managementIsEditMode ? '产品更新成功！' : '产品创建成功！');
         
         // 关闭模态框
         closeProductModal();
@@ -913,7 +959,7 @@ async function saveProduct() {
 
 // 删除产品
 async function deleteProduct() {
-    if (!isEditMode || !currentProductData) {
+    if (!managementIsEditMode || !currentProductData) {
         alert('无法删除：产品数据无效');
         return;
     }
@@ -974,7 +1020,7 @@ function getCurrentProductData() {
 
 // 检查是否为编辑模式（供子模块使用）
 function checkIsEditMode() {
-    return isEditMode;
+    return managementIsEditMode;
 }
 
 // 兼容性函数：设置缩略图
@@ -999,19 +1045,63 @@ function deleteMedia(mediaId) {
 function addNewCategoryFromModule() {
     console.log('从产品管理模块调用新增分类');
     
-    if (typeof addNewCategory === 'function') {
-        addNewCategory();
+    // 直接检查分类管理模块是否可用
+    if (typeof window.initializeCategoryManagementModule === 'function') {
+        console.log('分类管理模块可用，继续检查新增功能');
+        
+        // 直接使用全局作用域中分类管理模块暴露的原始函数
+        // 这个函数应该是分类管理模块的原始实现
+        const categoryModule = {
+            addNewCategory: function() {
+                // 直接调用分类模块内部的逻辑
+                const isCategoryEditMode = false;
+                const currentCategoryData = null;
+                
+                // 检查模态框是否存在
+                const categoryModal = document.getElementById('category-modal');
+                if (categoryModal) {
+                    // 重置表单
+                    const form = document.getElementById('category-form');
+                    if (form) form.reset();
+                    
+                    // 设置标题
+                    const title = document.getElementById('category-modal-title');
+                    if (title) title.textContent = '添加分类';
+                    
+                    // 隐藏删除按钮
+                    const deleteBtn = document.getElementById('delete-category-btn');
+                    if (deleteBtn) deleteBtn.style.display = 'none';
+                    
+                    // 显示模态框
+                    categoryModal.style.display = 'block';
+                } else {
+                    console.error('分类模态框未找到，请在分类管理页面使用此功能');
+                    alert('请在分类管理页面使用新增分类功能');
+                }
+            }
+        };
+        
+        categoryModule.addNewCategory();
     } else {
-        console.error('分类管理模块未找到addNewCategory函数');
-        alert('分类管理功能未加载，请刷新页面后重试');
+        console.error('分类管理模块未找到');
+        alert('分类管理功能未加载，请在分类管理页面使用此功能');
     }
 }
 
 // 对外暴露的函数
+console.log('=== 开始暴露函数到window对象 ===');
 if (typeof window !== 'undefined') {
+    console.log('window对象存在，开始暴露函数...');
+    
     window.addNewProduct = addNewProduct;
+    console.log('暴露 addNewProduct:', typeof addNewProduct);
+    
     window.viewProduct = viewProduct;
+    console.log('暴露 viewProduct:', typeof viewProduct);
+    
     window.editProductInEditMode = editProductInEditMode;
+    console.log('暴露 editProductInEditMode:', typeof editProductInEditMode);
+    
     window.saveProduct = saveProduct;
     window.deleteProduct = deleteProduct;
     window.switchLanguageTab = switchLanguageTab;
@@ -1025,32 +1115,37 @@ if (typeof window !== 'undefined') {
     
     // 主模块初始化
     window.initializeProductManagementModule = initializeProductManagementModule;
+    console.log('暴露 initializeProductManagementModule:', typeof initializeProductManagementModule);
     
     // 分类管理相关函数
     window.addNewCategoryFromModule = addNewCategoryFromModule;
+    
+    console.log('=== 函数暴露完成 ===');
+} else {
+    console.error('window对象不存在！');
 }
 
 // 导出模块初始化函数
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { 
         initializeProductManagementModule,
+        addNewProduct,
+        viewProduct,
+        saveProduct,
+        deleteProduct,
+        switchLanguageTab,
+        setThumbnail,
+        deleteMedia,
+        closeProductModal,
         getCurrentProductData,
-        checkIsEditMode
+        checkIsEditMode,
+        addNewCategoryFromModule
     };
 }
 
-// ES6 模块导出
-export {
-    initializeProductManagementModule,
-    addNewProduct,
-    viewProduct,
-    saveProduct,
-    deleteProduct,
-    switchLanguageTab,
-    setThumbnail,
-    deleteMedia,
-    closeProductModal,
-    getCurrentProductData,
-    checkIsEditMode,
-    addNewCategoryFromModule
-};
+// 立即检查函数是否正确暴露
+console.log('产品管理模块加载完成，检查函数暴露:');
+console.log('window.addNewProduct:', typeof window.addNewProduct);
+console.log('window.viewProduct:', typeof window.viewProduct);
+console.log('window.editProductInEditMode:', typeof window.editProductInEditMode);
+console.log('window.initializeProductManagementModule:', typeof window.initializeProductManagementModule);

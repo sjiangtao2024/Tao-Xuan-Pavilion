@@ -800,17 +800,6 @@ if (typeof window !== 'undefined') {
     window.isEditMode = isEditMode;
 }
 
-// ES6 模块导出
-export {
-    initializeProductEditor,
-    openProductEditor,
-    closeProductEditor,
-    saveProductChanges,
-    deleteCurrentProduct,
-    getCurrentProductData,
-    isEditMode
-};
-
 // 为模块系统导出函数
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {

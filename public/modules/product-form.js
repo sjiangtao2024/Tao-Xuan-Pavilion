@@ -1228,28 +1228,17 @@ if (typeof window !== 'undefined') {
     window.refreshCategories = refreshCategories; // 新增：刷新分类函数
 }
 
-// ES6 模块导出
-export {
-    initializeProductForm,
-    switchLanguage as switchLanguageTab,
-    validateForm,
-    getFormData,
-    populateFormData,
-    resetForm,
-    isFormModified as isProductFormModified,
-    getValidationErrors,
-    refreshCategories
-};
-
 // 模块导出
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         initializeProductForm,
+        switchLanguage,
         validateForm,
         getFormData,
         populateFormData,
         resetForm,
         isFormModified,
-        getValidationErrors
+        getValidationErrors,
+        refreshCategories
     };
 }

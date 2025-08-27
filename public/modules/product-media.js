@@ -769,22 +769,13 @@ if (typeof window !== 'undefined') {
     window.getThumbnailAssetId = getThumbnailAssetId;
 }
 
-// ES6 模块导出
-export {
-    initializeProductMedia,
-    setMediaAsThumbnail,
-    deleteMediaItem,
-    selectMediaItem,
-    getCurrentProductMedia,
-    setCurrentProductMedia,
-    clearCurrentProductMedia,
-    getThumbnailAssetId
-};
-
 // 模块导出
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         initializeProductMedia,
+        setMediaAsThumbnail,
+        deleteMediaItem,
+        selectMediaItem,
         getCurrentProductMedia,
         setCurrentProductMedia,
         clearCurrentProductMedia,
