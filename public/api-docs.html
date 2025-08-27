@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tao电商平台 API 文档</title>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+
+        body {
+            margin: 0;
+            background: #fafafa;
+        }
+
+        .swagger-ui .topbar {
+            background-color: #2d2d2d;
+        }
+
+        .swagger-ui .topbar .download-url-wrapper .select-label select {
+            min-width: 130px;
+        }
+
+        .custom-header {
+            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #f39c12;
+        }
+
+        .custom-header h1 {
+            margin: 0;
+            color: #f39c12;
+            font-size: 2em;
+        }
+
+        .custom-header p {
+            margin: 10px 0 0 0;
+            opacity: 0.8;
+        }
+
+        .api-info {
+            background: white;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .api-info h2 {
+            color: #2d2d2d;
+            border-bottom: 2px solid #f39c12;
+            padding-bottom: 10px;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #f39c12;
+        }
+
+        .feature-item h3 {
+            margin: 0 0 10px 0;
+            color: #2d2d2d;
+        }
+
+        .feature-item p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="custom-header">
+        <h1>🏪 Tao电商平台 API 文档</h1>
+        <p>基于Cloudflare Workers的现代化电商平台API</p>
+    </div>
+
+    <div class="api-info">
+        <h2>📋 API 概览</h2>
+        <p>本文档提供了Tao电商平台所有API接口的详细说明，包括认证、产品管理、分类管理、用户管理等功能模块。</p>
+        
+        <div class="feature-list">
+            <div class="feature-item">
+                <h3>🔐 认证系统</h3>
+                <p>基于JWT的安全认证，支持管理员登录和权限验证</p>
+            </div>
+            <div class="feature-item">
+                <h3>📦 产品管理</h3>
+                <p>完整的产品CRUD操作，支持多语言和媒体文件管理</p>
+            </div>
+            <div class="feature-item">
+                <h3>📂 分类管理</h3>
+                <p>产品分类的增删改查，支持中英文双语分类</p>
+            </div>
+            <div class="feature-item">
+                <h3>👥 用户管理</h3>
+                <p>用户信息管理，包括角色和状态控制</p>
+            </div>
+            <div class="feature-item">
+                <h3>🎬 媒体管理</h3>
+                <p>产品图片和视频的上传、管理和优化</p>
+            </div>
+            <div class="feature-item">
+                <h3>🌍 多语言支持</h3>
+                <p>完整的中英文双语支持，覆盖所有数据模型</p>
+            </div>
+        </div>
+
+        <h2>🚀 快速开始</h2>
+        <ol>
+            <li><strong>获取认证令牌：</strong>使用 <code>POST /api/auth/login</code> 接口进行管理员登录</li>
+            <li><strong>设置请求头：</strong>在后续请求中添加 <code>Authorization: Bearer &lt;token&gt;</code> 头</li>
+            <li><strong>开始使用：</strong>使用下方的API文档进行接口调用</li>
+        </ol>
+
+        <h2>🔑 认证说明</h2>
+        <p>大部分API需要管理员权限，请在请求头中包含有效的JWT令牌：</p>
+        <pre><code>Authorization: Bearer &lt;your-jwt-token&gt;</code></pre>
+
+        <h2>🌟 新增功能</h2>
+        <p>本次更新新增了完整的<strong>分类管理API</strong>，包括：</p>
+        <ul>
+            <li>📋 获取分类列表 - <code>GET /api/admin/categories</code></li>
+            <li>➕ 创建新分类 - <code>POST /api/admin/categories</code></li>
+            <li>✏️ 更新分类信息 - <code>PUT /api/admin/categories/{id}</code></li>
+            <li>🗑️ 删除分类 - <code>DELETE /api/admin/categories/{id}</code></li>
+        </ul>
+        <p>所有分类API都支持中英文双语操作，并集成在产品管理界面中。</p>
+    </div>
+
+    <div id="swagger-ui"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.min.js"></script>
+    <script>
+        window.onload = function() {
+            // 构建Swagger UI配置
+            const ui = SwaggerUIBundle({
+                url: '/swagger.json',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                validatorUrl: null,
+                tryItOutEnabled: true,
+                supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
+                onComplete: function() {
+                    console.log('Swagger UI 加载完成');
+                },
+                onFailure: function(error) {
+                    console.error('Swagger UI 加载失败:', error);
+                },
+                docExpansion: 'list',
+                apisSorter: 'alpha',
+                operationsSorter: 'alpha',
+                defaultModelsExpandDepth: 1,
+                defaultModelExpandDepth: 1,
+                showExtensions: true,
+                showCommonExtensions: true,
+                requestInterceptor: function(request) {
+                    // 在请求发送前拦截，可以添加通用的认证头等
+                    console.log('发送API请求:', request.url);
+                    return request;
+                },
+                responseInterceptor: function(response) {
+                    // 在响应接收后拦截
+                    console.log('收到API响应:', response.status, response.url);
+                    return response;
+                }
+            });
+
+            // 添加自定义样式
+            const style = document.createElement('style');
+            style.textContent = `
+                .swagger-ui .info .title {
+                    color: #f39c12;
+                }
+                .swagger-ui .scheme-container {
+                    background: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                }
+                .swagger-ui .opblock.opblock-post {
+                    border-color: #28a745;
+                    background: rgba(40, 167, 69, 0.1);
+                }
+                .swagger-ui .opblock.opblock-get {
+                    border-color: #007bff;
+                    background: rgba(0, 123, 255, 0.1);
+                }
+                .swagger-ui .opblock.opblock-put {
+                    border-color: #ffc107;
+                    background: rgba(255, 193, 7, 0.1);
+                }
+                .swagger-ui .opblock.opblock-delete {
+                    border-color: #dc3545;
+                    background: rgba(220, 53, 69, 0.1);
+                }
+            `;
+            document.head.appendChild(style);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分类语言切换修复测试</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 10px;
+            color: white;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.05);
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .test-button {
+            padding: 10px 20px;
+            margin: 10px;
+            background: #f39c12;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .test-button:hover {
+            background: #e67e22;
+        }
+        
+        .test-button.btn-primary {
+            background: #3498db;
+        }
+        
+        .test-button.btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .test-button.btn-success {
+            background: #27ae60;
+        }
+        
+        .test-button.btn-success:hover {
+            background: #219a52;
+        }
+        
+        .log-output {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .warning { color: #ffaa00; }
+        .info { color: #00aaff; }
+        
+        .product-form-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 分类语言切换修复测试</h1>
+        <p>测试分类在中英文切换后能否正确显示对应语言的分类名称，以及新增分类后自动刷新功能</p>
+        
+        <div class="test-section">
+            <h3>📋 测试项目</h3>
+            <ul>
+                <li><strong>优先问题：</strong>分类在切换中英文后，仍然只显示中文分类</li>
+                <li><strong>次要问题：</strong>新增分类可以创建成功，但需要刷新网页才能在产品编辑页看到新增的分类</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>🛠️ 测试功能</h3>
+            <button class="test-button" onclick="testModuleLoading()">1. 测试模块加载</button>
+            <button class="test-button btn-primary" onclick="testLanguageSwitching()">2. 测试语言切换</button>
+            <button class="test-button btn-success" onclick="testCategoryRefresh()">3. 测试分类刷新</button>
+            <button class="test-button" onclick="simulateAddCategory()">4. 模拟新增分类</button>
+            <button class="test-button" onclick="clearLog()">清空日志</button>
+        </div>
+        
+        <!-- 模拟产品表单界面 -->
+        <div class="test-section">
+            <h3>📝 产品表单模拟界面</h3>
+            <div id="product-form-container" class="product-form-container">
+                <!-- 产品表单内容将在这里渲染 -->
+            </div>
+        </div>
+        
+        <div class="log-output" id="log-output"></div>
+    </div>
+
+    <script>
+        // 重写console.log以显示在页面上
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        function appendLog(message, type = 'log') {
+            const logOutput = document.getElementById('log-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'warn' ? 'warning' : type === 'info' ? 'info' : 'success';
+            logOutput.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            appendLog(args.join(' '), 'log');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            appendLog(args.join(' '), 'warn');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            appendLog(args.join(' '), 'error');
+        };
+        
+        console.info = function(...args) {
+            originalLog.apply(console, args);
+            appendLog(args.join(' '), 'info');
+        };
+        
+        // 测试函数
+        function testModuleLoading() {
+            console.info('=== 测试模块加载 ===');
+            
+            const functions = [
+                { name: 'initializeProductForm', desc: '产品表单初始化' },
+                { name: 'switchLanguage', desc: '语言切换' },
+                { name: 'loadCategories', desc: '加载分类（产品表单）' },
+                { name: 'refreshCategories', desc: '刷新分类' },
+                { name: 'loadCategoryList', desc: '加载分类列表（分类管理）' },
+                { name: 'addNewCategory', desc: '新增分类' }
+            ];
+            
+            functions.forEach(func => {
+                const available = typeof window[func.name] === 'function';
+                if (available) {
+                    console.log(`✅ ${func.desc} - ${func.name}() 可用`);
+                } else {
+                    console.error(`❌ ${func.desc} - ${func.name}() 未找到`);
+                }
+            });
+            
+            // 初始化产品表单
+            if (typeof window.initializeProductForm === 'function') {
+                console.info('开始初始化产品表单...');
+                try {
+                    window.initializeProductForm();
+                    console.log('✅ 产品表单初始化成功');
+                } catch (error) {
+                    console.error(`❌ 产品表单初始化失败: ${error.message}`);
+                }
+            }
+        }
+        
+        function testLanguageSwitching() {
+            console.info('=== 测试语言切换功能 ===');
+            
+            // 检查分类下拉框是否存在
+            const categorySelect = document.getElementById('product-category');
+            if (!categorySelect) {
+                console.error('❌ 分类下拉框未找到，请先初始化产品表单');
+                return;
+            }
+            
+            console.log('✅ 分类下拉框存在');
+            
+            // 测试语言切换函数
+            if (typeof window.switchLanguage !== 'function') {
+                console.error('❌ switchLanguage 函数未找到');
+                return;
+            }
+            
+            console.log('✅ switchLanguage 函数可用');
+            
+            // 模拟语言切换测试
+            async function testSwitch() {
+                console.info('📝 开始测试语言切换...');
+                
+                // 记录切换前的分类选项
+                const beforeOptions = Array.from(categorySelect.options).map(opt => ({
+                    value: opt.value,
+                    text: opt.textContent
+                }));
+                console.log('切换前分类选项:', beforeOptions);
+                
+                // 切换到英文
+                console.info('🔄 切换到英文...');
+                await window.switchLanguage('en');
+                
+                // 等待一秒让API调用完成
+                setTimeout(() => {
+                    const afterOptions = Array.from(categorySelect.options).map(opt => ({
+                        value: opt.value,
+                        text: opt.textContent
+                    }));
+                    console.log('切换后分类选项:', afterOptions);
+                    
+                    // 比较选项变化
+                    const hasChanged = JSON.stringify(beforeOptions) !== JSON.stringify(afterOptions);
+                    if (hasChanged) {
+                        console.log('✅ 语言切换成功，分类选项已更新');
+                    } else {
+                        console.warn('⚠️  分类选项没有变化，可能需要服务器支持');
+                    }
+                    
+                    // 切换回中文
+                    setTimeout(async () => {
+                        console.info('🔄 切换回中文...');
+                        await window.switchLanguage('zh');
+                        console.log('✅ 语言切换测试完成');
+                    }, 1000);
+                }, 1000);
+            }
+            
+            testSwitch();
+        }
+        
+        function testCategoryRefresh() {
+            console.info('=== 测试分类刷新功能 ===');
+            
+            if (typeof window.refreshCategories !== 'function') {
+                console.error('❌ refreshCategories 函数未找到');
+                return;
+            }
+            
+            console.log('✅ refreshCategories 函数可用');
+            
+            // 记录刷新前的分类选项
+            const categorySelect = document.getElementById('product-category');
+            if (categorySelect) {
+                const beforeOptions = Array.from(categorySelect.options).map(opt => opt.textContent);
+                console.log('刷新前分类选项:', beforeOptions);
+                
+                // 执行刷新
+                console.info('🔄 执行分类刷新...');
+                window.refreshCategories().then(() => {
+                    setTimeout(() => {
+                        const afterOptions = Array.from(categorySelect.options).map(opt => opt.textContent);
+                        console.log('刷新后分类选项:', afterOptions);
+                        console.log('✅ 分类刷新测试完成');
+                    }, 500);
+                }).catch(error => {
+                    console.error(`❌ 分类刷新失败: ${error.message}`);
+                });
+            }
+        }
+        
+        function simulateAddCategory() {
+            console.info('=== 模拟新增分类操作 ===');
+            
+            // 模拟分类管理模块的行为
+            const mockSaveSuccess = () => {
+                console.info('📝 模拟分类保存成功...');
+                
+                // 模拟调用 refreshCategories
+                if (typeof window.refreshCategories === 'function') {
+                    console.info('🔄 调用 refreshCategories...');
+                    window.refreshCategories();
+                    console.log('✅ 已通知产品表单刷新分类');
+                } else {
+                    console.error('❌ refreshCategories 函数未找到');
+                }
+            };
+            
+            // 延迟模拟保存操作
+            setTimeout(mockSaveSuccess, 1000);
+        }
+        
+        function clearLog() {
+            document.getElementById('log-output').innerHTML = '';
+        }
+        
+        // 页面加载完成后执行基础测试
+        window.addEventListener('load', () => {
+            console.info('页面加载完成，开始基础测试...');
+            setTimeout(() => {
+                testModuleLoading();
+            }, 1000);
+        });
+    </script>
+    
+    <!-- 加载实际的模块文件 -->
+    <script src="/modules/category-management.js"></script>
+    <script src="/modules/product-form.js"></script>
+    <script src="/modules/product-management.js" type="module"></script>
+</body>
+</html>

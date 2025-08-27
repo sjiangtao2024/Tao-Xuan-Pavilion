@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - Tao电商平台</title>
+    <script type="module">
+        import { viewUser, initializeUserManagementModule } from '/modules/user-management.js';
+        
+        // 初始化用户管理模块
+        initializeUserManagementModule();
+    </script>
+</head>
+<body>
+    <h1>用户管理</h1>
+    <p>该页面用于查看和管理用户信息。点击用户列表中的"查看"按钮即可在此处显示用户详细信息。</p>
+    <div id="user-detail-container">
+        <!-- 用户详情将通过JavaScript动态加载 -->
+    </div>
+</body>
+</html>

@@ -43,6 +43,10 @@ staticRoutes.get('/docs', (c) => {
     return c.html(swaggerUI);
 });
 
+// 静态模块文件服务
+// 在 Cloudflare Workers 中，模块文件通过静态资产服务提供
+// Wrangler 会自动处理 public 目录下的文件，无需手动路由
+
 // 媒体文件服务路由
 staticRoutes.get('/:key', async (c) => {
     const key = c.req.param('key');

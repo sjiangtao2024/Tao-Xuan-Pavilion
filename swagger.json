@@ -1,0 +1,982 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Tao电商平台 API",
+    "description": "基于Cloudflare Workers的电商平台API文档",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Tao电商平台",
+      "email": "admin@tao.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8787",
+      "description": "开发环境"
+    },
+    {
+      "url": "https://your-app.your-subdomain.workers.dev",
+      "description": "生产环境"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "认证相关API"
+    },
+    {
+      "name": "Admin",
+      "description": "管理员功能API"
+    },
+    {
+      "name": "Products",
+      "description": "产品管理API"
+    },
+    {
+      "name": "Categories",
+      "description": "分类管理API"
+    },
+    {
+      "name": "Users",
+      "description": "用户管理API"
+    },
+    {
+      "name": "Media",
+      "description": "媒体文件管理API"
+    }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "管理员登录",
+        "description": "管理员使用邮箱和密码进行登录",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "admin@tao.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "JWT认证令牌"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "认证失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/categories": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "获取分类列表",
+        "description": "获取所有产品分类列表，支持多语言",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "lang",
+            "in": "query",
+            "description": "语言代码",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["zh", "en"],
+              "default": "zh"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回分类列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Categories"],
+        "summary": "创建新分类",
+        "description": "创建新的产品分类，支持中英文名称",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name_zh"],
+                "properties": {
+                  "name_zh": {
+                    "type": "string",
+                    "description": "中文分类名称",
+                    "example": "道教法器"
+                  },
+                  "name_en": {
+                    "type": "string",
+                    "description": "英文分类名称",
+                    "example": "Taoist Ritual Tools"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "分类创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "categoryId": {
+                      "type": "integer",
+                      "description": "新创建的分类ID",
+                      "example": 1
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Category created successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/admin/categories/{id}": {
+      "put": {
+        "tags": ["Categories"],
+        "summary": "更新分类",
+        "description": "更新指定ID的分类信息",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "分类ID",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name_zh": {
+                    "type": "string",
+                    "description": "中文分类名称",
+                    "example": "道教法器"
+                  },
+                  "name_en": {
+                    "type": "string",
+                    "description": "英文分类名称",
+                    "example": "Taoist Ritual Tools"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "分类更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Category updated successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Categories"],
+        "summary": "删除分类",
+        "description": "删除指定ID的分类，将清除使用此分类的产品的分类关联",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "分类ID",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "分类删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Category deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/admin/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "获取产品列表",
+        "description": "获取所有产品列表，支持分页和过滤",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "lang",
+            "in": "query",
+            "description": "语言代码",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["zh", "en"],
+              "default": "zh"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页数量",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "description": "分类ID过滤",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回产品列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Product"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "创建新产品",
+        "description": "创建新的产品，支持多语言和媒体文件",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "产品创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "productId": {
+                      "type": "integer",
+                      "description": "新创建的产品ID",
+                      "example": 1
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Product created successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/admin/products/{id}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "获取产品详情",
+        "description": "获取指定ID产品的详细信息",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "产品ID",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回产品详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Products"],
+        "summary": "更新产品",
+        "description": "更新指定ID的产品信息",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "产品ID",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "产品更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Product updated successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Products"],
+        "summary": "删除产品",
+        "description": "删除指定ID的产品及其相关媒体文件",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "产品ID",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "产品删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Product deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "获取用户列表",
+        "description": "获取所有用户列表，支持分页",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页数量",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回用户列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "分类ID",
+            "example": 1
+          },
+          "name_zh": {
+            "type": "string",
+            "description": "中文名称",
+            "example": "道教法器"
+          },
+          "name_en": {
+            "type": "string",
+            "description": "英文名称",
+            "example": "Taoist Ritual Tools"
+          },
+          "name": {
+            "type": "string",
+            "description": "当前语言下的名称",
+            "example": "道教法器"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "创建时间"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "更新时间"
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "产品ID",
+            "example": 1
+          },
+          "name_zh": {
+            "type": "string",
+            "description": "中文产品名称",
+            "example": "手工雕刻桃木剑"
+          },
+          "name_en": {
+            "type": "string",
+            "description": "英文产品名称",
+            "example": "Hand-Carved Peach Wood Sword"
+          },
+          "description_zh": {
+            "type": "string",
+            "description": "中文产品描述",
+            "example": "取整块百年桃木，由资深道家匠人手工雕刻而成..."
+          },
+          "description_en": {
+            "type": "string",
+            "description": "英文产品描述",
+            "example": "A traditional Taoist ritual sword..."
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal",
+            "description": "产品价格（USD）",
+            "example": 168.88
+          },
+          "categoryId": {
+            "type": "integer",
+            "description": "分类ID",
+            "example": 1
+          },
+          "categoryName": {
+            "type": "string",
+            "description": "分类名称",
+            "example": "道教法器"
+          },
+          "featured": {
+            "type": "boolean",
+            "description": "是否为精选产品",
+            "example": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "创建时间"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "更新时间"
+          },
+          "media": {
+            "type": "array",
+            "description": "产品媒体文件",
+            "items": {
+              "$ref": "#/components/schemas/Media"
+            }
+          }
+        }
+      },
+      "ProductInput": {
+        "type": "object",
+        "required": ["name_zh", "price"],
+        "properties": {
+          "name_zh": {
+            "type": "string",
+            "description": "中文产品名称",
+            "example": "手工雕刻桃木剑"
+          },
+          "name_en": {
+            "type": "string",
+            "description": "英文产品名称",
+            "example": "Hand-Carved Peach Wood Sword"
+          },
+          "description_zh": {
+            "type": "string",
+            "description": "中文产品描述",
+            "example": "取整块百年桃木，由资深道家匠人手工雕刻而成..."
+          },
+          "description_en": {
+            "type": "string",
+            "description": "英文产品描述",
+            "example": "A traditional Taoist ritual sword..."
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal",
+            "description": "产品价格（USD）",
+            "minimum": 0,
+            "example": 168.88
+          },
+          "categoryId": {
+            "type": "integer",
+            "description": "分类ID",
+            "example": 1
+          },
+          "featured": {
+            "type": "boolean",
+            "description": "是否为精选产品",
+            "default": false,
+            "example": true
+          },
+          "media": {
+            "type": "array",
+            "description": "产品媒体文件ID列表",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "用户ID",
+            "example": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "用户邮箱",
+            "example": "user@example.com"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["user", "admin", "super_admin"],
+            "description": "用户角色",
+            "example": "user"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "disabled", "suspended"],
+            "description": "用户状态",
+            "example": "active"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "注册时间"
+          },
+          "lastLogin": {
+            "type": "string",
+            "format": "date-time",
+            "description": "最后登录时间"
+          }
+        }
+      },
+      "Media": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "媒体文件ID",
+            "example": 1
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "文件URL",
+            "example": "https://example.com/media/image.jpg"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["image", "video"],
+            "description": "媒体类型",
+            "example": "image"
+          },
+          "filename": {
+            "type": "string",
+            "description": "文件名",
+            "example": "product-image.jpg"
+          },
+          "size": {
+            "type": "integer",
+            "description": "文件大小（字节）",
+            "example": 1024000
+          },
+          "isThumbnail": {
+            "type": "boolean",
+            "description": "是否为缩略图",
+            "example": true
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "错误信息",
+            "example": "Invalid credentials"
+          },
+          "details": {
+            "type": "string",
+            "description": "详细错误信息",
+            "example": "Email or password is incorrect"
+          }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "未授权访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "禁止访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源未找到",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "请求参数错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT Token进行身份验证。格式：Bearer <token>"
+      }
+    }
+  }
+}

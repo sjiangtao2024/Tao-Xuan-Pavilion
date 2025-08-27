@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品编辑器测试</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #1a1a1a; 
+            color: white; 
+            padding: 20px; 
+        }
+        .test-container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+        }
+        .test-btn { 
+            background: #f39c12; 
+            color: black; 
+            border: none; 
+            padding: 12px 20px; 
+            margin: 10px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-weight: bold; 
+        }
+        .status { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border-radius: 5px; 
+        }
+        .success { background: rgba(39, 174, 96, 0.2); border: 1px solid #27ae60; }
+        .error { background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; }
+        .warning { background: rgba(243, 156, 18, 0.2); border: 1px solid #f39c12; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 产品编辑器模块测试</h1>
+        
+        <div id="status-container">
+            <div class="status warning">正在加载模块...</div>
+        </div>
+        
+        <div class="test-actions">
+            <button class="test-btn" onclick="testModuleStatus()">检查模块状态</button>
+            <button class="test-btn" onclick="testCreateProduct()">测试创建产品</button>
+            <button class="test-btn" onclick="testEditProduct()">测试编辑产品</button>
+        </div>
+        
+        <div id="debug-info" style="margin-top: 30px;">
+            <h3>调试信息:</h3>
+            <div id="debug-content" style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap;"></div>
+        </div>
+    </div>
+
+    <script>
+        let debugLog = '';
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            document.getElementById('debug-content').textContent = debugLog;
+            console.log(`[${type}]`, message);
+        }
+        
+        function updateStatus(message, type = 'warning') {
+            const container = document.getElementById('status-container');
+            container.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function testModuleStatus() {
+            log('开始检查模块状态...');
+            
+            const modules = {
+                'Product Editor': typeof window.initializeProductEditor,
+                'Product Form': typeof window.initializeProductForm,
+                'Product Media': typeof window.initializeProductMedia,
+                'Open Editor': typeof window.openProductEditor,
+                'Close Editor': typeof window.closeProductEditor
+            };
+            
+            let allLoaded = true;
+            let statusHTML = '';
+            
+            for (const [name, type] of Object.entries(modules)) {
+                const isLoaded = type === 'function';
+                if (!isLoaded) allLoaded = false;
+                
+                statusHTML += `<div><strong>${name}</strong>: ${type} ${isLoaded ? '✅' : '❌'}</div>`;
+                log(`${name}: ${type}`, isLoaded ? 'success' : 'error');
+            }
+            
+            updateStatus(statusHTML, allLoaded ? 'success' : 'error');
+            
+            if (allLoaded) {
+                log('所有模块都已正确加载！', 'success');
+            } else {
+                log('部分模块未正确加载，需要检查', 'warning');
+            }
+        }
+        
+        function testCreateProduct() {
+            log('测试创建产品功能...');
+            
+            if (typeof window.openProductEditor === 'function') {
+                try {
+                    window.openProductEditor(null, 'create');
+                    log('创建产品编辑器成功调用', 'success');
+                    updateStatus('创建产品编辑器测试成功 ✅', 'success');
+                } catch (error) {
+                    log(`创建产品编辑器失败: ${error.message}`, 'error');
+                    updateStatus('创建产品编辑器测试失败 ❌', 'error');
+                }
+            } else {
+                log('openProductEditor 函数未找到', 'error');
+                updateStatus('产品编辑器函数未找到 ❌', 'error');
+            }
+        }
+        
+        function testEditProduct() {
+            log('测试编辑产品功能...');
+            
+            const mockProduct = {
+                id: 1,
+                name_zh: '测试产品',
+                name_en: 'Test Product',
+                description_zh: '这是一个测试产品描述',
+                description_en: 'This is a test product description',
+                price: 99.99,
+                categoryId: 1,
+                featured: true
+            };
+            
+            if (typeof window.openProductEditor === 'function') {
+                try {
+                    window.openProductEditor(mockProduct, 'edit');
+                    log('编辑产品编辑器成功调用', 'success');
+                    updateStatus('编辑产品编辑器测试成功 ✅', 'success');
+                } catch (error) {
+                    log(`编辑产品编辑器失败: ${error.message}`, 'error');
+                    updateStatus('编辑产品编辑器测试失败 ❌', 'error');
+                }
+            } else {
+                log('openProductEditor 函数未找到', 'error');
+                updateStatus('产品编辑器函数未找到 ❌', 'error');
+            }
+        }
+        
+        // 等待模块加载
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('页面加载完成，开始检查模块...');
+                testModuleStatus();
+            }, 1000);
+        });
+    </script>
+    
+    <!-- 加载模块 -->
+    <script src="/modules/product-form.js"></script>
+    <script src="/modules/product-media.js"></script>
+    <script src="/modules/product-editor.js"></script>
+</body>
+</html>

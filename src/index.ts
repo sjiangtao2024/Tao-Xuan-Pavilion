@@ -19,21 +19,60 @@ app.get('/admin', (c) => {
     return c.html(generateAdminDashboard());
 });
 
-// API 文档路由
-app.route('/api/docs', staticRoutes);
-
-// OpenAPI JSON 文档
-app.get('/openapi.json', async (c) => {
-    try {
-        const openApiSpec = generateOpenApiSpec();
-        return c.json(openApiSpec);
-    } catch (error) {
-        return c.json({ error: 'Failed to load API documentation' }, 500);
-    }
+// 用户管理路由
+app.get('/admin/user-management', (c) => {
+    return c.redirect('/static/admin/user-management.html', 302);
 });
 
-// 媒体文件服务路由
+// API 文档路由
+app.get('/api/docs', (c) => {
+    const swaggerUI = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Tao Ecommerce API Documentation</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3.52.5/swagger-ui.css" />
+    <style>
+        html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
+        *, *:before, *:after { box-sizing: inherit; }
+        body { margin:0; background: #fafafa; }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@3.52.5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@3.52.5/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            const ui = SwaggerUIBundle({
+                url: '/openapi.json',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout"
+            });
+        };
+    </script>
+</body>
+</html>`;
+    return c.html(swaggerUI);
+});
+
+// OpenAPI JSON 文档路由
+app.get('/openapi.json', (c) => {
+    const openApiSpec = generateOpenApiSpec();
+    return c.json(openApiSpec);
+});
+
+// 静态文件服务路由
 app.route('/media', staticRoutes);
+app.route('/static', staticRoutes);
+app.route('/', staticRoutes);
 
 // API 路由
 app.route('/api/auth', authRoutes);

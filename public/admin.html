@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员仪表板 - Tao电商平台</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- 登录界面 -->
+    <div id="login-container" class="login-container">
+        <div class="login-box">
+            <h2>管理员登录</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">邮箱</label>
+                    <input type="email" id="email" placeholder="admin@tao.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" placeholder="请输入密码" required>
+                </div>
+                <button type="submit">登录</button>
+                <div id="error-message" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 管理界面 -->
+    <div id="admin-container" class="admin-container hidden">
+        <header class="header">
+            <h1>道玄阁管理后台</h1>
+            <div class="header-actions">
+                <span>当前登录: <strong id="current-user">管理员</strong></span>
+                <button id="logout-btn" class="logout-btn">退出登录</button>
+            </div>
+        </header>
+
+        <nav class="nav-menu">
+            <div class="nav-item active" data-section="dashboard">
+                <i class="fas fa-chart-line"></i> 仪表板
+            </div>
+            <div class="nav-item" data-section="users">
+                <i class="fas fa-users"></i> 用户管理
+            </div>
+            <div class="nav-item" data-section="orders">
+                <i class="fas fa-shopping-cart"></i> 订单管理
+            </div>
+            <div class="nav-item" data-section="products">
+                <i class="fas fa-box"></i> 产品管理
+            </div>
+            <div class="nav-item" data-section="logs">
+                <i class="fas fa-file-alt"></i> 操作日志
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <!-- 仪表板部分 -->
+            <div id="dashboard-section" class="section">
+                <div class="dashboard-overview">
+                    <div class="overview-header">
+                        <h3 class="overview-title">
+                            <i class="fas fa-chart-bar"></i> 系统概览
+                        </h3>
+                    </div>
+                    <!-- 统计卡片 -->
+                    <div class="stats-grid">
+                        <div class="stat-card" id="total-users-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h4>用户总数</h4>
+                                <span class="stat-number" id="total-users">-</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card" id="total-orders-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h4>订单总数</h4>
+                                <span class="stat-number" id="total-orders">-</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card" id="total-products-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-box"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h4>产品总数</h4>
+                                <span class="stat-number" id="total-products">-</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h4>本月新用户</h4>
+                                <span class="stat-number" id="new-users-month">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="overview-content">
+                        <p>
+                            <i class="fas fa-info-circle"></i>
+                            欢迎使用道玄阁管理后台！您可以点击上方的统计卡片或使用左侧导航菜单管理用户、订单、产品和查看操作日志。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户管理部分 -->
+            <div id="users-section" class="section hidden">
+                <div class="data-table">
+                    <h3>用户管理</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>用户ID</th>
+                                <th>邮箱</th>
+                                <th>角色</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>user@example.com</td>
+                                <td>普通用户</td>
+                                <td>正常</td>
+                                <td><button class="view-user-btn" data-user-id="1">查看</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 订单管理部分 -->
+            <div id="orders-section" class="section hidden">
+                <div class="data-table">
+                    <h3>订单管理</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID</th>
+                                <th>用户邮箱</th>
+                                <th>金额</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5">暂无订单数据</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 产品管理部分 -->
+            <div id="products-section" class="section hidden">
+                <div class="data-table">
+                    <h3>产品管理</h3>
+                    <div class="table-actions">
+                        <button id="add-product-btn" class="btn btn-success">新增产品</button>
+                        <button id="add-category-btn" class="btn btn-primary">新增分类</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>产品名称</th>
+                                <th>价格 (USD)</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>测试产品</td>
+                                <td>99.99</td>
+                                <td>正常</td>
+                                <td>
+                                    <button class="view-product-btn btn" data-product-id="1">查看</button>
+                                    <button class="btn btn-danger">删除</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 操作日志部分 -->
+            <div id="logs-section" class="section hidden">
+                <div class="data-table">
+                    <h3>操作日志</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>管理员</th>
+                                <th>操作</th>
+                                <th>IP地址</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4">暂无日志数据</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 模态框容器 -->
+    <div id="user-detail-container"></div>
+    <div id="product-detail-container"></div>
+
+    <script src="/js/admin.js" type="module"></script>
+</body>
+</html>

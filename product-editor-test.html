@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品编辑功能测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .test-btn {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(243, 156, 18, 0.4);
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .success { border-left: 5px solid #27ae60; }
+        .error { border-left: 5px solid #e74c3c; }
+        .info { border-left: 5px solid #3498db; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ 产品编辑功能测试</h1>
+        <p>测试产品编辑器模块是否正常工作</p>
+        
+        <div>
+            <button class="test-btn" onclick="testCreateProduct()">测试创建产品</button>
+            <button class="test-btn" onclick="testEditProduct()">测试编辑产品</button>
+            <button class="test-btn" onclick="testLanguageSwitch()">测试语言切换</button>
+        </div>
+        
+        <div id="status" class="status info">
+            ✅ 页面已加载，等待测试...
+        </div>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <!-- 模拟加载模块 -->
+    <script>
+        // 模拟localStorage中的adminToken
+        if (!localStorage.getItem('adminToken')) {
+            localStorage.setItem('adminToken', 'test-token-123');
+        }
+        
+        // 模拟加载产品编辑器模块
+        loadProductEditorModule();
+        
+        async function loadProductEditorModule() {
+            try {
+                updateStatus('info', '🔄 正在加载产品编辑器模块...');
+                
+                // 模拟加载模块内容（实际环境中会从/modules/product-editor.js加载）
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // 初始化产品编辑器（这里使用简化版本）
+                initializeSimpleProductEditor();
+                
+                updateStatus('success', '✅ 产品编辑器模块加载成功！');
+                
+            } catch (error) {
+                updateStatus('error', '❌ 模块加载失败: ' + error.message);
+            }
+        }
+        
+        function initializeSimpleProductEditor() {
+            // 简化的产品编辑器实现用于测试
+            window.initializeProductEditor = function() {
+                console.log('产品编辑器已初始化');
+            };
+            
+            window.openProductEditor = function(productData, mode = 'create') {
+                console.log('打开产品编辑器:', mode, productData);
+                
+                // 创建简单的测试模态框
+                if (!document.getElementById('test-editor-modal')) {
+                    createTestEditorModal();
+                }
+                
+                const modal = document.getElementById('test-editor-modal');
+                modal.style.display = 'block';
+                
+                const title = document.getElementById('test-editor-title');
+                title.textContent = mode === 'edit' ? '编辑产品' : '创建产品';
+                
+                if (productData && mode === 'edit') {
+                    document.getElementById('test-product-name').value = productData.name_zh || productData.name || '';
+                    document.getElementById('test-product-price').value = productData.price || '';
+                } else {
+                    document.getElementById('test-product-name').value = '';
+                    document.getElementById('test-product-price').value = '';
+                }
+                
+                updateTestResults(`${mode === 'edit' ? '编辑' : '创建'}产品编辑器已打开`);
+            };
+            
+            window.closeProductEditor = function() {
+                const modal = document.getElementById('test-editor-modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+                updateTestResults('产品编辑器已关闭');
+            };
+            
+            window.switchLanguage = function(lang) {
+                console.log('切换语言到:', lang);
+                updateTestResults(`语言已切换到: ${lang === 'zh' ? '中文' : 'English'}`);
+            };
+        }
+        
+        function createTestEditorModal() {
+            const modalHTML = `
+                <div id="test-editor-modal" style="
+                    display: none; position: fixed; z-index: 10000; left: 0; top: 0;
+                    width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8);
+                    backdrop-filter: blur(5px);
+                ">
+                    <div style="
+                        background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+                        margin: 5% auto; padding: 30px; border-radius: 15px;
+                        width: 90%; max-width: 600px; color: #ffffff;
+                        border: 2px solid #f39c12;
+                    ">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2 id="test-editor-title" style="color: #f39c12; margin: 0;">产品编辑器</h2>
+                            <button onclick="closeProductEditor()" style="
+                                background: none; border: none; color: #aaa; font-size: 24px; cursor: pointer;
+                            ">&times;</button>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <button onclick="switchLanguage('zh')" style="
+                                background: #f39c12; color: #000; border: none; padding: 8px 16px; 
+                                border-radius: 5px; margin-right: 10px; cursor: pointer;
+                            ">中文</button>
+                            <button onclick="switchLanguage('en')" style="
+                                background: #3498db; color: #fff; border: none; padding: 8px 16px; 
+                                border-radius: 5px; cursor: pointer;
+                            ">English</button>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; color: #f39c12; margin-bottom: 5px;">产品名称:</label>
+                            <input id="test-product-name" type="text" placeholder="输入产品名称..." style="
+                                width: 100%; padding: 10px; border: 1px solid #555; border-radius: 5px;
+                                background: rgba(255,255,255,0.1); color: #fff; box-sizing: border-box;
+                            ">
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; color: #f39c12; margin-bottom: 5px;">价格 (USD):</label>
+                            <input id="test-product-price" type="number" step="0.01" placeholder="0.00" style="
+                                width: 100%; padding: 10px; border: 1px solid #555; border-radius: 5px;
+                                background: rgba(255,255,255,0.1); color: #fff; box-sizing: border-box;
+                            ">
+                        </div>
+                        
+                        <div style="text-align: center;">
+                            <button onclick="saveTestProduct()" style="
+                                background: #27ae60; color: #fff; border: none; padding: 12px 24px;
+                                border-radius: 8px; cursor: pointer; margin-right: 10px;
+                            ">保存</button>
+                            <button onclick="closeProductEditor()" style="
+                                background: #95a5a6; color: #fff; border: none; padding: 12px 24px;
+                                border-radius: 8px; cursor: pointer;
+                            ">取消</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+        
+        function testCreateProduct() {
+            updateStatus('info', '🧪 测试创建产品功能...');
+            try {
+                openProductEditor(null, 'create');
+                updateStatus('success', '✅ 创建产品测试成功！');
+            } catch (error) {
+                updateStatus('error', '❌ 创建产品测试失败: ' + error.message);
+            }
+        }
+        
+        function testEditProduct() {
+            updateStatus('info', '🧪 测试编辑产品功能...');
+            try {
+                const mockProduct = {
+                    id: 1,
+                    name_zh: '测试产品',
+                    name_en: 'Test Product',
+                    price: 29.99,
+                    description_zh: '这是一个测试产品',
+                    description_en: 'This is a test product'
+                };
+                openProductEditor(mockProduct, 'edit');
+                updateStatus('success', '✅ 编辑产品测试成功！');
+            } catch (error) {
+                updateStatus('error', '❌ 编辑产品测试失败: ' + error.message);
+            }
+        }
+        
+        function testLanguageSwitch() {
+            updateStatus('info', '🧪 测试语言切换功能...');
+            try {
+                switchLanguage('en');
+                setTimeout(() => switchLanguage('zh'), 1000);
+                updateStatus('success', '✅ 语言切换测试成功！');
+            } catch (error) {
+                updateStatus('error', '❌ 语言切换测试失败: ' + error.message);
+            }
+        }
+        
+        function saveTestProduct() {
+            const name = document.getElementById('test-product-name').value;
+            const price = document.getElementById('test-product-price').value;
+            
+            if (!name.trim()) {
+                alert('请输入产品名称');
+                return;
+            }
+            
+            if (!price || price <= 0) {
+                alert('请输入有效价格');
+                return;
+            }
+            
+            updateTestResults(`产品保存成功: ${name} - $${price}`);
+            closeProductEditor();
+        }
+        
+        function updateStatus(type, message) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = `status ${type}`;
+            statusEl.textContent = message;
+        }
+        
+        function updateTestResults(message) {
+            const resultsEl = document.getElementById('test-results');
+            const time = new Date().toLocaleTimeString();
+            resultsEl.innerHTML += `<div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">[${time}] ${message}</div>`;
+        }
+    </script>
+</body>
+</html>

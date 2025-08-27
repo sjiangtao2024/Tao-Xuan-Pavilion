@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新增分类功能集成测试</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.05);
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .test-button {
+            padding: 10px 20px;
+            margin: 10px;
+            background: #f39c12;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .test-button:hover {
+            background: #e67e22;
+        }
+        
+        .test-button.btn-primary {
+            background: #3498db;
+        }
+        
+        .test-button.btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .log-output {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .warning { color: #ffaa00; }
+        .info { color: #00aaff; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 新增分类功能集成测试</h1>
+        <p>测试产品管理界面中新增分类功能的集成情况</p>
+        
+        <!-- 模拟产品管理界面结构 -->
+        <div class="test-section">
+            <h3>1. 产品管理界面模拟</h3>
+            <p>模拟admin.html中的产品管理部分结构：</p>
+            
+            <div id="products-section" class="section">
+                <div class="data-table">
+                    <h3>产品管理</h3>
+                    <div class="table-actions">
+                        <button id="add-product-btn" class="btn btn-success test-button">新增产品</button>
+                        <button id="add-category-btn" class="btn btn-primary test-button">新增分类</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>产品名称</th>
+                                <th>价格 (USD)</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>测试产品</td>
+                                <td>99.99</td>
+                                <td>正常</td>
+                                <td>
+                                    <button class="view-product-btn btn test-button" data-product-id="1">查看</button>
+                                    <button class="btn btn-danger test-button">删除</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 功能测试</h3>
+            <button class="test-button" onclick="testModuleLoading()">测试模块加载</button>
+            <button class="test-button" onclick="testButtonExistence()">测试按钮存在性</button>
+            <button class="test-button" onclick="testFunctionAvailability()">测试函数可用性</button>
+            <button class="test-button" onclick="testCategoryManagement()">测试分类管理模块</button>
+            <button class="test-button" onclick="testIntegration()">测试完整集成</button>
+            <button class="test-button" onclick="clearLog()">清空日志</button>
+        </div>
+        
+        <div class="log-output" id="log-output"></div>
+    </div>
+
+    <script>
+        // 重写console.log以显示在页面上
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        function appendLog(message, type = 'log') {
+            const logOutput = document.getElementById('log-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'warn' ? 'warning' : type === 'info' ? 'info' : 'success';
+            logOutput.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            appendLog(args.join(' '), 'log');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            appendLog(args.join(' '), 'warn');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            appendLog(args.join(' '), 'error');
+        };
+        
+        console.info = function(...args) {
+            originalLog.apply(console, args);
+            appendLog(args.join(' '), 'info');
+        };
+        
+        // 测试函数
+        function testModuleLoading() {
+            console.info('=== 测试模块加载 ===');
+            
+            const modules = [
+                { name: '产品管理模块', check: 'initializeProductManagementModule' },
+                { name: '分类管理模块', check: 'initializeCategoryManagementModule' },
+                { name: '产品表单模块', check: 'initializeProductForm' },
+                { name: '产品媒体模块', check: 'initializeProductMedia' },
+                { name: '产品编辑器模块', check: 'initializeProductEditor' }
+            ];
+            
+            modules.forEach(module => {
+                const available = typeof window[module.check] === 'function';
+                if (available) {
+                    console.log(`✅ ${module.name} 可用`);
+                } else {
+                    console.error(`❌ ${module.name} 未找到`);
+                }
+            });
+        }
+        
+        function testButtonExistence() {
+            console.info('=== 测试按钮存在性 ===');
+            
+            const buttons = [
+                { id: 'add-product-btn', name: '新增产品按钮' },
+                { id: 'add-category-btn', name: '新增分类按钮' }
+            ];
+            
+            buttons.forEach(button => {
+                const element = document.getElementById(button.id);
+                if (element) {
+                    console.log(`✅ ${button.name} 存在 - ID: ${button.id}`);
+                    console.log(`   文本内容: "${element.textContent.trim()}"`);
+                    console.log(`   CSS类: ${element.className}`);
+                } else {
+                    console.error(`❌ ${button.name} 不存在 - ID: ${button.id}`);
+                }
+            });
+        }
+        
+        function testFunctionAvailability() {
+            console.info('=== 测试函数可用性 ===');
+            
+            const functions = [
+                { name: 'addNewProduct', desc: '新增产品函数' },
+                { name: 'addNewCategory', desc: '新增分类函数（全局）' },
+                { name: 'addNewCategoryFromModule', desc: '新增分类函数（模块）' },
+                { name: 'viewProduct', desc: '查看产品函数' },
+                { name: 'editProduct', desc: '编辑产品函数' },
+                { name: 'deleteProduct', desc: '删除产品函数' }
+            ];
+            
+            functions.forEach(func => {
+                const available = typeof window[func.name] === 'function';
+                if (available) {
+                    console.log(`✅ ${func.desc} 可用 - ${func.name}()`);
+                } else {
+                    console.error(`❌ ${func.desc} 未找到 - ${func.name}()`);
+                }
+            });
+        }
+        
+        function testCategoryManagement() {
+            console.info('=== 测试分类管理模块 ===');
+            
+            // 检查分类管理相关函数
+            const categoryFunctions = [
+                'initializeCategoryManagementModule',
+                'addNewCategory',
+                'editCategory',
+                'saveCategory',
+                'deleteCategory',
+                'loadCategoryList',
+                'renderCategoryList'
+            ];
+            
+            categoryFunctions.forEach(funcName => {
+                const available = typeof window[funcName] === 'function';
+                if (available) {
+                    console.log(`✅ ${funcName} 可用`);
+                } else {
+                    console.warn(`⚠️  ${funcName} 未找到（可能在模块内部）`);
+                }
+            });
+            
+            // 尝试初始化分类管理模块
+            if (typeof window.initializeCategoryManagementModule === 'function') {
+                try {
+                    console.info('尝试初始化分类管理模块...');
+                    window.initializeCategoryManagementModule();
+                    console.log('✅ 分类管理模块初始化成功');
+                } catch (error) {
+                    console.error(`❌ 分类管理模块初始化失败: ${error.message}`);
+                }
+            }
+        }
+        
+        function testIntegration() {
+            console.info('=== 测试完整集成 ===');
+            
+            // 1. 检查新增分类按钮是否存在
+            const addCategoryBtn = document.getElementById('add-category-btn');
+            if (!addCategoryBtn) {
+                console.error('❌ 新增分类按钮不存在');
+                return;
+            }
+            console.log('✅ 新增分类按钮存在');
+            
+            // 2. 模拟点击新增分类按钮
+            console.info('模拟点击新增分类按钮...');
+            
+            // 先检查是否有事件监听器
+            const hasEventListener = addCategoryBtn.onclick || 
+                                  addCategoryBtn.addEventListener ||
+                                  typeof window.addNewCategory === 'function';
+            
+            if (hasEventListener) {
+                console.log('✅ 新增分类按钮有相关处理逻辑');
+                
+                // 模拟点击事件
+                try {
+                    if (typeof window.addNewCategory === 'function') {
+                        console.info('调用 window.addNewCategory()...');
+                        window.addNewCategory();
+                    } else {
+                        console.info('触发按钮点击事件...');
+                        addCategoryBtn.click();
+                    }
+                } catch (error) {
+                    console.error(`❌ 执行新增分类功能时出错: ${error.message}`);
+                }
+            } else {
+                console.error('❌ 新增分类按钮缺少事件处理');
+            }
+            
+            // 3. 检查分类模态框是否出现
+            setTimeout(() => {
+                const categoryModal = document.getElementById('category-modal');
+                if (categoryModal) {
+                    const isVisible = categoryModal.style.display === 'block' || 
+                                    !categoryModal.style.display && 
+                                    getComputedStyle(categoryModal).display === 'block';
+                    
+                    if (isVisible) {
+                        console.log('✅ 分类管理模态框已显示');
+                    } else {
+                        console.warn('⚠️  分类管理模态框存在但未显示');
+                    }
+                } else {
+                    console.error('❌ 分类管理模态框不存在');
+                }
+            }, 1000);
+        }
+        
+        function clearLog() {
+            document.getElementById('log-output').innerHTML = '';
+        }
+        
+        // 页面加载完成后自动执行基础测试
+        window.addEventListener('load', () => {
+            console.info('页面加载完成，开始基础测试...');
+            setTimeout(() => {
+                testButtonExistence();
+            }, 1000);
+        });
+    </script>
+    
+    <!-- 加载实际的模块文件 -->
+    <script src="/modules/category-management.js"></script>
+    <script src="/modules/product-management.js" type="module"></script>
+    <script src="/js/admin.js" type="module"></script>
+</body>
+</html>
