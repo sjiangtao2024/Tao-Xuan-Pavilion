@@ -223,7 +223,7 @@ function injectUserManagementStyles() {
 
 // 模块初始化函数
 function initializeUserManagementModule() {
-    console.log('用户管理模块已初始化');
+    debugInfo('userManagement', '用户管理模块已初始化');
     
     // 确保模态框样式已加载
     injectUserManagementStyles();
@@ -630,4 +630,4 @@ if (typeof module !== 'undefined' && module.exports) {
     };
 }
 
-console.log('用户管理模块已加载');
+debugInfo('userManagement', '用户管理模块已加载');

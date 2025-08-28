@@ -1,11 +1,17 @@
 import { sqliteTable, integer, text, real, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
+import { sqliteTable, text, integer, real, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 // Users Table: Stores user credentials and information.
 export const users = sqliteTable('users', {
     id: integer('id').primaryKey(),
     email: text('email').notNull().unique(),
-    password: text('password').notNull(), // This will store the hashed password
+    password: text('password'), // Optional for OAuth users
+    googleId: text('google_id').unique(), // Google OAuth ID
+    oauthProvider: text('oauth_provider'), // OAuth provider ('google', 'github', 'facebook', etc.)
+    oauthPicture: text('oauth_picture'), // OAuth profile picture URL
+    authMethod: text('auth_method', { enum: ['email', 'oauth'] }).default('email'), // Authentication method
+    emailVerified: integer('email_verified', { mode: 'boolean' }).default(false), // Email verification status
     role: text('role', { enum: ['user', 'admin', 'super_admin', 'moderator'] }).default('user'),
     status: text('status', { enum: ['active', 'disabled', 'suspended', 'deleted'] }).default('active'),
     lastLoginAt: integer('last_login_at', { mode: 'timestamp' }),
@@ -151,6 +157,22 @@ export const adminLogs = sqliteTable('admin_logs', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
+// OAuth Sessions Table: Stores OAuth tokens and session information
+export const oauthSessions = sqliteTable('oauth_sessions', {
+    id: integer('id').primaryKey(),
+    userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(), // 'google', 'github', 'facebook', etc.
+    providerUserId: text('provider_user_id').notNull(), // OAuth provider's user ID
+    accessToken: text('access_token'), // OAuth access token
+    refreshToken: text('refresh_token'), // OAuth refresh token
+    tokenExpiresAt: integer('token_expires_at', { mode: 'timestamp' }), // Access token expiration
+    scope: text('scope'), // OAuth permissions scope
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+}, (table) => ({
+    providerUserIdx: uniqueIndex('provider_user_idx').on(table.provider, table.providerUserId),
+}));
+
 
 // --- RELATIONS ---
 export const usersRelations = relations(users, ({ many, one }) => ({
@@ -159,6 +181,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     profile: one(userProfiles),
     addresses: many(userAddresses),
     adminLogs: many(adminLogs),
+    oauthSessions: many(oauthSessions),
     createdByUser: one(users, { fields: [users.createdBy], references: [users.id] }),
     createdUsers: many(users, { foreignKey: users.createdBy }),
 }));
@@ -263,6 +286,13 @@ export const mediaAssetsRelations = relations(mediaAssets, ({ many }) => ({
 export const adminLogsRelations = relations(adminLogs, ({ one }) => ({
     admin: one(users, {
         fields: [adminLogs.adminId],
+        references: [users.id],
+    }),
+}));
+
+export const oauthSessionsRelations = relations(oauthSessions, ({ one }) => ({
+    user: one(users, {
+        fields: [oauthSessions.userId],
         references: [users.id],
     }),
 }));

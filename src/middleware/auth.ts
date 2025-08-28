@@ -1,4 +1,4 @@
-import { verify } from 'hono/jwt';
+import { verifyToken } from '../utils/jwt';
 import type { Context } from 'hono';
 import type { AppContext } from '../types';
 
@@ -15,8 +15,11 @@ export const authMiddleware = async (c: Context<AppContext>, next: () => Promise
     const secret = c.env.JWT_SECRET || 'a-very-secret-key';
 
     try {
-        const decodedPayload = await verify(token, secret);
-        c.set('userId', parseInt((decodedPayload as any).sub, 10));
+        const payload = await verifyToken(token, secret);
+        c.set('userId', parseInt(payload.sub, 10));
+        c.set('userEmail', payload.email);
+        c.set('userRole', payload.role);
+        c.set('authMethod', payload.authMethod);
         await next();
     } catch (error) {
         return c.json({ error: 'Invalid token' }, 401);

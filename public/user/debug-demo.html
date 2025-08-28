@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试控制系统演示</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        .container {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+        }
+        h1 {
+            color: #A88F5A;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #A88F5A;
+            border-bottom: 2px solid #A88F5A;
+            padding-bottom: 10px;
+        }
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        button {
+            background: #B83B1D;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background: #d14f31;
+        }
+        .console-tip {
+            background: #1e3a5f;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .warning {
+            background: #5d4037;
+            border-left: 4px solid #ff9800;
+        }
+        .success {
+            background: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+        code {
+            background: #1a1a1a;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #A88F5A;
+        }
+        .demo-section {
+            margin: 30px 0;
+        }
+        .command-list {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #444;
+        }
+        .command-list h3 {
+            color: #A88F5A;
+            margin-top: 0;
+        }
+        .command-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        .command-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+        }
+        .command-list li:last-child {
+            border-bottom: none;
+        }
+        .status-display {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 1px solid #444;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 调试控制系统演示</h1>
+    
+    <div class="container">
+        <h2>📋 基础控制</h2>
+        <div class="console-tip">
+            💡 请打开浏览器开发者工具 (F12) 查看控制台输出效果
+        </div>
+        
+        <div class="button-group">
+            <button onclick="enableDebug()">启用全局调试</button>
+            <button onclick="disableDebug()">关闭全局调试</button>
+            <button onclick="debugDev()">开发者模式</button>
+            <button onclick="debugProd()">生产模式</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>🎯 模块级控制</h2>
+        <div class="console-tip warning">
+            ⚠️ 先使用生产模式关闭所有调试，然后选择特定模块开启
+        </div>
+        
+        <div class="button-group">
+            <button onclick="debugModule('shop', true)">开启商店调试</button>
+            <button onclick="debugModule('cart', true)">开启购物车调试</button>
+            <button onclick="debugModule('auth', true)">开启认证调试</button>
+            <button onclick="debugModule('api', true)">开启API调试</button>
+            <button onclick="debugModule('navigation', true)">开启导航调试</button>
+            <button onclick="debugModule('i18n', true)">开启国际化调试</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>📊 状态查看</h2>
+        <div class="button-group">
+            <button onclick="showDebugConfig()">查看调试配置</button>
+            <button onclick="DEBUG_UTILS.state()">查看应用状态</button>
+            <button onclick="debugHelp()">显示帮助</button>
+            <button onclick="testAPI()">测试API连接</button>
+            <button onclick="validateModules()">验证模块系统</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>🧪 测试调试输出</h2>
+        <div class="console-tip success">
+            ✅ 点击下面的按钮测试不同类型的调试信息输出
+        </div>
+        
+        <div class="button-group">
+            <button onclick="testDebugOutput()">测试调试输出</button>
+            <button onclick="testModuleDebug()">测试模块调试</button>
+            <button onclick="testErrorHandling()">测试错误处理</button>
+        </div>
+        
+        <div id="status-display" class="status-display">
+            <strong>当前状态：</strong><span id="debug-status">未知</span>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>📝 常用命令</h2>
+        <div class="command-list">
+            <h3>控制台命令</h3>
+            <ul>
+                <li><code>enableDebug()</code> - 启用全局调试模式</li>
+                <li><code>disableDebug()</code> - 关闭全局调试模式</li>
+                <li><code>debugDev()</code> - 开发者模式（显示所有调试信息）</li>
+                <li><code>debugProd()</code> - 生产模式（关闭所有调试信息）</li>
+                <li><code>debugModule("模块名", true/false)</code> - 控制指定模块的调试信息</li>
+                <li><code>showDebugConfig()</code> - 显示当前调试配置</li>
+                <li><code>debugHelp()</code> - 显示帮助信息</li>
+                <li><code>DEBUG_UTILS.state()</code> - 显示应用状态</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>💡 使用建议</h2>
+        <div class="console-tip">
+            <h3>开发阶段：</h3>
+            <p>1. 使用 <code>debugDev()</code> 查看所有调试信息</p>
+            <p>2. 定期使用 <code>DEBUG_UTILS.state()</code> 检查应用状态</p>
+        </div>
+        
+        <div class="console-tip warning">
+            <h3>特定问题调试：</h3>
+            <p>1. 先使用 <code>debugProd()</code> 关闭所有调试</p>
+            <p>2. 使用 <code>debugModule("模块名", true)</code> 只开启相关模块</p>
+        </div>
+        
+        <div class="console-tip success">
+            <h3>生产部署前：</h3>
+            <p>1. 使用 <code>debugProd()</code> 确保所有调试信息关闭</p>
+            <p>2. 使用 <code>showDebugConfig()</code> 验证配置</p>
+        </div>
+    </div>
+
+    <script>
+        // 测试函数
+        function testDebugOutput() {
+            console.log('=== 测试调试输出 ===');
+            
+            DEBUG_UTILS.log('demo', '这是一条普通日志信息');
+            DEBUG_UTILS.warn('demo', '这是一条警告信息');
+            DEBUG_UTILS.error('demo', '这是一条错误信息');
+            DEBUG_UTILS.success('demo', '这是一条成功信息');
+            
+            updateStatus();
+        }
+        
+        function testModuleDebug() {
+            console.log('=== 测试模块调试 ===');
+            
+            // 先关闭所有调试
+            debugProd();
+            DEBUG_UTILS.log('demo', '这条信息不会显示（已关闭）');
+            
+            // 开启demo模块调试
+            debugModule('demo', true);
+            DEBUG_UTILS.log('demo', '开启demo模块后，这条信息会显示');
+            DEBUG_UTILS.success('demo', 'demo模块调试已启用');
+            
+            updateStatus();
+        }
+        
+        function testErrorHandling() {
+            console.log('=== 测试错误处理 ===');
+            
+            try {
+                // 模拟一个错误
+                throw new Error('这是一个测试错误');
+            } catch (error) {
+                DEBUG_UTILS.error('demo', '捕获到错误', error);
+            }
+            
+            DEBUG_UTILS.warn('demo', '错误处理测试完成');
+            updateStatus();
+        }
+        
+        function updateStatus() {
+            const statusEl = document.getElementById('debug-status');
+            const isGlobalDebug = window.APP_CONFIG?.DEBUG;
+            const isAllModules = window.APP_CONFIG?.DEBUG_MODULES?.all;
+            
+            let status = '';
+            if (isGlobalDebug && isAllModules) {
+                status = '开发者模式 (显示所有调试信息)';
+            } else if (isGlobalDebug) {
+                status = '全局调试模式';
+            } else if (isAllModules) {
+                status = '所有模块调试模式';
+            } else {
+                // 检查是否有单独开启的模块
+                const enabledModules = [];
+                if (window.APP_CONFIG?.DEBUG_MODULES) {
+                    Object.entries(window.APP_CONFIG.DEBUG_MODULES).forEach(([module, enabled]) => {
+                        if (enabled && module !== 'all') {
+                            enabledModules.push(module);
+                        }
+                    });
+                }
+                
+                if (enabledModules.length > 0) {
+                    status = `模块调试模式 (${enabledModules.join(', ')})`;
+                } else {
+                    status = '生产模式 (调试已关闭)';
+                }
+            }
+            
+            statusEl.textContent = status;
+        }
+        
+        // 页面加载时更新状态
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(updateStatus, 1000);
+        });
+        
+        // 重写部分调试控制函数以更新状态显示
+        const originalEnableDebug = window.enableDebug;
+        const originalDisableDebug = window.disableDebug;
+        const originalDebugDev = window.debugDev;
+        const originalDebugProd = window.debugProd;
+        const originalDebugModule = window.debugModule;
+        
+        window.enableDebug = function() {
+            const result = originalEnableDebug();
+            updateStatus();
+            return result;
+        };
+        
+        window.disableDebug = function() {
+            const result = originalDisableDebug();
+            updateStatus();
+            return result;
+        };
+        
+        window.debugDev = function() {
+            const result = originalDebugDev();
+            updateStatus();
+            return result;
+        };
+        
+        window.debugProd = function() {
+            const result = originalDebugProd();
+            updateStatus();
+            return result;
+        };
+        
+        window.debugModule = function(module, enabled) {
+            const result = originalDebugModule(module, enabled);
+            updateStatus();
+            return result;
+        };
+    </script>
+</body>
+</html>

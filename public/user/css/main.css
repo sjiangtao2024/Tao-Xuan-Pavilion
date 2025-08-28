@@ -1,0 +1,153 @@
+/**
+ * 主样式文件
+ * 包含全局变量、基础样式和布局
+ */
+
+/* CSS变量定义 */
+:root {
+    --bg-mystic-black: #1C1C1C;
+    --bg-talisman-yellow: #EAE0C8;
+    --text-on-dark: #EAE0C8;
+    --text-on-light: #1C1C1C;
+    --primary-cinnabar-red: #B83B1D;
+    --primary-cinnabar-red-hover: #d14f31;
+    --accent-gilded-gold: #A88F5A;
+}
+
+/* 基础样式 */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-mystic-black);
+    color: var(--text-on-dark);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 字体类 */
+.font-serif-sc {
+    font-family: 'Noto Serif SC', serif;
+}
+
+/* 按钮样式 */
+.btn-primary {
+    background-color: var(--primary-cinnabar-red);
+    color: var(--text-on-dark);
+    transition: background-color 0.3s ease;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-cinnabar-red-hover);
+}
+
+/* 导航链接 */
+.nav-link {
+    position: relative;
+    transition: color 0.3s ease;
+    color: var(--text-on-dark);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.nav-link:hover {
+    color: var(--accent-gilded-gold);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--primary-cinnabar-red);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+    width: 100%;
+}
+
+/* 语言切换器 */
+.lang-switcher button.active {
+    color: var(--primary-cinnabar-red);
+    font-weight: bold;
+}
+
+/* 文本颜色类 */
+.text-primary {
+    color: var(--primary-cinnabar-red);
+}
+
+.text-gold {
+    color: var(--accent-gilded-gold);
+}
+
+/* 焦点环 */
+.focus-ring-primary:focus {
+    --tw-ring-color: var(--primary-cinnabar-red);
+    border-color: var(--primary-cinnabar-red);
+}
+
+/* 页面容器 */
+.page {
+    min-height: calc(100vh - 200px);
+    padding: 20px 0;
+}
+
+.page.hidden {
+    display: none;
+}
+
+/* 容器 */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* 主内容区 */
+#app-content {
+    flex: 1;
+}
+
+/* 产品网格平滑过渡效果 */
+#products-grid {
+    transition: opacity 0.3s ease;
+}
+
+/* 加载状态 */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* 错误状态 */
+.error {
+    color: #ef4444;
+    background-color: #fee2e2;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #fecaca;
+}
+
+/* 成功状态 */
+.success {
+    color: #059669;
+    background-color: #d1fae5;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #a7f3d0;
+}
+
+/* 页脚样式 */
+footer {
+    margin-top: auto;
+}

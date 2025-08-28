@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tao Xuan Pavilion - Find Taoist Artifacts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-mystic-black: #1C1C1C;
+            --bg-talisman-yellow: #EAE0C8;
+            --text-on-dark: #EAE0C8;
+            --text-on-light: #1C1C1C;
+            --primary-cinnabar-red: #B83B1D;
+            --primary-cinnabar-red-hover: #d14f31;
+            --accent-gilded-gold: #A88F5A;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-mystic-black); color: var(--text-on-dark); }
+        .font-serif-sc { font-family: 'Noto Serif SC', serif; }
+        .product-card { transition: transform 0.3s ease, box-shadow 0.3s ease; background-color: var(--bg-talisman-yellow); color: var(--text-on-light); border: 1px solid var(--accent-gilded-gold); }
+        .product-card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); }
+        .btn-primary { background-color: var(--primary-cinnabar-red); color: var(--text-on-dark); transition: background-color 0.3s ease; font-weight: bold; }
+        .btn-primary:hover { background-color: var(--primary-cinnabar-red-hover); }
+        .nav-link { position: relative; transition: color 0.3s ease; color: var(--text-on-dark); }
+        .nav-link:hover { color: var(--accent-gilded-gold); }
+        .nav-link::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -4px; left: 50%; transform: translateX(-50%); background-color: var(--primary-cinnabar-red); transition: width 0.3s ease; }
+        .nav-link:hover::after, .nav-link.active::after { width: 100%; }
+        .lang-switcher button.active { color: var(--primary-cinnabar-red); font-weight: bold; }
+        .text-primary { color: var(--primary-cinnabar-red); }
+        .text-gold { color: var(--accent-gilded-gold); }
+        .focus-ring-primary:focus { --tw-ring-color: var(--primary-cinnabar-red); border-color: var(--primary-cinnabar-red); }
+        .carousel { position: relative; width: 100%; overflow: hidden; max-width: 600px; margin: 0 auto; }
+        .carousel-inner { display: flex; transition: transform 0.5s ease; }
+        .carousel-item { min-width: 100%; box-sizing: border-box; }
+        .carousel-item img, .carousel-item video { width: 100%; display: block; border-radius: 0.5rem; }
+        .carousel-control { position: absolute; top: 50%; transform: translateY(-50%); background-color: rgba(0, 0, 0, 0.5); color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 50%; z-index: 10; font-size: 1.5rem; line-height: 1; }
+        .carousel-control.prev { left: 1rem; }
+        .carousel-control.next { right: 1rem; }
+        
+        /* 产品网格平滑过渡效果 */
+        #products-grid {
+            transition: opacity 0.3s ease;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-content {
+            background-color: var(--bg-talisman-yellow);
+            color: var(--text-on-light);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            max-width: 28rem;
+            width: 100%;
+            margin: 0 1rem;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--accent-gilded-gold);
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent-gilded-gold);
+            margin: 0;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-on-light);
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            opacity: 1;
+        }
+        
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-on-light);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            background-color: white;
+            color: var(--text-on-light);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-cinnabar-red);
+            box-shadow: 0 0 0 3px rgba(184, 59, 29, 0.1);
+        }
+        
+        .form-error {
+            display: none;
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        .w-full {
+            width: 100%;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-sm {
+            font-size: 0.875rem;
+        }
+        
+        .ml-1 {
+            margin-left: 0.25rem;
+        }
+        
+        .mt-2 {
+            margin-top: 0.5rem;
+        }
+        
+        .hover\:underline:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="bg-black bg-opacity-60 backdrop-blur-sm sticky top-0 z-50 shadow-lg shadow-black/30 border-b border-white/10">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-serif-sc font-bold tracking-wider text-gold" data-lang-key="siteName">Tao Xuan Pavilion</h1>
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#home" class="nav-link text-lg active" onclick="showPage('home')" data-page="home" data-lang-key="navHome">Home</a>
+                <a href="#shop" class="nav-link text-lg" onclick="showPage('shop')" data-page="shop" data-lang-key="navShop">All Artifacts</a>
+                <a href="#about" class="nav-link text-lg" onclick="showPage('about')" data-page="about" data-lang-key="navAbout">About Us</a>
+                <a href="#contact" class="nav-link text-lg" onclick="showPage('contact')" data-page="contact" data-lang-key="navContact">Contact Us</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <div class="lang-switcher text-gray-300 text-sm">
+                    <button id="lang-zh" class="hover:text-white transition">中文</button>
+                    <span>/</span>
+                    <button id="lang-en" class="hover:text-white transition">English</button>
+                </div>
+                <div id="auth-container">
+                    <button id="login-button" class="btn-primary px-4 py-2 rounded-md text-sm" data-lang-key="login">Login</button>
+                    <div id="user-profile" class="hidden items-center space-x-2">
+                        <span id="user-email" class="text-gold text-sm"></span>
+                        <span class="text-gray-400">|</span>
+                        <button id="profile-button" class="text-gold hover:text-primary text-sm" onclick="showPage('profile')" data-lang-key="profile">Profile</button>
+                        <span class="text-gray-400">|</span>
+                        <button id="logout-button" class="text-gray-400 hover:text-white text-sm" data-lang-key="logout">Logout</button>
+                    </div>
+                </div>
+                <button id="cart-button" class="relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-gray-300 hover:text-gold transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    <span id="cart-count" class="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="app-content">
+        <div id="home-page" class="page"></div>
+        <div id="shop-page" class="page hidden"></div>
+        <div id="product-page" class="page hidden"></div>
+        <div id="profile-page" class="page hidden"></div>
+        <div id="about-page" class="page hidden"></div>
+        <div id="contact-page" class="page hidden"></div>
+    </main>
+
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center"></div>
+    <div id="register-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center"></div>
+    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center"></div>
+    <div id="message-modal" class="fixed top-20 right-5 text-white py-3 px-6 rounded-lg shadow-lg z-50 transform translate-x-[120%] transition-transform duration-500"><p id="message-text"></p></div>
+
+    <!-- 页脚 -->
+    <footer class="bg-black bg-opacity-80 backdrop-blur-sm border-t border-white/10 mt-auto">
+        <div class="container mx-auto px-6 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-serif-sc font-bold text-gold mb-4" data-lang-key="siteName">Tao Xuan Pavilion</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        <span data-lang-key="aboutMissionText">Discover ancient artifacts imbued with mystical powers</span>
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-4" data-lang-key="navContact">Contact Us</h4>
+                    <div class="text-gray-400 text-sm space-y-2">
+                        <p data-lang-key="contactEmail">Email: support@taoxuan.com</p>
+                        <p data-lang-key="contactPhone">Phone: +86 400-888-0000</p>
+                        <p data-lang-key="contactHours">Business Hours: 9:00 AM - 6:00 PM (UTC+8)</p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-4">Links</h4>
+                    <div class="text-gray-400 text-sm space-y-2">
+                        <a href="#about" class="block hover:text-gold transition" onclick="showPage('about')" data-lang-key="navAbout">About Us</a>
+                        <a href="#contact" class="block hover:text-gold transition" onclick="showPage('contact')" data-lang-key="navContact">Contact Us</a>
+                        <a href="#" class="block hover:text-gold transition" data-lang-key="footerPrivacy">Privacy Policy</a>
+                        <a href="#" class="block hover:text-gold transition" data-lang-key="footerTerms">Terms of Service</a>
+                        <a href="#" class="block hover:text-gold transition" data-lang-key="footerReturns">Return Policy</a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-white/10 mt-8 pt-8 text-center">
+                <p class="text-gray-500 text-sm" data-lang-key="footerCopyright">&copy; 2024 Tao Xuan Pavilion. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 全局函数定义 - 匹配原始frontend.html的全局函数 -->
+    <script>
+        // 全局函数 - 完全匹配原始frontend.html
+        function showPage(pageId) {
+            if (window.NavigationModule) {
+                window.NavigationModule.navigateTo(pageId);
+            }
+            
+            // 更新导航链接状态
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[onclick="showPage('${pageId}')"]`)?.classList.add('active');
+        }
+        
+        function showProductDetail(productId) {
+            console.log('🔍 showProductDetail called with productId:', productId);
+            
+            if (window.ProductModule) {
+                // 确保productId是数字类型
+                const numericProductId = typeof productId === 'string' ? parseInt(productId) : productId;
+                console.log('📝 Setting currentProductId to:', numericProductId);
+                
+                window.APP_STATE.currentProductId = numericProductId;
+                
+                // 验证设置是否成功
+                console.log('✅ APP_STATE.currentProductId is now:', window.APP_STATE.currentProductId);
+                
+                window.NavigationModule.navigateTo('product');
+            } else {
+                console.error('❌ ProductModule not available!');
+            }
+        }
+        
+        function addToCart(productId, quantity = 1) {
+            if (window.CartModule) {
+                const product = window.ShopModule.allProducts.find(p => p.id === productId);
+                if (product) {
+                    window.CartModule.addItem(product, quantity);
+                }
+            }
+        }
+        
+        // 联系表单处理 - 匹配原始frontend.html
+        function handleContactForm(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            // 这里可以添加实际的表单提交逻辑
+            // 例如发送到后端API或第三方服务
+            
+            if (window.MessageComponent) {
+                window.MessageComponent.success('感谢您的留言！我们会尽快回复您。');
+            }
+            event.target.reset();
+        }
+    </script>
+    
+    <!-- 核心JavaScript文件（按依赖顺序加载） -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="i18n/zh.js"></script>
+    <script src="i18n/en.js"></script>
+    <script src="i18n/i18n.js"></script>
+    <script src="components/modal.js"></script>
+    <script src="components/message.js"></script>
+    <script src="components/carousel.js"></script>
+    <script src="modules/auth.js"></script>
+    <script src="modules/google-oauth.js"></script>
+    <script src="modules/cart.js"></script>
+    <script src="modules/shop.js"></script>
+    <script src="modules/product.js"></script>
+    <script src="modules/profile.js"></script>
+    <script src="modules/navigation.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- 模块初始化修复脚本（临时） -->
+    
+    <!-- 开发环境验证脚本 -->
+    <script src="js/validation.js"></script>
+</body>
+</html>

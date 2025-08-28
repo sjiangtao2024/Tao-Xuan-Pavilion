@@ -171,86 +171,86 @@ class AdminDashboard {
     async loadModules() {
         try {
             // 所有模块都已通过script标签加载，直接初始化
-            console.log('开始初始化管理模块...');
+            debugInfo('admin', '开始初始化管理模块...');
             
             // 1. 初始化基础子模块
-            console.log('初始化基础子模块...');
+            debugInfo('admin', '初始化基础子模块...');
             
             if (typeof window.initializeProductForm === 'function') {
                 window.initializeProductForm();
-                console.log('产品表单模块已初始化');
+                debugInfo('admin', '产品表单模块已初始化');
             } else {
-                console.warn('产品表单模块未找到');
+                debugWarn('admin', '产品表单模块未找到');
             }
             
             if (typeof window.initializeProductMedia === 'function') {
                 window.initializeProductMedia();
-                console.log('产品媒体模块已初始化');
+                debugInfo('admin', '产品媒体模块已初始化');
             } else {
-                console.warn('产品媒体模块未找到');
+                debugWarn('admin', '产品媒体模块未找到');
             }
             
             if (typeof window.initializeProductEditor === 'function') {
                 window.initializeProductEditor();
-                console.log('产品编辑器模块已初始化');
+                debugInfo('admin', '产品编辑器模块已初始化');
             } else {
-                console.warn('产品编辑器模块未找到');
+                debugWarn('admin', '产品编辑器模块未找到');
             }
             
             // 等待一下确保子模块完全初始化
             await new Promise(resolve => setTimeout(resolve, 200));
             
             // 2. 初始化主管理模块
-            console.log('初始化主管理模块...');
+            debugInfo('admin', '初始化主管理模块...');
             
             // 加载用户管理模块
             if (typeof window.initializeUserManagementModule === 'function') {
                 window.initializeUserManagementModule();
-                console.log('用户管理模块已初始化');
+                debugInfo('admin', '用户管理模块已初始化');
             } else {
-                console.warn('用户管理模块未找到');
+                debugWarn('admin', '用户管理模块未找到');
             }
             
             // 加载产品管理模块
             if (typeof window.initializeProductManagementModule === 'function') {
                 window.initializeProductManagementModule();
-                console.log('产品管理模块已初始化');
+                debugInfo('admin', '产品管理模块已初始化');
                 
                 // 等待一下，然后检查函数是否正确暴露
                 setTimeout(() => {
-                    console.log('检查产品管理模块函数暴露:');
-                    console.log('addNewProduct:', typeof window.addNewProduct);
-                    console.log('viewProduct:', typeof window.viewProduct);
-                    console.log('editProductInEditMode:', typeof window.editProductInEditMode);
+                    debugDebug('admin', '检查产品管理模块函数暴露:');
+                    debugDebug('admin', 'addNewProduct:', typeof window.addNewProduct);
+                    debugDebug('admin', 'viewProduct:', typeof window.viewProduct);
+                    debugDebug('admin', 'editProductInEditMode:', typeof window.editProductInEditMode);
                 }, 100);
             } else {
-                console.warn('产品管理模块未找到');
+                debugWarn('admin', '产品管理模块未找到');
                 
                 // 尝试手动检查和修复
-                console.log('尝试手动初始化...');
+                debugInfo('admin', '尝试手动初始化...');
                 if (typeof initializeProductManagementModule === 'function') {
-                    console.log('找到全局initializeProductManagementModule函数，尝试调用');
+                    debugInfo('admin', '找到全局initializeProductManagementModule函数，尝试调用');
                     initializeProductManagementModule();
                     window.initializeProductManagementModule = initializeProductManagementModule;
                 } else {
-                    console.error('无法找到initializeProductManagementModule函数');
+                    debugError('admin', '无法找到initializeProductManagementModule函数');
                 }
             }
             
             // 加载导航模块
             if (typeof window.initializeNavigationModule === 'function') {
                 window.initializeNavigationModule();
-                console.log('导航模块已初始化');
+                debugInfo('admin', '导航模块已初始化');
             } else {
-                console.warn('导航模块未找到');
+                debugWarn('admin', '导航模块未找到');
             }
             
             // 加载分类管理模块
             if (typeof window.initializeCategoryManagementModule === 'function') {
                 window.initializeCategoryManagementModule();
-                console.log('分类管理模块已初始化');
+                debugInfo('admin', '分类管理模块已初始化');
             } else {
-                console.warn('分类管理模块未找到');
+                debugWarn('admin', '分类管理模块未找到');
             }
 
             // 3. 绑定按钮事件
@@ -262,7 +262,7 @@ class AdminDashboard {
             // 5. 加载初始数据
             await this.loadInitialData();
             
-            console.log('所有管理模块初始化成功');
+            debugInfo('admin', '所有管理模块初始化成功');
             
             // 检查关键模块函数是否正确加载
             this.checkModuleStatus();
@@ -273,7 +273,7 @@ class AdminDashboard {
     }
     
     checkModuleStatus() {
-        console.log('=== 模块加载状态检查 ===');
+        debugInfo('admin', '模块加载状态检查');
         
         const productFunctions = [
             'addNewProduct',
@@ -285,7 +285,7 @@ class AdminDashboard {
         
         productFunctions.forEach(funcName => {
             const func = window[funcName];
-            console.log(`${funcName}:`, typeof func, func ? '✓' : '✗');
+            debugDebug('admin', `${funcName}:`, typeof func, func ? '✓' : '✗');
         });
         
         const categoryFunctions = [
@@ -296,10 +296,10 @@ class AdminDashboard {
         
         categoryFunctions.forEach(funcName => {
             const func = window[funcName];
-            console.log(`${funcName}:`, typeof func, func ? '✓' : '✗');
+            debugDebug('admin', `${funcName}:`, typeof func, func ? '✓' : '✗');
         });
         
-        console.log('=== 检查完成 ===');
+        debugInfo('admin', '检查完成');
     }
 
     async loadDashboardData() {
@@ -430,7 +430,7 @@ class AdminDashboard {
         if (!tbody) return;
 
         if (products.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5">暂无产品数据</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6">暂无产品数据</td></tr>';
             return;
         }
 
@@ -439,6 +439,7 @@ class AdminDashboard {
                 <td>${product.id}</td>
                 <td>${product.name || '未命名产品'}</td>
                 <td>$${product.price.toFixed(2)}</td>
+                <td><span class="status-badge ${product.featured ? 'status-featured' : 'status-normal'}">${product.featured ? '精选' : '普通'}</span></td>
                 <td>正常</td>
                 <td>
                     <button class="view-product-btn btn" data-product-id="${product.id}">查看</button>

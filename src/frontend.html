@@ -618,7 +618,7 @@
 
         // 辅助函数 - 获取商品缩略图
         function getThumbnailUrl(product) {
-            if (!product) return '/placeholder.jpg';
+            if (!product) return '/placeholder.svg';
             
             // 情况 1: 后端返回的 imageUrl 字段（购物车 API）
             if (product.imageUrl) {
@@ -633,7 +633,7 @@
                 }
             }
             
-            return '/placeholder.jpg';
+            return '/placeholder.svg';
         }
         
         // 辅助函数 - 获取商品名称
@@ -934,7 +934,7 @@
                                     
                                     return `
                                         <div class="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                                            <img src="${thumbnailUrl}" alt="${productName}" class="w-16 h-16 object-cover rounded" onerror="this.src='/placeholder.jpg'">
+                                            <img src="${thumbnailUrl}" alt="${productName}" class="w-16 h-16 object-cover rounded" onerror="this.src='/placeholder.svg'">
                                             <div class="flex-1">
                                                 <h3 class="font-semibold">${productName}</h3>
                                                 <p class="text-gray-600">${translations[currentLang].currencySymbol}${productPrice.toFixed(2)}</p>
@@ -1093,7 +1093,7 @@
         function renderProductMedia(media, containerId) {
             const container = document.getElementById(containerId);
             if (!media || media.length === 0) {
-                container.innerHTML = '<img src="/placeholder.jpg" alt="Product Image" class="w-full h-full object-cover rounded-lg">';
+                container.innerHTML = '<img src="/placeholder.svg" alt="Product Image" class="w-full h-full object-cover rounded-lg">';
                 return;
             }
 
@@ -1168,7 +1168,7 @@
         function renderProductCard(product) {
             const thumbnailUrl = (product.media && product.media.length > 0) 
                 ? product.media[0].asset.url 
-                : '/placeholder.jpg';
+                : '/placeholder.svg';
 
             return `
                 <div class="product-card rounded-lg p-4 shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col justify-between">

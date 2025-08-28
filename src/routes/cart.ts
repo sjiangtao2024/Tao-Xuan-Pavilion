@@ -204,3 +204,27 @@ cartRoutes.delete('/items/:itemId', authMiddleware, async (c) => {
         return c.json({ error: 'Failed to remove cart item', details: error.message }, 500);
     }
 });
+
+// 清空购物车
+cartRoutes.delete('/', authMiddleware, async (c) => {
+    const userId = c.get('userId');
+    const db = drizzle(c.env.DB, { schema });
+    
+    try {
+        // 查找用户的购物车
+        const cart = await db.query.carts.findFirst({ 
+            where: eq(carts.userId, userId) 
+        });
+        
+        if (!cart) {
+            return c.json({ message: 'Cart is already empty' });
+        }
+        
+        // 删除购物车中所有商品
+        await db.delete(cartItems).where(eq(cartItems.cartId, cart.id));
+        
+        return c.json({ message: 'Cart cleared successfully' });
+    } catch (error: any) {
+        return c.json({ error: 'Failed to clear cart', details: error.message }, 500);
+    }
+});

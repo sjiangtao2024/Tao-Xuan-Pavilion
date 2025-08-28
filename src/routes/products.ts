@@ -19,44 +19,60 @@ export const productRoutes = new Hono<AppContext>();
 
 // 获取所有产品
 productRoutes.get('/', async (c) => {
-    const db = drizzle(c.env.DB, { schema });
-    const lang = c.req.query('lang') || 'en';
-    const categoryId = c.req.query('categoryId');
-    
-    let whereCondition;
-    if (categoryId && !isNaN(Number(categoryId))) {
-        whereCondition = eq(products.categoryId, Number(categoryId));
-    }
-    
-    const results = await db.query.products.findMany({ 
-        where: whereCondition,
-        with: { 
-            media: { 
-                with: { asset: true }, 
-                orderBy: [schema.productMedia.displayOrder] 
-            }, 
-            translations: { 
-                where: eq(productTranslations.language, lang) 
-            },
-            category: {
-                with: {
-                    translations: { 
-                        where: eq(categoryTranslations.language, lang) 
+    try {
+        console.log('🔍 Product list request received');
+        const db = drizzle(c.env.DB, { schema });
+        const lang = c.req.query('lang') || 'en';
+        const categoryId = c.req.query('categoryId');
+        
+        console.log('📋 Query params:', { lang, categoryId });
+        
+        let whereCondition;
+        if (categoryId && !isNaN(Number(categoryId))) {
+            whereCondition = eq(products.categoryId, Number(categoryId));
+        }
+        
+        console.log('🗃️ Querying database...');
+        const results = await db.query.products.findMany({ 
+            where: whereCondition,
+            with: { 
+                media: { 
+                    with: { asset: true }, 
+                    orderBy: [schema.productMedia.displayOrder] 
+                }, 
+                translations: { 
+                    where: eq(productTranslations.language, lang) 
+                },
+                category: {
+                    with: {
+                        translations: { 
+                            where: eq(categoryTranslations.language, lang) 
+                        }
                     }
                 }
-            }
-        } 
-    });
-    
-    const formatted = results.map(p => ({ 
-        ...p, 
-        name: p.translations[0]?.name, 
-        description: p.translations[0]?.description,
-        categoryName: (p.category as any)?.translations?.[0]?.name,
-        price: p.price
-    }));
-    
-    return c.json(formatted);
+            } 
+        });
+        
+        console.log(`📦 Found ${results.length} products`);
+        
+        const formatted = results.map(p => ({ 
+            ...p, 
+            name: p.translations[0]?.name, 
+            description: p.translations[0]?.description,
+            categoryName: (p.category as any)?.translations?.[0]?.name,
+            price: p.price
+        }));
+        
+        console.log('✅ Product list response ready');
+        return c.json(formatted);
+    } catch (error: any) {
+        console.error('❌ Product list error:', error);
+        return c.json({ 
+            error: 'Failed to fetch products', 
+            details: error.message,
+            timestamp: new Date().toISOString()
+        }, 500);
+    }
 });
 
 // 创建产品

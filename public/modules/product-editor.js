@@ -23,11 +23,11 @@ let mediaModule = null;
  */
 function initializeProductEditor() {
     if (editorState.isInitialized) {
-        console.log('产品编辑器已经初始化');
+
         return;
     }
     
-    console.log('产品编辑器主控制器初始化中...');
+
     
     try {
         // 创建编辑器界面
@@ -40,7 +40,7 @@ function initializeProductEditor() {
         setupMainEvents();
         
         editorState.isInitialized = true;
-        console.log('产品编辑器主控制器初始化完成');
+
         
     } catch (error) {
         console.error('产品编辑器初始化失败:', error);
@@ -243,14 +243,14 @@ function setupMainEvents() {
         }
     });
     
-    console.log('主事件监听设置完成');
+    // 设置主事件监听
 }
 
 /**
  * 确保子模块已初始化
  */
 function ensureSubModulesInitialized() {
-    console.log('检查子模块初始化状态...');
+
     
     // 检查表单模块
     if (!formModule) {
@@ -273,7 +273,7 @@ function ensureSubModulesInitialized() {
                     reset: window.resetProductForm,
                     isModified: window.isProductFormModified
                 };
-                console.log('表单模块延迟初始化完成');
+                debugInfo('productEditor', '表单模块延迟初始化完成');
             } else {
                 console.log('表单模块初始化返回false，容器可能不存在');
             }
@@ -301,7 +301,7 @@ function ensureSubModulesInitialized() {
                     clearMedia: window.clearCurrentProductMedia,
                     getThumbnailId: window.getThumbnailAssetId
                 };
-                console.log('媒体模块延迟初始化完成');
+                debugInfo('productEditor', '媒体模块延迟初始化完成');
             } else {
                 console.log('媒体模块初始化返回false，容器可能不存在');
             }
@@ -322,10 +322,38 @@ function openProductEditor(productData = null, mode = 'create') {
         return;
     }
     
-    console.log('打开产品编辑器:', mode, productData);
+
     
     // 确保子模块已初始化
     ensureSubModulesInitialized();
+    
+    // 特别检查媒体模块，如果未初始化则强制初始化
+    if (!mediaModule && typeof window.initializeProductMedia === 'function') {
+        console.log('强制重新初始化媒体模块...');
+        
+        // 确保容器已存在 - 等待DOM更新
+        setTimeout(() => {
+            const mediaInitResult = window.initializeProductMedia(true); // 传入true启用强制模式
+            if (mediaInitResult) {
+                mediaModule = {
+                    getCurrentMedia: window.getCurrentProductMedia,
+                    setCurrentMedia: window.setCurrentProductMedia,
+                    clearMedia: window.clearCurrentProductMedia,
+                    getThumbnailId: window.getThumbnailAssetId,
+                    loadMedia: window.loadProductMedia
+                };
+                console.log('媒体模块强制初始化成功');
+                
+                // 如果有产品数据，立即加载媒体
+                if (productData && productData.id) {
+                    console.log('自动加载产品媒体:', productData.id);
+                    window.loadProductMedia(productData.id);
+                }
+            } else {
+                console.warn('媒体模块强制初始化失败');
+            }
+        }, 200); // 给DOM更多时间来创建容器
+    }
     
     // 设置编辑器状态
     editorState.currentProduct = productData;
@@ -379,7 +407,7 @@ function openProductEditor(productData = null, mode = 'create') {
         const delay = 100 + (attempts * 100); // 递增延迟
         
         setTimeout(() => {
-            console.log(`尝试填充数据 (第${attempts + 1}次)...`);
+        
             const moduleStatus = ensureSubModulesInitialized();
             
             if (moduleStatus.formModule || attempts >= maxAttempts - 1) {
@@ -399,21 +427,21 @@ function openProductEditor(productData = null, mode = 'create') {
  * @param {Object} productData - 产品数据
  */
 function populateEditorData(productData) {
-    console.log('开始填充编辑器数据:', productData);
+    // 开始填充数据
     
     // 再次确保子模块已初始化
     const moduleStatus = ensureSubModulesInitialized();
-    console.log('模块状态:', moduleStatus);
+
     
     // 填充表单数据
     if (productData && formModule && formModule.populateData) {
-        console.log('调用表单数据填充函数...');
+
         try {
             formModule.populateData(productData);
-            console.log('表单数据填充成功');
+            debugInfo('productEditor', '表单数据填充成功');
             showProductInfo(productData);
         } catch (error) {
-            console.error('表单数据填充失败:', error);
+            debugError('productEditor', '表单数据填充失败:', error);
         }
     } else if (formModule && formModule.reset) {
         console.log('重置表单...');
@@ -439,17 +467,22 @@ function populateEditorData(productData) {
     }
     
     // 填充媒体数据
-    if (productData && mediaModule && mediaModule.getCurrentMedia) {
+    if (productData && productData.id) {
         console.log('加载产品媒体文件...');
-        loadProductMedia(productData.id);
+        // 使用媒体模块自带的加载函数
+        if (typeof window.loadProductMedia === 'function') {
+            window.loadProductMedia(productData.id);
+        } else {
+            console.warn('媒体加载函数不存在');
+        }
     } else if (mediaModule && mediaModule.clearMedia) {
         console.log('清空媒体列表...');
         mediaModule.clearMedia();
+    } else if (typeof window.clearCurrentProductMedia === 'function') {
+        console.log('使用全局函数清空媒体列表...');
+        window.clearCurrentProductMedia();
     } else {
-        console.warn('媒体模块未完全初始化:', {
-            mediaModule: !!mediaModule,
-            clearMedia: mediaModule ? typeof mediaModule.clearMedia : 'undefined'
-        });
+        console.warn('媒体模块未完全初始化，将在模块初始化后加载媒体数据');
     }
     
     console.log('数据填充完成');
@@ -780,6 +813,14 @@ function getCurrentProductData() {
 }
 
 /**
+ * 检查是否为编辑模式（别名函数，与媒体模块兼容）
+ * @returns {boolean} - 是否为编辑模式
+ */
+function checkIsEditMode() {
+    return editorState.isEditMode;
+}
+
+/**
  * 检查是否为编辑模式
  * @returns {boolean} - 是否为编辑模式
  */
@@ -798,6 +839,7 @@ if (typeof window !== 'undefined') {
     // 状态访问函数
     window.getCurrentProductData = getCurrentProductData;
     window.isEditMode = isEditMode;
+    window.checkIsEditMode = checkIsEditMode; // 别名函数，兼容媒体模块
 }
 
 // 为模块系统导出函数
@@ -809,8 +851,9 @@ if (typeof module !== 'undefined' && module.exports) {
         saveProductChanges,
         deleteCurrentProduct,
         getCurrentProductData,
-        isEditMode
+        isEditMode,
+        checkIsEditMode
     };
 }
 
-console.log('产品编辑器主控制器模块已加载');
+debugInfo('productEditor', '产品编辑器主控制器模块已加载');

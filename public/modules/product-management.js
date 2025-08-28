@@ -5,8 +5,6 @@
  * 整合产品表单管理和媒体管理子模块
  */
 
-console.log('=== product-management.js 开始加载 ===');
-
 // 导入子模块（如果在模块环境中）
 if (typeof require !== 'undefined') {
     try {
@@ -14,34 +12,27 @@ if (typeof require !== 'undefined') {
         require('./product-media.js');
         require('./category-management.js');
     } catch (e) {
-        console.warn('子模块加载失败，请确保文件存在:', e.message);
+        debugWarn('productManagement', '子模块加载失败，请确保文件存在:', e.message);
     }
 }
-
-console.log('=== require 部分完成 ===');
 
 // 存储当前编辑的产品信息
 let currentProductData = null;
 let managementIsEditMode = false; // 重命名避免与product-editor.js中的isEditMode函数冲突
 let moduleInitialized = false;
 
-console.log('=== 全局变量初始化完成 ===');
+// 全局变量初始化完成
 
 // 模块初始化函数
 function initializeProductManagementModule() {
-    console.log('=== initializeProductManagementModule 被调用 ===');
-    
     if (moduleInitialized) {
-        console.log('产品管理模块已经初始化过');
         return;
     }
-    
-    console.log('产品管理模块初始化中...');
     
     // 检查依赖模块
     const dependencies = checkDependencies();
     if (!dependencies.allAvailable) {
-        console.warn('依赖模块未完全加载，将在延迟后重试');
+        debugWarn('productManagement', '依赖模块未完全加载，将在延迟后重试');
         setTimeout(() => initializeProductManagementModule(), 500);
         return;
     }
@@ -56,13 +47,10 @@ function initializeProductManagementModule() {
     initializeSubModules();
     
     moduleInitialized = true;
-    console.log('产品管理模块初始化完成');
+
     
     // 立即检查函数暴露
-    console.log('验证函数暴露状态:');
-    console.log('addNewProduct:', typeof window.addNewProduct);
-    console.log('viewProduct:', typeof window.viewProduct);
-    console.log('editProductInEditMode:', typeof window.editProductInEditMode);
+
 }
 
 // 检查依赖模块
@@ -76,11 +64,6 @@ function checkDependencies() {
     
     const missing = Object.keys(required).filter(key => !required[key]);
     
-    console.log('依赖检查结果:');
-    Object.keys(required).forEach(key => {
-        console.log(`${key}:`, required[key] ? '✅' : '❌');
-    });
-    
     return {
         allAvailable: missing.length === 0,
         missing: missing,
@@ -92,19 +75,13 @@ function checkDependencies() {
 function initializeSubModules() {
     // 现在子模块由admin.js统一加载和初始化
     // 这里只需要检查子模块是否已经可用
-    console.log('检查子模块状态:');
-    console.log('产品表单模块:', typeof initializeProductForm !== 'undefined' ? '✅可用' : '❌未找到');
-    console.log('产品媒体模块:', typeof initializeProductMedia !== 'undefined' ? '✅可用' : '❌未找到');
-    console.log('产品编辑器模块:', typeof initializeProductEditor !== 'undefined' ? '✅可用' : '❌未找到');
-    console.log('分类管理模块:', typeof initializeCategoryManagementModule !== 'undefined' ? '✅可用' : '❌未找到');
     
     // 初始化分类管理模块
     if (typeof initializeCategoryManagementModule === 'function') {
         try {
             initializeCategoryManagementModule();
-            console.log('✅ 分类管理模块初始化成功');
         } catch (error) {
-            console.error('❌ 分类管理模块初始化失败:', error);
+            debugError('productManagement', '❗ 分类管理模块初始化失败:', error);
         }
     }
 }
@@ -406,7 +383,7 @@ function createProductManagementModals() {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     
     // 媒体模块已由admin.js统一初始化，无需在这里重复初始化
-    console.log('产品管理模态框创建完成');
+    debugInfo('productManagement', '产品管理模态框创建完成');
 }
 
 
@@ -423,7 +400,7 @@ function switchLanguageTab(language) {
         // 降级方案：手动切换
         switchLanguageTabManually(language);
     } catch (error) {
-        console.error('语言切换失败:', error);
+        debugError('productManagement', '语言切换失败:', error);
         switchLanguageTabManually(language);
     }
 }
@@ -517,7 +494,7 @@ function resetProductForm() {
         }
         
     } catch (error) {
-        console.error('重置产品表单失败:', error);
+        debugError('productManagement', '重置产品表单失败:', error);
     }
 }
 
@@ -572,20 +549,20 @@ function hideLoadingModal(modal) {
 
 // 修改 addNewProduct 函数以使用新的编辑器
 function addNewProduct() {
-    console.log('添加新产品');
+    debugInfo('productManagement', '添加新产品');
     
     // 确保产品编辑器已初始化
     if (typeof initializeProductEditor === 'function') {
         try {
             initializeProductEditor();
         } catch (error) {
-            console.warn('产品编辑器初始化警告:', error);
+            debugWarn('productManagement', '产品编辑器初始化警告:', error);
         }
     }
     
     // 检查产品编辑器是否可用
     if (typeof openProductEditor !== 'function') {
-        console.error('产品编辑器模块未正确加载');
+        debugError('productManagement', '产品编辑器模块未正确加载');
         alert('产品编辑器模块加载失败，请刷新页面后重试。');
         return;
     }
@@ -597,20 +574,20 @@ function addNewProduct() {
 // 查看/编辑产品
 async function viewProduct(productId) {
     try {
-        console.log('开始加载产品进行查看:', productId);
+    
         
         // 确保产品编辑器已初始化
         if (typeof initializeProductEditor === 'function') {
             try {
                 initializeProductEditor();
             } catch (error) {
-                console.warn('产品编辑器初始化警告:', error);
+                debugWarn('productManagement', '产品编辑器初始化警告:', error);
             }
         }
         
         // 检查产品编辑器是否可用
         if (typeof openProductEditor !== 'function') {
-            console.error('产品编辑器模块未正确加载');
+            debugError('productManagement', '产品编辑器模块未正确加载');
             alert('产品编辑器模块加载失败，请刷新页面后重试。');
             return;
         }
@@ -640,10 +617,10 @@ async function viewProduct(productId) {
         // 打开产品编辑器（查看模式）
         openProductEditor(productData, 'view');
         
-        console.log('产品查看器已打开:', productData);
+    
         
     } catch (error) {
-        console.error('获取产品详情失败:', error);
+        debugError('productManagement', '获取产品详情失败:', error);
         alert(`获取产品信息失败: ${error.message}`);
         
         // 确保关闭加载模态框
@@ -655,20 +632,20 @@ async function viewProduct(productId) {
 // 编辑产品（编辑模式）
 async function editProductInEditMode(productId) {
     try {
-        console.log('开始加载产品进行编辑:', productId);
+    
         
         // 确保产品编辑器已初始化
         if (typeof initializeProductEditor === 'function') {
             try {
                 initializeProductEditor();
             } catch (error) {
-                console.warn('产品编辑器初始化警告:', error);
+                debugWarn('productManagement', '产品编辑器初始化警告:', error);
             }
         }
         
         // 检查产品编辑器是否可用
         if (typeof openProductEditor !== 'function') {
-            console.error('产品编辑器模块未正确加载');
+            debugError('productManagement', '产品编辑器模块未正确加载');
             alert('产品编辑器模块加载失败，请刷新页面后重试。');
             return;
         }
@@ -698,10 +675,10 @@ async function editProductInEditMode(productId) {
         // 打开产品编辑器（编辑模式）
         openProductEditor(productData, 'edit');
         
-        console.log('产品编辑器已打开:', productData);
+    
         
     } catch (error) {
-        console.error('获取产品详情失败:', error);
+        debugError('productManagement', '获取产品详情失败:', error);
         alert(`获取产品信息失败: ${error.message}`);
         
         // 确保关闭加载模态框
@@ -725,7 +702,7 @@ function populateProductForm(productData) {
         populateProductInfo(productData);
         
     } catch (error) {
-        console.error('填充产品表单失败:', error);
+        debugError('productManagement', '填充产品表单失败:', error);
         // 降级到手动填充
         populateProductFormManually(productData);
     }
@@ -800,7 +777,7 @@ async function loadProductMedia(productId) {
                 renderMediaList();
             }
         } else {
-            console.warn('加载媒体文件失败:', response.status);
+            debugWarn('productManagement', '加载媒体文件失败:', response.status);
             if (typeof clearCurrentProductMedia === 'function') {
                 clearCurrentProductMedia();
             } else {
@@ -809,7 +786,7 @@ async function loadProductMedia(productId) {
             }
         }
     } catch (error) {
-        console.error('加载媒体文件出错:', error);
+        debugError('productManagement', '加载媒体文件出错:', error);
         if (typeof clearCurrentProductMedia === 'function') {
             clearCurrentProductMedia();
         } else {
@@ -820,14 +797,16 @@ async function loadProductMedia(productId) {
 }
 
 // 渲染媒体文件列表（降级方案）
-function renderMediaList() {
-    // 如果媒体管理模块可用，则跳过
-    if (typeof setCurrentProductMedia === 'function') {
+function renderMediaListFallback() {
+    // 如果媒体管理模块可用，则委托给专门的模块
+    if (typeof window.setCurrentProductMedia === 'function') {
         return;
     }
     
     const mediaList = document.getElementById('media-list');
-    if (!mediaList) return;
+    if (!mediaList) {
+        return;
+    }
     
     if (!currentProductMedia || currentProductMedia.length === 0) {
         mediaList.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">暂无媒体文件</div>';
@@ -945,7 +924,7 @@ async function saveProduct() {
         }
         
     } catch (error) {
-        console.error('保存产品失败:', error);
+        debugError('productManagement', '保存产品失败:', error);
         alert(`保存失败: ${error.message}`);
     } finally {
         // 恢复保存按钮
@@ -1001,7 +980,7 @@ async function deleteProduct() {
         }
         
     } catch (error) {
-        console.error('删除产品失败:', error);
+        debugError('productManagement', '删除产品失败:', error);
         alert(`删除失败: ${error.message}`);
     } finally {
         // 恢复删除按钮
@@ -1028,7 +1007,7 @@ function setThumbnail(mediaId) {
     if (typeof setMediaAsThumbnail === 'function') {
         setMediaAsThumbnail(mediaId);
     } else {
-        console.warn('媒体管理模块未找到');
+        debugWarn('productManagement', '媒体管理模块未找到');
     }
 }
 
@@ -1037,17 +1016,17 @@ function deleteMedia(mediaId) {
     if (typeof deleteMediaItem === 'function') {
         deleteMediaItem(mediaId);
     } else {
-        console.warn('媒体管理模块未找到');
+        debugWarn('productManagement', '媒体管理模块未找到');
     }
 }
 
 // 新增分类功能（供全局调用）
 function addNewCategoryFromModule() {
-    console.log('从产品管理模块调用新增分类');
+    debugInfo('productManagement', '从产品管理模块调用新增分类');
     
     // 直接检查分类管理模块是否可用
     if (typeof window.initializeCategoryManagementModule === 'function') {
-        console.log('分类管理模块可用，继续检查新增功能');
+        debugInfo('productManagement', '分类管理模块可用，继续检查新增功能');
         
         // 直接使用全局作用域中分类管理模块暴露的原始函数
         // 这个函数应该是分类管理模块的原始实现
@@ -1075,7 +1054,7 @@ function addNewCategoryFromModule() {
                     // 显示模态框
                     categoryModal.style.display = 'block';
                 } else {
-                    console.error('分类模态框未找到，请在分类管理页面使用此功能');
+                    debugError('productManagement', '分类模态框未找到，请在分类管理页面使用此功能');
                     alert('请在分类管理页面使用新增分类功能');
                 }
             }
@@ -1089,18 +1068,18 @@ function addNewCategoryFromModule() {
 }
 
 // 对外暴露的函数
-console.log('=== 开始暴露函数到window对象 ===');
+debugInfo('productManagement', '开始暴露函数到window对象');
 if (typeof window !== 'undefined') {
-    console.log('window对象存在，开始暴露函数...');
+    debugInfo('productManagement', 'window对象存在，开始暴露函数...');
     
     window.addNewProduct = addNewProduct;
-    console.log('暴露 addNewProduct:', typeof addNewProduct);
+    debugDebug('productManagement', '暴露 addNewProduct:', typeof addNewProduct);
     
     window.viewProduct = viewProduct;
-    console.log('暴露 viewProduct:', typeof viewProduct);
+    debugDebug('productManagement', '暴露 viewProduct:', typeof viewProduct);
     
     window.editProductInEditMode = editProductInEditMode;
-    console.log('暴露 editProductInEditMode:', typeof editProductInEditMode);
+    debugDebug('productManagement', '暴露 editProductInEditMode:', typeof editProductInEditMode);
     
     window.saveProduct = saveProduct;
     window.deleteProduct = deleteProduct;
@@ -1115,14 +1094,14 @@ if (typeof window !== 'undefined') {
     
     // 主模块初始化
     window.initializeProductManagementModule = initializeProductManagementModule;
-    console.log('暴露 initializeProductManagementModule:', typeof initializeProductManagementModule);
+    debugDebug('productManagement', '暴露 initializeProductManagementModule:', typeof initializeProductManagementModule);
     
     // 分类管理相关函数
     window.addNewCategoryFromModule = addNewCategoryFromModule;
     
-    console.log('=== 函数暴露完成 ===');
+    debugInfo('productManagement', '函数暴露完成');
 } else {
-    console.error('window对象不存在！');
+    debugError('productManagement', 'window对象不存在！');
 }
 
 // 导出模块初始化函数
@@ -1144,8 +1123,5 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 // 立即检查函数是否正确暴露
-console.log('产品管理模块加载完成，检查函数暴露:');
-console.log('window.addNewProduct:', typeof window.addNewProduct);
-console.log('window.viewProduct:', typeof window.viewProduct);
-console.log('window.editProductInEditMode:', typeof window.editProductInEditMode);
-console.log('window.initializeProductManagementModule:', typeof window.initializeProductManagementModule);
+// 模块加载完成
+debugDebug('productManagement', 'window.initializeProductManagementModule:', typeof window.initializeProductManagementModule);

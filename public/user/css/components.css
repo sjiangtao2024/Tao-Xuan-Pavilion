@@ -1,0 +1,568 @@
+/**
+ * 组件样式文件
+ * 包含模态框、轮播图、产品卡片等组件样式
+ */
+
+/* 模态框样式 */
+.modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background-color: var(--bg-talisman-yellow);
+    color: var(--text-on-light);
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 400px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 15px;
+}
+
+.modal-title {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--primary-cinnabar-red);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    color: var(--primary-cinnabar-red);
+}
+
+/* 产品卡片样式 */
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: var(--bg-talisman-yellow);
+    color: var(--text-on-light);
+    border: 1px solid var(--accent-gilded-gold);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+.product-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.product-info {
+    padding: 16px;
+}
+
+.product-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: var(--primary-cinnabar-red);
+}
+
+.product-price {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--accent-gilded-gold);
+    margin-bottom: 12px;
+}
+
+.product-description {
+    font-size: 0.9em;
+    color: #666;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+/* 轮播图样式 */
+.carousel {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    max-width: 600px;
+    margin: 0 auto;
+    border-radius: 8px;
+}
+
+.carousel-inner {
+    display: flex;
+    transition: transform 0.5s ease;
+}
+
+.carousel-item {
+    min-width: 100%;
+    box-sizing: border-box;
+}
+
+.carousel-item img,
+.carousel-item video {
+    width: 100%;
+    display: block;
+    border-radius: 0.5rem;
+}
+
+.carousel-control {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 50%;
+    z-index: 10;
+    font-size: 1.5rem;
+    line-height: 1;
+    transition: background-color 0.3s ease;
+}
+
+.carousel-control:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.carousel-control.prev {
+    left: 1rem;
+}
+
+.carousel-control.next {
+    right: 1rem;
+}
+
+.carousel-indicators {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+}
+
+.carousel-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.carousel-indicator.active {
+    background-color: white;
+}
+
+/* 消息提示样式 */
+.message-modal {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 60;
+    transform: translateX(120%);
+    transition: transform 0.5s ease;
+    max-width: 300px;
+}
+
+.message-modal.show {
+    transform: translateX(0);
+}
+
+.message-modal.success {
+    background-color: #10b981;
+}
+
+.message-modal.error {
+    background-color: #ef4444;
+}
+
+.message-modal.warning {
+    background-color: #f59e0b;
+}
+
+.message-modal.info {
+    background-color: #3b82f6;
+}
+
+/* 购物车样式 */
+.cart-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.cart-item:last-child {
+    border-bottom: none;
+}
+
+.cart-item-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.cart-item-info {
+    flex: 1;
+}
+
+.cart-item-title {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.cart-item-price {
+    color: var(--accent-gilded-gold);
+    font-weight: bold;
+}
+
+.cart-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quantity-input {
+    width: 60px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+.remove-item-btn {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+
+.remove-item-btn:hover {
+    background-color: #dc2626;
+}
+
+/* 表单样式 */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: var(--text-on-light);
+}
+
+.form-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.form-input:focus {
+    border-color: var(--primary-cinnabar-red);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(184, 59, 29, 0.2);
+}
+
+.form-error {
+    color: #ef4444;
+    font-size: 0.8em;
+    margin-top: 4px;
+}
+
+/* 网格布局 */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+/* 分页样式 */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin: 20px 0;
+}
+
+.pagination-btn {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    background-color: white;
+    color: var(--text-on-light);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.pagination-btn:hover {
+    background-color: var(--primary-cinnabar-red);
+    color: white;
+    border-color: var(--primary-cinnabar-red);
+}
+
+.pagination-btn.active {
+    background-color: var(--primary-cinnabar-red);
+    color: white;
+    border-color: var(--primary-cinnabar-red);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-btn:disabled:hover {
+    background-color: white;
+    color: var(--text-on-light);
+    border-color: #ccc;
+}
+
+/* 用户资料页面样式 */
+.profile-container {
+    min-height: 80vh;
+    padding: 2rem 1rem;
+}
+
+.profile-sidebar {
+    position: sticky;
+    top: 2rem;
+    height: fit-content;
+}
+
+.profile-nav {
+    background-color: rgba(31, 41, 55, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(168, 143, 90, 0.3);
+}
+
+.profile-nav-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--text-on-dark);
+    border-radius: 0.375rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.profile-nav-btn:hover {
+    background-color: rgba(168, 143, 90, 0.2);
+    color: var(--accent-gilded-gold);
+}
+
+.profile-nav-btn.active {
+    background-color: var(--primary-cinnabar-red);
+    color: white;
+}
+
+.profile-content {
+    min-height: 400px;
+}
+
+.profile-section {
+    background-color: rgba(31, 41, 55, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(168, 143, 90, 0.3);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+.profile-section h2 {
+    color: var(--accent-gilded-gold);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(168, 143, 90, 0.3);
+    padding-bottom: 0.5rem;
+}
+
+.profile-section.hidden {
+    display: none;
+}
+
+/* 用户资料表单样式 */
+.profile-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.profile-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.profile-form .form-label {
+    display: block;
+    color: var(--text-on-dark);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.profile-form .form-input {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(168, 143, 90, 0.3);
+    border-radius: 0.375rem;
+    color: var(--text-on-dark);
+    transition: all 0.3s ease;
+}
+
+.profile-form .form-input:focus {
+    border-color: var(--accent-gilded-gold);
+    box-shadow: 0 0 0 2px rgba(168, 143, 90, 0.2);
+    outline: none;
+}
+
+.profile-form .form-input:read-only {
+    background-color: rgba(0, 0, 0, 0.2);
+    color: rgba(234, 224, 200, 0.7);
+    cursor: not-allowed;
+}
+
+/* 订单历史样式 */
+.order-item {
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(168, 143, 90, 0.2);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.order-item h3 {
+    color: var(--accent-gilded-gold);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.order-status {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-weight: 500;
+}
+
+.order-status.completed {
+    background-color: #10b981;
+    color: white;
+}
+
+.order-status.pending {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.order-status.cancelled {
+    background-color: #ef4444;
+    color: white;
+}
+
+/* 设置项样式 */
+.setting-item {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(168, 143, 90, 0.2);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-item h3 {
+    color: var(--text-on-dark);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.setting-item label {
+    display: flex;
+    align-items: center;
+    color: var(--text-on-dark);
+    cursor: pointer;
+}
+
+.setting-item input[type="checkbox"] {
+    margin-right: 0.5rem;
+    accent-color: var(--primary-cinnabar-red);
+}
+
+.setting-item select {
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(168, 143, 90, 0.3);
+    border-radius: 0.375rem;
+    color: var(--text-on-dark);
+    padding: 0.5rem;
+}
+
+/* 登录要求页面样式 */
+.login-required {
+    text-align: center;
+    padding: 4rem 1rem;
+}
+
+.login-required h1 {
+    color: var(--accent-gilded-gold);
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.login-required p {
+    color: rgba(156, 163, 175, 1);
+    margin-bottom: 2rem;
+    font-size: 1.125rem;
+}

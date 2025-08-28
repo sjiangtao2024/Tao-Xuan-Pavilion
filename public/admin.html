@@ -183,6 +183,7 @@
                                 <th>ID</th>
                                 <th>产品名称</th>
                                 <th>价格 (USD)</th>
+                                <th>精选</th>
                                 <th>状态</th>
                                 <th>操作</th>
                             </tr>
@@ -245,6 +246,9 @@
     <div id="product-detail-container"></div>
 
     <!-- 加载所有管理模块 -->
+    <!-- 调试配置系统（最先加载） -->
+    <script src="/js/debug-config.js"></script>
+    
     <!-- 基础子模块（按依赖关系顺序加载） -->
     <script src="/modules/product-form.js"></script>
     <script src="/modules/product-media.js"></script>

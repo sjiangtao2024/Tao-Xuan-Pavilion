@@ -11,7 +11,7 @@ let isCategoryEditMode = false;
  * 初始化产品分类管理
  */
 function initializeCategoryManagementModule() {
-    console.log('产品分类管理模块初始化');
+    debugInfo('categoryManagement', '产品分类管理模块初始化');
     injectCategoryStyles();
     createCategoryModals();
     loadCategoryList('zh'); // 默认加载中文分类
@@ -93,7 +93,7 @@ async function loadCategoryList(language = 'zh') {
         
         if (response.ok) {
             categoryList = await response.json();
-            console.log(`加载分类数据成功 (${language}):`, categoryList);
+            debugDebug('categoryManagement', `加载分类数据成功 (${language}):`, categoryList);
             renderCategoryList();
         } else {
             const error = await response.json();

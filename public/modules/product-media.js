@@ -15,18 +15,42 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 /**
  * 初始化媒体管理功能
+ * @param {boolean} forceRender - 是否强制渲染界面
  */
-function initializeProductMedia() {
-    console.log('产品媒体管理模块初始化');
-    
+function initializeProductMedia(forceRender = false) {
     // 注入样式
     injectMediaStyles();
     
+    // 检查容器是否存在
+    let container = document.getElementById('product-media-container');
+    
+    if (!container && forceRender) {
+        // 尝试查找编辑器容器
+        const editorModal = document.getElementById('product-editor-modal');
+        const editorSidebar = document.querySelector('.editor-sidebar');
+        const editorContent = document.querySelector('.editor-content');
+        
+        if (editorModal || editorSidebar || editorContent) {
+            // 查找或创建媒体容器
+            const targetParent = editorSidebar || editorContent || editorModal.querySelector('.modal-content');
+            if (targetParent) {
+                // 查找现有的媒体容器
+                container = targetParent.querySelector('#product-media-container');
+                if (!container) {
+                    // 创建媒体容器
+                    container = document.createElement('div');
+                    container.id = 'product-media-container';
+                    container.className = 'media-container-section';
+                    targetParent.appendChild(container);
+                }
+            }
+        }
+    }
+    
     // 渲染媒体界面
-    const rendered = renderMediaInterface();
+    const rendered = renderMediaInterface(forceRender, container);
     if (!rendered) {
         // 容器不存在，等待后续调用
-        console.log('产品媒体模块初始化暂缓，等待编辑器初始化');
         return false;
     }
     
@@ -38,14 +62,37 @@ function initializeProductMedia() {
 
 /**
  * 渲染媒体界面
+ * @param {boolean} forceRender - 是否强制渲染
+ * @param {HTMLElement} container - 指定的容器元素
  */
-function renderMediaInterface() {
-    const container = document.getElementById('product-media-container');
+function renderMediaInterface(forceRender = false, container = null) {
+    // 如果没有传入容器，尝试查找
     if (!container) {
-        console.log('产品媒体容器未找到，等待后续初始化');
+        container = document.getElementById('product-media-container');
+    }
+    
+    if (!container) {
         return false;
     }
     
+    return doRenderMediaInterface(container);
+}
+
+/**
+ * 触发媒体上传
+ */
+function triggerMediaUpload() {
+    const uploadInput = document.getElementById('media-upload-input');
+    if (uploadInput) {
+        uploadInput.click();
+    }
+}
+
+/**
+ * 执行媒体界面渲染
+ * @param {HTMLElement} container - 容器元素
+ */
+function doRenderMediaInterface(container) {
     const mediaHTML = `
         <div class="media-section">
             <div class="media-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -53,10 +100,16 @@ function renderMediaInterface() {
                     <span>🖼️</span>
                     <span>媒体文件</span>
                 </h3>
-                <button class="media-upload-btn" onclick="triggerMediaUpload()" style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; display: flex; align-items: center; gap: 8px;">
-                    <span>📁</span>
-                    <span>上传</span>
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="media-view-btn" onclick="viewAllMedia()" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s; display: flex; align-items: center; gap: 6px;">
+                        <span>👁️</span>
+                        <span>查看</span>
+                    </button>
+                    <button class="media-upload-btn" onclick="triggerMediaUpload()" style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s; display: flex; align-items: center; gap: 6px;">
+                        <span>📁</span>
+                        <span>上传</span>
+                    </button>
+                </div>
             </div>
             
             <div id="media-list" class="media-grid">
@@ -80,16 +133,158 @@ function renderMediaInterface() {
     `;
     
     container.innerHTML = mediaHTML;
+    
+    // 立即尝试加载现有媒体数据
+    const currentProductData = window.getCurrentProductData ? window.getCurrentProductData() : null;
+    if (currentProductData && currentProductData.id) {
+        loadProductMedia(currentProductData.id);
+    }
+    
+    return true;
 }
 
 /**
- * 触发媒体上传
+ * 查看所有媒体文件
  */
-function triggerMediaUpload() {
-    const uploadInput = document.getElementById('media-upload-input');
-    if (uploadInput) {
-        uploadInput.click();
+function viewAllMedia() {
+    if (currentProductMedia.length === 0) {
+        showNotification('暂无媒体文件可查看', 'info');
+        return;
     }
+    
+    // 滚动到媒体列表区域
+    const mediaList = document.getElementById('media-list');
+    if (mediaList) {
+        mediaList.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // 高亮显示媒体列表
+        mediaList.style.border = '2px solid #f39c12';
+        mediaList.style.borderRadius = '8px';
+        mediaList.style.transition = 'all 0.3s';
+        
+        setTimeout(() => {
+            mediaList.style.border = '';
+        }, 2000);
+    }
+    
+    showNotification(`共有 ${currentProductMedia.length} 个媒体文件`, 'info');
+}
+
+/**
+ * 打开媒体预览弹窗
+ * @param {string} url - 媒体文件URL
+ * @param {string} type - 媒体类型 (image/video)
+ */
+function openMediaPreview(url, type) {
+    // 创建预览弹窗
+    const modal = document.createElement('div');
+    modal.className = 'media-preview-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+        max-width: 90%;
+        max-height: 90%;
+        position: relative;
+    `;
+    
+    if (type === 'image') {
+        const img = document.createElement('img');
+        img.src = url;
+        img.style.cssText = `
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        `;
+        content.appendChild(img);
+    } else if (type === 'video') {
+        const video = document.createElement('video');
+        video.src = url;
+        video.controls = true;
+        video.autoplay = true;
+        video.style.cssText = `
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+        `;
+        content.appendChild(video);
+    }
+    
+    // 添加关闭按钮
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '×';
+    closeBtn.style.cssText = `
+        position: absolute;
+        top: -40px;
+        right: 0;
+        background: rgba(255, 255, 255, 0.8);
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        font-size: 20px;
+        cursor: pointer;
+        color: #333;
+    `;
+    
+    closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        document.body.removeChild(modal);
+    };
+    
+    content.appendChild(closeBtn);
+    modal.appendChild(content);
+    
+    // 点击外部关闭
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
+    };
+    
+    // 阻止内容区域点击传播
+    content.onclick = (e) => {
+        e.stopPropagation();
+    };
+    
+    document.body.appendChild(modal);
+}
+
+/**
+ * 刷新媒体列表显示
+ */
+function refreshMediaDisplay() {
+    renderMediaList();
+    console.log('媒体列表已刷新');
+}
+
+/**
+ * 获取媒体文件统计信息
+ */
+function getMediaStats() {
+    const imageCount = currentProductMedia.filter(m => m.type === 'image' || /\.(jpg|jpeg|png|gif|webp)$/i.test(m.url)).length;
+    const videoCount = currentProductMedia.filter(m => m.type === 'video' || /\.(mp4|mov|avi|webm)$/i.test(m.url)).length;
+    const thumbnailCount = currentProductMedia.filter(m => m.is_thumbnail).length;
+    
+    return {
+        total: currentProductMedia.length,
+        images: imageCount,
+        videos: videoCount,
+        thumbnails: thumbnailCount
+    };
 }
 
 /**
@@ -139,7 +334,7 @@ function injectMediaStyles() {
         
         .media-preview {
             width: 100%;
-            height: 100px;
+            height: 120px;
             object-fit: cover;
             border-radius: 5px;
             margin-bottom: 8px;
@@ -147,6 +342,19 @@ function injectMediaStyles() {
             display: flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .media-preview:hover {
+            transform: scale(1.05);
+        }
+        
+        .media-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 5px;
         }
         
         .media-preview video {
@@ -496,7 +704,11 @@ function addMediaToList(mediaData) {
  */
 function renderMediaList() {
     const mediaList = document.getElementById('media-list');
-    if (!mediaList) return;
+    
+    if (!mediaList) {
+        console.error('找不到media-list容器！');
+        return;
+    }
     
     if (currentProductMedia.length === 0) {
         mediaList.innerHTML = '<div class="empty-media-state">暂无媒体文件</div>';
@@ -507,6 +719,12 @@ function renderMediaList() {
         const isImage = media.type === 'image' || /\.(jpg|jpeg|png|gif|webp)$/i.test(media.url);
         const isVideo = media.type === 'video' || /\.(mp4|mov|avi|webm)$/i.test(media.url);
         
+        // 处理图片URL，确保路径正确
+        let mediaUrl = media.url;
+        if (mediaUrl && !mediaUrl.startsWith('http') && !mediaUrl.startsWith('/')) {
+            mediaUrl = '/' + mediaUrl;
+        }
+        
         return `
             <div class="media-item ${media.is_thumbnail ? 'thumbnail' : ''}" 
                  data-media-id="${media.id || index}"
@@ -515,18 +733,19 @@ function renderMediaList() {
                 ${media.is_thumbnail ? '<div class="thumbnail-badge">缩略图</div>' : ''}
                 <div class="media-type-badge">${isImage ? '图片' : isVideo ? '视频' : '文件'}</div>
                 
-                <div class="media-preview">
+                <div class="media-preview" onclick="openMediaPreview('${mediaUrl}', '${isImage ? 'image' : 'video'}')">
                     ${isImage ? `
-                        <img src="${media.url}" alt="${media.filename || '产品图片'}" 
-                             loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="media-preview file-icon" style="display: none;">🖼️</div>
+                        <img src="${mediaUrl}" alt="${media.filename || '产品图片'}" 
+                             loading="lazy" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="file-icon" style="display: none; font-size: 2em; color: rgba(255, 255, 255, 0.6);">🖼️</div>
                     ` : isVideo ? `
                         <video muted preload="metadata">
-                            <source src="${media.url}" type="${media.type || 'video/mp4'}">
-                            <div class="media-preview file-icon">🎥</div>
+                            <source src="${mediaUrl}" type="${media.type || 'video/mp4'}">
                         </video>
+                        <div class="file-icon" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2em; color: rgba(255, 255, 255, 0.8);">🎥</div>
                     ` : `
-                        <div class="media-preview file-icon">📄</div>
+                        <div class="file-icon" style="font-size: 2em; color: rgba(255, 255, 255, 0.6);">📄</div>
                     `}
                 </div>
                 
@@ -750,6 +969,51 @@ function clearCurrentProductMedia() {
 }
 
 /**
+ * 加载产品媒体数据
+ * @param {number} productId - 产品ID
+ */
+async function loadProductMedia(productId) {
+    if (!productId) {
+        clearCurrentProductMedia();
+        return;
+    }
+    
+    try {
+        const token = localStorage.getItem('adminToken');
+        const apiUrl = `/api/admin/products/${productId}/media`;
+        
+        const response = await fetch(apiUrl, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const mediaList = data.media || [];
+            
+            setCurrentProductMedia(mediaList);
+            
+            // 设置缩略图
+            const thumbnail = mediaList.find(m => m.is_thumbnail);
+            if (thumbnail) {
+                thumbnailAssetId = thumbnail.id;
+            }
+        } else {
+            const errorText = await response.text();
+            console.warn('加载媒体数据失败:', response.status, errorText);
+            clearCurrentProductMedia();
+            showNotification(`加载媒体数据失败: ${response.status}`, 'warning');
+        }
+    } catch (error) {
+        console.error('加载媒体数据失败:', error);
+        clearCurrentProductMedia();
+        showNotification('加载媒体文件失败', 'error');
+    }
+}
+
+/**
  * 获取缩略图资源ID
  * @returns {number|null} - 缩略图资源ID
  */
@@ -767,6 +1031,15 @@ if (typeof window !== 'undefined') {
     window.setCurrentProductMedia = setCurrentProductMedia;
     window.clearCurrentProductMedia = clearCurrentProductMedia;
     window.getThumbnailAssetId = getThumbnailAssetId;
+    window.loadProductMedia = loadProductMedia;
+    window.triggerMediaUpload = triggerMediaUpload;
+    window.viewAllMedia = viewAllMedia;
+    window.refreshMediaDisplay = refreshMediaDisplay;
+    window.getMediaStats = getMediaStats;
+    window.openMediaPreview = openMediaPreview;
+    
+    // 添加对编辑模式检查函数的引用
+    window.checkIsEditMode = window.checkIsEditMode || window.isEditMode;
 }
 
 // 模块导出
@@ -779,6 +1052,12 @@ if (typeof module !== 'undefined' && module.exports) {
         getCurrentProductMedia,
         setCurrentProductMedia,
         clearCurrentProductMedia,
-        getThumbnailAssetId
+        getThumbnailAssetId,
+        loadProductMedia,
+        triggerMediaUpload,
+        viewAllMedia,
+        refreshMediaDisplay,
+        getMediaStats,
+        openMediaPreview
     };
 }

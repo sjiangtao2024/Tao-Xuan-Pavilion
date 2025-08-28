@@ -52,7 +52,7 @@ const VALIDATION_RULES = {
  * 初始化产品表单管理
  */
 function initializeProductForm() {
-    console.log('产品表单管理模块初始化');
+
     
     // 注入表单样式
     injectFormStyles();
@@ -61,7 +61,7 @@ function initializeProductForm() {
     const rendered = renderFormInterface();
     if (!rendered) {
         // 容器不存在，等待后续调用
-        console.log('产品表单模块初始化暂缓，等待编辑器初始化');
+
         return false;
     }
     
@@ -84,11 +84,8 @@ function initializeProductForm() {
 function renderFormInterface() {
     const container = document.getElementById('product-form-container');
     if (!container) {
-        console.log('产品表单容器未找到，等待后续初始化');
         return false;
     }
-    
-    console.log('开始渲染产品表单界面...');
     
     const formHTML = `
         <!-- 语言切换器 -->
@@ -181,7 +178,7 @@ function renderFormInterface() {
         return false;
     }
     
-    console.log('产品表单界面渲染完成，所有必要元素均已创建');
+
     return true;
 }
 
@@ -539,54 +536,33 @@ async function switchLanguage(language) {
     currentLanguage = language;
     
     // 更新标签页状态
-    console.log('更新语言标签状态...');
     document.querySelectorAll('.language-tab').forEach(tab => {
         tab.classList.remove('active');
-        console.log(`移除标签 active 类: ${tab.textContent}`);
     });
     
     const activeTab = document.querySelector(`[onclick*="${language}"]`);
     if (activeTab) {
         activeTab.classList.add('active');
-        console.log(`激活标签: ${activeTab.textContent}`);
     } else {
         console.error(`找不到语言标签: ${language}`);
     }
     
     // 更新内容显示
-    console.log('更新语言内容显示...');
     document.querySelectorAll('.language-content').forEach(content => {
         content.classList.remove('active');
-        console.log(`隐藏内容区域: ${content.id}`);
     });
     
     const targetContent = document.getElementById(`${language}-form-content`);
     if (targetContent) {
         targetContent.classList.add('active');
-        console.log(`显示内容区域: ${targetContent.id}`);
-        
-        // 检查内容区域的显示状态
-        const computedStyle = window.getComputedStyle(targetContent);
-        console.log(`${targetContent.id} 的 display 状态: ${computedStyle.display}`);
     } else {
         console.error(`找不到语言内容区域: ${language}-form-content`);
-        
-        // 列出所有可用的语言内容区域
-        const allContents = document.querySelectorAll('.language-content');
-        console.log('所有可用的语言内容区域:');
-        allContents.forEach(content => {
-            console.log(`- ${content.id}: ${content.classList.contains('active') ? 'active' : 'inactive'}`);
-        });
     }
     
     // 恢复当前语言的数据到表单
     restoreLanguageData(language);
     
-    // 重新加载分类（根据当前语言）
     await loadCategories(language);
-    
-    console.log(`语言切换完成: ${previousLanguage} -> ${language}`);
-    console.log('当前formData:', formData);
 }
 
 /**
@@ -595,19 +571,15 @@ async function switchLanguage(language) {
 function saveCurrentLanguageData() {
     if (!currentLanguage) return;
     
-    console.log(`保存 ${currentLanguage} 语言数据...`);
-    
     if (currentLanguage === 'zh') {
         const nameInput = document.getElementById('product-name-zh');
         const descInput = document.getElementById('product-description-zh');
         
         if (nameInput) {
             formData.zh.name = nameInput.value || '';
-            console.log(`保存中文名称: "${formData.zh.name}"`);
         }
         if (descInput) {
             formData.zh.description = descInput.value || '';
-            console.log(`保存中文描述: "${formData.zh.description}"`);
         }
     } else if (currentLanguage === 'en') {
         const nameInput = document.getElementById('product-name-en');
@@ -615,11 +587,9 @@ function saveCurrentLanguageData() {
         
         if (nameInput) {
             formData.en.name = nameInput.value || '';
-            console.log(`保存英文名称: "${formData.en.name}"`);
         }
         if (descInput) {
             formData.en.description = descInput.value || '';
-            console.log(`保存英文描述: "${formData.en.description}"`);
         }
     }
     
@@ -644,9 +614,6 @@ function saveCurrentLanguageData() {
  * @param {string} language - 语言代码
  */
 function restoreLanguageData(language) {
-    console.log(`恢复 ${language} 语言数据...`);
-    console.log('当前formData:', JSON.stringify(formData, null, 2));
-    
     // 使用setTimeout确保 DOM元素已经渲染完成
     setTimeout(() => {
         if (language === 'zh') {
@@ -655,13 +622,11 @@ function restoreLanguageData(language) {
             
             if (nameInput) {
                 nameInput.value = formData.zh.name || '';
-                console.log(`恢复中文名称: "${nameInput.value}"`);
             } else {
                 console.error('中文名称输入框未找到');
             }
             if (descInput) {
                 descInput.value = formData.zh.description || '';
-                console.log(`恢复中文描述: "${descInput.value}"`);
             } else {
                 console.error('中文描述输入框未找到');
             }
@@ -671,13 +636,11 @@ function restoreLanguageData(language) {
             
             if (nameInput) {
                 nameInput.value = formData.en.name || '';
-                console.log(`恢复英文名称: "${nameInput.value}"`);
             } else {
                 console.error('英文名称输入框未找到');
             }
             if (descInput) {
                 descInput.value = formData.en.description || '';
-                console.log(`恢复英文描述: "${descInput.value}"`);
             } else {
                 console.error('英文描述输入框未找到');
             }
@@ -899,7 +862,7 @@ async function loadCategories(language = 'zh') {
     
     if (!categorySelect) return;
     
-    console.log(`加载分类列表，语言: ${language}`);
+
     
     try {
         if (loadingIndicator) {
@@ -935,7 +898,7 @@ async function loadCategories(language = 'zh') {
                 categorySelect.value = selectedCategoryId;
             }
             
-            console.log(`成功加载 ${categories.length} 个分类（${language}）`);
+
         } else {
             console.warn('加载分类失败:', response.status);
         }
@@ -1036,7 +999,7 @@ function populateFormData(data) {
         return;
     }
     
-    console.log('开始填充表单数据:', data);
+    debugInfo('productForm', '开始填充表单数据:', data);
     
     // 重置表单数据
     formData = {
@@ -1056,15 +1019,15 @@ function populateFormData(data) {
     formData.categoryId = data.categoryId || '';
     formData.featured = data.featured || false;
     
-    console.log('数据填充到formData对象:', JSON.stringify(formData, null, 2));
+    debugDebug('productForm', '数据填充到formData对象:', JSON.stringify(formData, null, 2));
     
     // 延迟更新UI，确保DOM元素完全初始化
     setTimeout(() => {
-        console.log('开始更新UI...');
+        debugInfo('productForm', '开始更新UI...');
         updateFormUI();
         updateLanguageTabStatus();
         updateFormProgress();
-        console.log('表单数据填充完成');
+        debugInfo('productForm', '表单数据填充完成');
     }, 100); // 延迟100ms
     
     isFormDirty = false;
@@ -1074,7 +1037,7 @@ function populateFormData(data) {
  * 更新表单UI
  */
 function updateFormUI() {
-    console.log('更新表单UI，当前formData:', formData);
+    debugDebug('productForm', '更新表单UI，当前formData:', formData);
     
     // 更新输入字段
     const inputs = {
@@ -1097,7 +1060,7 @@ function updateFormUI() {
             input.value = inputs[inputId] || '';
             if (oldValue !== input.value) {
                 updatedElements++;
-                console.log(`已更新 ${inputId}: "${oldValue}" -> "${input.value}"`);
+                debugDebug('productForm', `已更新 ${inputId}: "${oldValue}" -> "${input.value}"`);
             }
             updateCharacterCounter(inputId);
         } else {
@@ -1105,7 +1068,7 @@ function updateFormUI() {
         }
     });
     
-    console.log(`表单UI更新完成: 找到${foundElements}个元素，更新${updatedElements}个元素`);
+    debugDebug('productForm', `表单UI更新完成: 找到${foundElements}个元素，更新${updatedElements}个元素`);
     
     // 更新复选框
     const checkbox = document.getElementById('product-featured');
@@ -1113,7 +1076,7 @@ function updateFormUI() {
         const oldChecked = checkbox.checked;
         checkbox.checked = formData.featured;
         if (oldChecked !== checkbox.checked) {
-            console.log(`已更新精选状态: ${oldChecked} -> ${checkbox.checked}`);
+            debugDebug('productForm', `已更新精选状态: ${oldChecked} -> ${checkbox.checked}`);
         }
     } else {
         console.warn('精选复选框元素未找到: product-featured');

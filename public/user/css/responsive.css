@@ -1,0 +1,286 @@
+/**
+ * 响应式样式文件
+ * 处理不同屏幕尺寸的样式适配
+ */
+
+/* 移动设备样式 (小于768px) */
+@media (max-width: 767px) {
+    /* 导航菜单 */
+    #main-navigation {
+        display: none;
+    }
+    
+    /* 移动端导航 */
+    .mobile-nav-toggle {
+        display: block;
+        background: none;
+        border: none;
+        color: var(--text-on-dark);
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+    
+    .mobile-nav {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 280px;
+        height: 100vh;
+        background-color: var(--bg-mystic-black);
+        transition: left 0.3s ease;
+        z-index: 100;
+        padding: 60px 20px 20px;
+    }
+    
+    .mobile-nav.active {
+        left: 0;
+    }
+    
+    .mobile-nav-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 99;
+        display: none;
+    }
+    
+    .mobile-nav-overlay.active {
+        display: block;
+    }
+    
+    .mobile-nav .nav-link {
+        display: block;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 1.1rem;
+    }
+    
+    /* 容器 */
+    .container {
+        padding: 0 16px;
+    }
+    
+    /* 产品网格 */
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+        padding: 16px 0;
+    }
+    
+    /* 模态框 */
+    .modal-content {
+        width: 95%;
+        max-width: none;
+        margin: 20px;
+        padding: 20px;
+    }
+    
+    /* 头部 */
+    header .container {
+        padding: 0 16px;
+    }
+    
+    /* 语言切换和认证区域 */
+    .lang-switcher {
+        font-size: 0.8rem;
+    }
+    
+    #auth-container {
+        font-size: 0.9rem;
+    }
+    
+    /* 购物车按钮 */
+    #cart-button svg {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+    
+    /* 轮播图 */
+    .carousel-control {
+        padding: 0.25rem 0.5rem;
+        font-size: 1.2rem;
+    }
+    
+    .carousel-control.prev {
+        left: 0.5rem;
+    }
+    
+    .carousel-control.next {
+        right: 0.5rem;
+    }
+    
+    /* 消息提示 */
+    .message-modal {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        font-size: 0.9rem;
+    }
+    
+    /* 页脚 */
+    footer .grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+}
+
+/* 平板设备样式 (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+    /* 产品网格 */
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 18px;
+    }
+    
+    /* 容器 */
+    .container {
+        padding: 0 24px;
+    }
+    
+    /* 导航菜单 */
+    #main-navigation {
+        gap: 1.5rem;
+    }
+    
+    .nav-link {
+        font-size: 1rem;
+    }
+    
+    /* 页脚 */
+    footer .grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 32px;
+    }
+    
+    footer .grid > div:last-child {
+        grid-column: span 2;
+    }
+}
+
+/* 大屏设备样式 (大于1024px) */
+@media (min-width: 1024px) {
+    /* 容器 */
+    .container {
+        max-width: 1200px;
+        padding: 0 32px;
+    }
+    
+    /* 产品网格 */
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 24px;
+    }
+    
+    /* 导航菜单 */
+    #main-navigation {
+        gap: 2rem;
+    }
+    
+    /* 模态框 */
+    .modal-content {
+        max-width: 500px;
+        padding: 40px;
+    }
+    
+    /* 轮播图 */
+    .carousel {
+        max-width: 800px;
+    }
+}
+
+/* 超大屏设备样式 (大于1440px) */
+@media (min-width: 1440px) {
+    .container {
+        max-width: 1400px;
+    }
+    
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 28px;
+    }
+}
+
+/* 高度较小的设备 */
+@media (max-height: 600px) {
+    .modal-content {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .page {
+        min-height: calc(100vh - 150px);
+    }
+}
+
+/* 打印样式 */
+@media print {
+    header,
+    footer,
+    #cart-button,
+    .modal,
+    .message-modal {
+        display: none;
+    }
+    
+    body {
+        background: white;
+        color: black;
+    }
+    
+    .page {
+        display: block !important;
+    }
+    
+    .product-card {
+        break-inside: avoid;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+    }
+}
+
+/* 减少动画的用户偏好 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .carousel-inner {
+        transition: none;
+    }
+    
+    .product-card {
+        transition: none;
+    }
+    
+    .nav-link::after {
+        transition: none;
+    }
+}
+
+/* 深色模式偏好 (虽然项目本身就是深色主题) */
+@media (prefers-color-scheme: light) {
+    /* 如果需要支持浅色模式，在这里添加样式 */
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+    .nav-link,
+    .text-gold,
+    .product-title {
+        color: #ffffff;
+    }
+    
+    .btn-primary {
+        border: 2px solid white;
+    }
+    
+    .product-card {
+        border-width: 2px;
+    }
+}

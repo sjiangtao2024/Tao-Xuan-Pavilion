@@ -1,11 +1,1448 @@
 var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
+// wrangler-modules-watch:wrangler:modules-watch
+var init_wrangler_modules_watch = __esm({
+  "wrangler-modules-watch:wrangler:modules-watch"() {
+    init_modules_watch_stub();
+  }
+});
+
+// node_modules/wrangler/templates/modules-watch-stub.js
+var init_modules_watch_stub = __esm({
+  "node_modules/wrangler/templates/modules-watch-stub.js"() {
+    init_wrangler_modules_watch();
+  }
+});
+
+// node_modules/hono/dist/request/constants.js
+var GET_MATCH_RESULT;
+var init_constants = __esm({
+  "node_modules/hono/dist/request/constants.js"() {
+    init_modules_watch_stub();
+    GET_MATCH_RESULT = Symbol();
+  }
+});
+
+// node_modules/hono/dist/utils/body.js
+async function parseFormData(request, options) {
+  const formData = await request.formData();
+  if (formData) {
+    return convertFormDataToBodyData(formData, options);
+  }
+  return {};
+}
+function convertFormDataToBodyData(formData, options) {
+  const form = /* @__PURE__ */ Object.create(null);
+  formData.forEach((value, key) => {
+    const shouldParseAllValues = options.all || key.endsWith("[]");
+    if (!shouldParseAllValues) {
+      form[key] = value;
+    } else {
+      handleParsingAllValues(form, key, value);
+    }
+  });
+  if (options.dot) {
+    Object.entries(form).forEach(([key, value]) => {
+      const shouldParseDotValues = key.includes(".");
+      if (shouldParseDotValues) {
+        handleParsingNestedValues(form, key, value);
+        delete form[key];
+      }
+    });
+  }
+  return form;
+}
+var parseBody, handleParsingAllValues, handleParsingNestedValues;
+var init_body = __esm({
+  "node_modules/hono/dist/utils/body.js"() {
+    init_modules_watch_stub();
+    init_request();
+    parseBody = /* @__PURE__ */ __name(async (request, options = /* @__PURE__ */ Object.create(null)) => {
+      const { all = false, dot = false } = options;
+      const headers = request instanceof HonoRequest ? request.raw.headers : request.headers;
+      const contentType = headers.get("Content-Type");
+      if (contentType?.startsWith("multipart/form-data") || contentType?.startsWith("application/x-www-form-urlencoded")) {
+        return parseFormData(request, { all, dot });
+      }
+      return {};
+    }, "parseBody");
+    __name(parseFormData, "parseFormData");
+    __name(convertFormDataToBodyData, "convertFormDataToBodyData");
+    handleParsingAllValues = /* @__PURE__ */ __name((form, key, value) => {
+      if (form[key] !== void 0) {
+        if (Array.isArray(form[key])) {
+          ;
+          form[key].push(value);
+        } else {
+          form[key] = [form[key], value];
+        }
+      } else {
+        if (!key.endsWith("[]")) {
+          form[key] = value;
+        } else {
+          form[key] = [value];
+        }
+      }
+    }, "handleParsingAllValues");
+    handleParsingNestedValues = /* @__PURE__ */ __name((form, key, value) => {
+      let nestedForm = form;
+      const keys = key.split(".");
+      keys.forEach((key2, index) => {
+        if (index === keys.length - 1) {
+          nestedForm[key2] = value;
+        } else {
+          if (!nestedForm[key2] || typeof nestedForm[key2] !== "object" || Array.isArray(nestedForm[key2]) || nestedForm[key2] instanceof File) {
+            nestedForm[key2] = /* @__PURE__ */ Object.create(null);
+          }
+          nestedForm = nestedForm[key2];
+        }
+      });
+    }, "handleParsingNestedValues");
+  }
+});
+
+// node_modules/hono/dist/utils/url.js
+var splitPath, splitRoutingPath, extractGroupsFromPath, replaceGroupMarks, patternCache, getPattern, tryDecode, tryDecodeURI, getPath, getPathNoStrict, mergePath, checkOptionalParameter, _decodeURI, _getQueryParam, getQueryParam, getQueryParams, decodeURIComponent_;
+var init_url = __esm({
+  "node_modules/hono/dist/utils/url.js"() {
+    init_modules_watch_stub();
+    splitPath = /* @__PURE__ */ __name((path) => {
+      const paths = path.split("/");
+      if (paths[0] === "") {
+        paths.shift();
+      }
+      return paths;
+    }, "splitPath");
+    splitRoutingPath = /* @__PURE__ */ __name((routePath) => {
+      const { groups, path } = extractGroupsFromPath(routePath);
+      const paths = splitPath(path);
+      return replaceGroupMarks(paths, groups);
+    }, "splitRoutingPath");
+    extractGroupsFromPath = /* @__PURE__ */ __name((path) => {
+      const groups = [];
+      path = path.replace(/\{[^}]+\}/g, (match, index) => {
+        const mark = `@${index}`;
+        groups.push([mark, match]);
+        return mark;
+      });
+      return { groups, path };
+    }, "extractGroupsFromPath");
+    replaceGroupMarks = /* @__PURE__ */ __name((paths, groups) => {
+      for (let i = groups.length - 1; i >= 0; i--) {
+        const [mark] = groups[i];
+        for (let j = paths.length - 1; j >= 0; j--) {
+          if (paths[j].includes(mark)) {
+            paths[j] = paths[j].replace(mark, groups[i][1]);
+            break;
+          }
+        }
+      }
+      return paths;
+    }, "replaceGroupMarks");
+    patternCache = {};
+    getPattern = /* @__PURE__ */ __name((label, next) => {
+      if (label === "*") {
+        return "*";
+      }
+      const match = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/);
+      if (match) {
+        const cacheKey = `${label}#${next}`;
+        if (!patternCache[cacheKey]) {
+          if (match[2]) {
+            patternCache[cacheKey] = next && next[0] !== ":" && next[0] !== "*" ? [cacheKey, match[1], new RegExp(`^${match[2]}(?=/${next})`)] : [label, match[1], new RegExp(`^${match[2]}$`)];
+          } else {
+            patternCache[cacheKey] = [label, match[1], true];
+          }
+        }
+        return patternCache[cacheKey];
+      }
+      return null;
+    }, "getPattern");
+    tryDecode = /* @__PURE__ */ __name((str, decoder) => {
+      try {
+        return decoder(str);
+      } catch {
+        return str.replace(/(?:%[0-9A-Fa-f]{2})+/g, (match) => {
+          try {
+            return decoder(match);
+          } catch {
+            return match;
+          }
+        });
+      }
+    }, "tryDecode");
+    tryDecodeURI = /* @__PURE__ */ __name((str) => tryDecode(str, decodeURI), "tryDecodeURI");
+    getPath = /* @__PURE__ */ __name((request) => {
+      const url = request.url;
+      const start = url.indexOf(
+        "/",
+        url.charCodeAt(9) === 58 ? 13 : 8
+      );
+      let i = start;
+      for (; i < url.length; i++) {
+        const charCode = url.charCodeAt(i);
+        if (charCode === 37) {
+          const queryIndex = url.indexOf("?", i);
+          const path = url.slice(start, queryIndex === -1 ? void 0 : queryIndex);
+          return tryDecodeURI(path.includes("%25") ? path.replace(/%25/g, "%2525") : path);
+        } else if (charCode === 63) {
+          break;
+        }
+      }
+      return url.slice(start, i);
+    }, "getPath");
+    getPathNoStrict = /* @__PURE__ */ __name((request) => {
+      const result = getPath(request);
+      return result.length > 1 && result.at(-1) === "/" ? result.slice(0, -1) : result;
+    }, "getPathNoStrict");
+    mergePath = /* @__PURE__ */ __name((base, sub, ...rest) => {
+      if (rest.length) {
+        sub = mergePath(sub, ...rest);
+      }
+      return `${base?.[0] === "/" ? "" : "/"}${base}${sub === "/" ? "" : `${base?.at(-1) === "/" ? "" : "/"}${sub?.[0] === "/" ? sub.slice(1) : sub}`}`;
+    }, "mergePath");
+    checkOptionalParameter = /* @__PURE__ */ __name((path) => {
+      if (path.charCodeAt(path.length - 1) !== 63 || !path.includes(":")) {
+        return null;
+      }
+      const segments = path.split("/");
+      const results = [];
+      let basePath = "";
+      segments.forEach((segment) => {
+        if (segment !== "" && !/\:/.test(segment)) {
+          basePath += "/" + segment;
+        } else if (/\:/.test(segment)) {
+          if (/\?/.test(segment)) {
+            if (results.length === 0 && basePath === "") {
+              results.push("/");
+            } else {
+              results.push(basePath);
+            }
+            const optionalSegment = segment.replace("?", "");
+            basePath += "/" + optionalSegment;
+            results.push(basePath);
+          } else {
+            basePath += "/" + segment;
+          }
+        }
+      });
+      return results.filter((v, i, a) => a.indexOf(v) === i);
+    }, "checkOptionalParameter");
+    _decodeURI = /* @__PURE__ */ __name((value) => {
+      if (!/[%+]/.test(value)) {
+        return value;
+      }
+      if (value.indexOf("+") !== -1) {
+        value = value.replace(/\+/g, " ");
+      }
+      return value.indexOf("%") !== -1 ? tryDecode(value, decodeURIComponent_) : value;
+    }, "_decodeURI");
+    _getQueryParam = /* @__PURE__ */ __name((url, key, multiple) => {
+      let encoded;
+      if (!multiple && key && !/[%+]/.test(key)) {
+        let keyIndex2 = url.indexOf(`?${key}`, 8);
+        if (keyIndex2 === -1) {
+          keyIndex2 = url.indexOf(`&${key}`, 8);
+        }
+        while (keyIndex2 !== -1) {
+          const trailingKeyCode = url.charCodeAt(keyIndex2 + key.length + 1);
+          if (trailingKeyCode === 61) {
+            const valueIndex = keyIndex2 + key.length + 2;
+            const endIndex = url.indexOf("&", valueIndex);
+            return _decodeURI(url.slice(valueIndex, endIndex === -1 ? void 0 : endIndex));
+          } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
+            return "";
+          }
+          keyIndex2 = url.indexOf(`&${key}`, keyIndex2 + 1);
+        }
+        encoded = /[%+]/.test(url);
+        if (!encoded) {
+          return void 0;
+        }
+      }
+      const results = {};
+      encoded ??= /[%+]/.test(url);
+      let keyIndex = url.indexOf("?", 8);
+      while (keyIndex !== -1) {
+        const nextKeyIndex = url.indexOf("&", keyIndex + 1);
+        let valueIndex = url.indexOf("=", keyIndex);
+        if (valueIndex > nextKeyIndex && nextKeyIndex !== -1) {
+          valueIndex = -1;
+        }
+        let name = url.slice(
+          keyIndex + 1,
+          valueIndex === -1 ? nextKeyIndex === -1 ? void 0 : nextKeyIndex : valueIndex
+        );
+        if (encoded) {
+          name = _decodeURI(name);
+        }
+        keyIndex = nextKeyIndex;
+        if (name === "") {
+          continue;
+        }
+        let value;
+        if (valueIndex === -1) {
+          value = "";
+        } else {
+          value = url.slice(valueIndex + 1, nextKeyIndex === -1 ? void 0 : nextKeyIndex);
+          if (encoded) {
+            value = _decodeURI(value);
+          }
+        }
+        if (multiple) {
+          if (!(results[name] && Array.isArray(results[name]))) {
+            results[name] = [];
+          }
+          ;
+          results[name].push(value);
+        } else {
+          results[name] ??= value;
+        }
+      }
+      return key ? results[key] : results;
+    }, "_getQueryParam");
+    getQueryParam = _getQueryParam;
+    getQueryParams = /* @__PURE__ */ __name((url, key) => {
+      return _getQueryParam(url, key, true);
+    }, "getQueryParams");
+    decodeURIComponent_ = decodeURIComponent;
+  }
+});
+
+// node_modules/hono/dist/request.js
+var tryDecodeURIComponent, HonoRequest;
+var init_request = __esm({
+  "node_modules/hono/dist/request.js"() {
+    init_modules_watch_stub();
+    init_constants();
+    init_body();
+    init_url();
+    tryDecodeURIComponent = /* @__PURE__ */ __name((str) => tryDecode(str, decodeURIComponent_), "tryDecodeURIComponent");
+    HonoRequest = class {
+      static {
+        __name(this, "HonoRequest");
+      }
+      raw;
+      #validatedData;
+      #matchResult;
+      routeIndex = 0;
+      path;
+      bodyCache = {};
+      constructor(request, path = "/", matchResult = [[]]) {
+        this.raw = request;
+        this.path = path;
+        this.#matchResult = matchResult;
+        this.#validatedData = {};
+      }
+      param(key) {
+        return key ? this.#getDecodedParam(key) : this.#getAllDecodedParams();
+      }
+      #getDecodedParam(key) {
+        const paramKey = this.#matchResult[0][this.routeIndex][1][key];
+        const param = this.#getParamValue(paramKey);
+        return param ? /\%/.test(param) ? tryDecodeURIComponent(param) : param : void 0;
+      }
+      #getAllDecodedParams() {
+        const decoded = {};
+        const keys = Object.keys(this.#matchResult[0][this.routeIndex][1]);
+        for (const key of keys) {
+          const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key]);
+          if (value && typeof value === "string") {
+            decoded[key] = /\%/.test(value) ? tryDecodeURIComponent(value) : value;
+          }
+        }
+        return decoded;
+      }
+      #getParamValue(paramKey) {
+        return this.#matchResult[1] ? this.#matchResult[1][paramKey] : paramKey;
+      }
+      query(key) {
+        return getQueryParam(this.url, key);
+      }
+      queries(key) {
+        return getQueryParams(this.url, key);
+      }
+      header(name) {
+        if (name) {
+          return this.raw.headers.get(name) ?? void 0;
+        }
+        const headerData = {};
+        this.raw.headers.forEach((value, key) => {
+          headerData[key] = value;
+        });
+        return headerData;
+      }
+      async parseBody(options) {
+        return this.bodyCache.parsedBody ??= await parseBody(this, options);
+      }
+      #cachedBody = /* @__PURE__ */ __name((key) => {
+        const { bodyCache, raw: raw2 } = this;
+        const cachedBody = bodyCache[key];
+        if (cachedBody) {
+          return cachedBody;
+        }
+        const anyCachedKey = Object.keys(bodyCache)[0];
+        if (anyCachedKey) {
+          return bodyCache[anyCachedKey].then((body) => {
+            if (anyCachedKey === "json") {
+              body = JSON.stringify(body);
+            }
+            return new Response(body)[key]();
+          });
+        }
+        return bodyCache[key] = raw2[key]();
+      }, "#cachedBody");
+      json() {
+        return this.#cachedBody("text").then((text2) => JSON.parse(text2));
+      }
+      text() {
+        return this.#cachedBody("text");
+      }
+      arrayBuffer() {
+        return this.#cachedBody("arrayBuffer");
+      }
+      blob() {
+        return this.#cachedBody("blob");
+      }
+      formData() {
+        return this.#cachedBody("formData");
+      }
+      addValidatedData(target, data) {
+        this.#validatedData[target] = data;
+      }
+      valid(target) {
+        return this.#validatedData[target];
+      }
+      get url() {
+        return this.raw.url;
+      }
+      get method() {
+        return this.raw.method;
+      }
+      get [GET_MATCH_RESULT]() {
+        return this.#matchResult;
+      }
+      get matchedRoutes() {
+        return this.#matchResult[0].map(([[, route]]) => route);
+      }
+      get routePath() {
+        return this.#matchResult[0].map(([[, route]]) => route)[this.routeIndex].path;
+      }
+    };
+  }
+});
+
+// node_modules/hono/dist/utils/html.js
+var HtmlEscapedCallbackPhase, raw, resolveCallback;
+var init_html = __esm({
+  "node_modules/hono/dist/utils/html.js"() {
+    init_modules_watch_stub();
+    HtmlEscapedCallbackPhase = {
+      Stringify: 1,
+      BeforeStream: 2,
+      Stream: 3
+    };
+    raw = /* @__PURE__ */ __name((value, callbacks) => {
+      const escapedString = new String(value);
+      escapedString.isEscaped = true;
+      escapedString.callbacks = callbacks;
+      return escapedString;
+    }, "raw");
+    resolveCallback = /* @__PURE__ */ __name(async (str, phase, preserveCallbacks, context, buffer) => {
+      if (typeof str === "object" && !(str instanceof String)) {
+        if (!(str instanceof Promise)) {
+          str = str.toString();
+        }
+        if (str instanceof Promise) {
+          str = await str;
+        }
+      }
+      const callbacks = str.callbacks;
+      if (!callbacks?.length) {
+        return Promise.resolve(str);
+      }
+      if (buffer) {
+        buffer[0] += str;
+      } else {
+        buffer = [str];
+      }
+      const resStr = Promise.all(callbacks.map((c) => c({ phase, buffer, context }))).then(
+        (res) => Promise.all(
+          res.filter(Boolean).map((str2) => resolveCallback(str2, phase, false, context, buffer))
+        ).then(() => buffer[0])
+      );
+      if (preserveCallbacks) {
+        return raw(await resStr, callbacks);
+      } else {
+        return resStr;
+      }
+    }, "resolveCallback");
+  }
+});
+
+// node_modules/hono/dist/context.js
+var TEXT_PLAIN, setDefaultContentType, Context;
+var init_context = __esm({
+  "node_modules/hono/dist/context.js"() {
+    init_modules_watch_stub();
+    init_request();
+    init_html();
+    TEXT_PLAIN = "text/plain; charset=UTF-8";
+    setDefaultContentType = /* @__PURE__ */ __name((contentType, headers) => {
+      return {
+        "Content-Type": contentType,
+        ...headers
+      };
+    }, "setDefaultContentType");
+    Context = class {
+      static {
+        __name(this, "Context");
+      }
+      #rawRequest;
+      #req;
+      env = {};
+      #var;
+      finalized = false;
+      error;
+      #status;
+      #executionCtx;
+      #res;
+      #layout;
+      #renderer;
+      #notFoundHandler;
+      #preparedHeaders;
+      #matchResult;
+      #path;
+      constructor(req, options) {
+        this.#rawRequest = req;
+        if (options) {
+          this.#executionCtx = options.executionCtx;
+          this.env = options.env;
+          this.#notFoundHandler = options.notFoundHandler;
+          this.#path = options.path;
+          this.#matchResult = options.matchResult;
+        }
+      }
+      get req() {
+        this.#req ??= new HonoRequest(this.#rawRequest, this.#path, this.#matchResult);
+        return this.#req;
+      }
+      get event() {
+        if (this.#executionCtx && "respondWith" in this.#executionCtx) {
+          return this.#executionCtx;
+        } else {
+          throw Error("This context has no FetchEvent");
+        }
+      }
+      get executionCtx() {
+        if (this.#executionCtx) {
+          return this.#executionCtx;
+        } else {
+          throw Error("This context has no ExecutionContext");
+        }
+      }
+      get res() {
+        return this.#res ||= new Response(null, {
+          headers: this.#preparedHeaders ??= new Headers()
+        });
+      }
+      set res(_res) {
+        if (this.#res && _res) {
+          _res = new Response(_res.body, _res);
+          for (const [k, v] of this.#res.headers.entries()) {
+            if (k === "content-type") {
+              continue;
+            }
+            if (k === "set-cookie") {
+              const cookies = this.#res.headers.getSetCookie();
+              _res.headers.delete("set-cookie");
+              for (const cookie of cookies) {
+                _res.headers.append("set-cookie", cookie);
+              }
+            } else {
+              _res.headers.set(k, v);
+            }
+          }
+        }
+        this.#res = _res;
+        this.finalized = true;
+      }
+      render = /* @__PURE__ */ __name((...args) => {
+        this.#renderer ??= (content) => this.html(content);
+        return this.#renderer(...args);
+      }, "render");
+      setLayout = /* @__PURE__ */ __name((layout) => this.#layout = layout, "setLayout");
+      getLayout = /* @__PURE__ */ __name(() => this.#layout, "getLayout");
+      setRenderer = /* @__PURE__ */ __name((renderer) => {
+        this.#renderer = renderer;
+      }, "setRenderer");
+      header = /* @__PURE__ */ __name((name, value, options) => {
+        if (this.finalized) {
+          this.#res = new Response(this.#res.body, this.#res);
+        }
+        const headers = this.#res ? this.#res.headers : this.#preparedHeaders ??= new Headers();
+        if (value === void 0) {
+          headers.delete(name);
+        } else if (options?.append) {
+          headers.append(name, value);
+        } else {
+          headers.set(name, value);
+        }
+      }, "header");
+      status = /* @__PURE__ */ __name((status) => {
+        this.#status = status;
+      }, "status");
+      set = /* @__PURE__ */ __name((key, value) => {
+        this.#var ??= /* @__PURE__ */ new Map();
+        this.#var.set(key, value);
+      }, "set");
+      get = /* @__PURE__ */ __name((key) => {
+        return this.#var ? this.#var.get(key) : void 0;
+      }, "get");
+      get var() {
+        if (!this.#var) {
+          return {};
+        }
+        return Object.fromEntries(this.#var);
+      }
+      #newResponse(data, arg, headers) {
+        const responseHeaders = this.#res ? new Headers(this.#res.headers) : this.#preparedHeaders ?? new Headers();
+        if (typeof arg === "object" && "headers" in arg) {
+          const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers);
+          for (const [key, value] of argHeaders) {
+            if (key.toLowerCase() === "set-cookie") {
+              responseHeaders.append(key, value);
+            } else {
+              responseHeaders.set(key, value);
+            }
+          }
+        }
+        if (headers) {
+          for (const [k, v] of Object.entries(headers)) {
+            if (typeof v === "string") {
+              responseHeaders.set(k, v);
+            } else {
+              responseHeaders.delete(k);
+              for (const v2 of v) {
+                responseHeaders.append(k, v2);
+              }
+            }
+          }
+        }
+        const status = typeof arg === "number" ? arg : arg?.status ?? this.#status;
+        return new Response(data, { status, headers: responseHeaders });
+      }
+      newResponse = /* @__PURE__ */ __name((...args) => this.#newResponse(...args), "newResponse");
+      body = /* @__PURE__ */ __name((data, arg, headers) => this.#newResponse(data, arg, headers), "body");
+      text = /* @__PURE__ */ __name((text2, arg, headers) => {
+        return !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized ? new Response(text2) : this.#newResponse(
+          text2,
+          arg,
+          setDefaultContentType(TEXT_PLAIN, headers)
+        );
+      }, "text");
+      json = /* @__PURE__ */ __name((object, arg, headers) => {
+        return this.#newResponse(
+          JSON.stringify(object),
+          arg,
+          setDefaultContentType("application/json", headers)
+        );
+      }, "json");
+      html = /* @__PURE__ */ __name((html2, arg, headers) => {
+        const res = /* @__PURE__ */ __name((html22) => this.#newResponse(html22, arg, setDefaultContentType("text/html; charset=UTF-8", headers)), "res");
+        return typeof html2 === "object" ? resolveCallback(html2, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res) : res(html2);
+      }, "html");
+      redirect = /* @__PURE__ */ __name((location, status) => {
+        const locationString = String(location);
+        this.header(
+          "Location",
+          !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
+        );
+        return this.newResponse(null, status ?? 302);
+      }, "redirect");
+      notFound = /* @__PURE__ */ __name(() => {
+        this.#notFoundHandler ??= () => new Response();
+        return this.#notFoundHandler(this);
+      }, "notFound");
+    };
+  }
+});
+
+// node_modules/hono/dist/utils/cookie.js
+var init_cookie = __esm({
+  "node_modules/hono/dist/utils/cookie.js"() {
+    init_modules_watch_stub();
+    init_url();
+  }
+});
+
+// node_modules/hono/dist/helper/cookie/index.js
+var init_cookie2 = __esm({
+  "node_modules/hono/dist/helper/cookie/index.js"() {
+    init_modules_watch_stub();
+    init_cookie();
+  }
+});
+
+// node_modules/hono/dist/http-exception.js
+var init_http_exception = __esm({
+  "node_modules/hono/dist/http-exception.js"() {
+    init_modules_watch_stub();
+  }
+});
+
+// node_modules/hono/dist/utils/encode.js
+var decodeBase64Url, encodeBase64Url, encodeBase64, decodeBase64;
+var init_encode = __esm({
+  "node_modules/hono/dist/utils/encode.js"() {
+    init_modules_watch_stub();
+    decodeBase64Url = /* @__PURE__ */ __name((str) => {
+      return decodeBase64(str.replace(/_|-/g, (m) => ({ _: "/", "-": "+" })[m] ?? m));
+    }, "decodeBase64Url");
+    encodeBase64Url = /* @__PURE__ */ __name((buf) => encodeBase64(buf).replace(/\/|\+/g, (m) => ({ "/": "_", "+": "-" })[m] ?? m), "encodeBase64Url");
+    encodeBase64 = /* @__PURE__ */ __name((buf) => {
+      let binary = "";
+      const bytes = new Uint8Array(buf);
+      for (let i = 0, len = bytes.length; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }, "encodeBase64");
+    decodeBase64 = /* @__PURE__ */ __name((str) => {
+      const binary = atob(str);
+      const bytes = new Uint8Array(new ArrayBuffer(binary.length));
+      const half = binary.length / 2;
+      for (let i = 0, j = binary.length - 1; i <= half; i++, j--) {
+        bytes[i] = binary.charCodeAt(i);
+        bytes[j] = binary.charCodeAt(j);
+      }
+      return bytes;
+    }, "decodeBase64");
+  }
+});
+
+// node_modules/hono/dist/utils/jwt/jwa.js
+var AlgorithmTypes;
+var init_jwa = __esm({
+  "node_modules/hono/dist/utils/jwt/jwa.js"() {
+    init_modules_watch_stub();
+    AlgorithmTypes = /* @__PURE__ */ ((AlgorithmTypes2) => {
+      AlgorithmTypes2["HS256"] = "HS256";
+      AlgorithmTypes2["HS384"] = "HS384";
+      AlgorithmTypes2["HS512"] = "HS512";
+      AlgorithmTypes2["RS256"] = "RS256";
+      AlgorithmTypes2["RS384"] = "RS384";
+      AlgorithmTypes2["RS512"] = "RS512";
+      AlgorithmTypes2["PS256"] = "PS256";
+      AlgorithmTypes2["PS384"] = "PS384";
+      AlgorithmTypes2["PS512"] = "PS512";
+      AlgorithmTypes2["ES256"] = "ES256";
+      AlgorithmTypes2["ES384"] = "ES384";
+      AlgorithmTypes2["ES512"] = "ES512";
+      AlgorithmTypes2["EdDSA"] = "EdDSA";
+      return AlgorithmTypes2;
+    })(AlgorithmTypes || {});
+  }
+});
+
+// node_modules/hono/dist/helper/adapter/index.js
+var knownUserAgents, getRuntimeKey, checkUserAgentEquals;
+var init_adapter = __esm({
+  "node_modules/hono/dist/helper/adapter/index.js"() {
+    init_modules_watch_stub();
+    knownUserAgents = {
+      deno: "Deno",
+      bun: "Bun",
+      workerd: "Cloudflare-Workers",
+      node: "Node.js"
+    };
+    getRuntimeKey = /* @__PURE__ */ __name(() => {
+      const global = globalThis;
+      const userAgentSupported = typeof navigator !== "undefined" && true;
+      if (userAgentSupported) {
+        for (const [runtimeKey, userAgent] of Object.entries(knownUserAgents)) {
+          if (checkUserAgentEquals(userAgent)) {
+            return runtimeKey;
+          }
+        }
+      }
+      if (typeof global?.EdgeRuntime === "string") {
+        return "edge-light";
+      }
+      if (global?.fastly !== void 0) {
+        return "fastly";
+      }
+      if (global?.process?.release?.name === "node") {
+        return "node";
+      }
+      return "other";
+    }, "getRuntimeKey");
+    checkUserAgentEquals = /* @__PURE__ */ __name((platform) => {
+      const userAgent = "Cloudflare-Workers";
+      return userAgent.startsWith(platform);
+    }, "checkUserAgentEquals");
+  }
+});
+
+// node_modules/hono/dist/utils/jwt/types.js
+var JwtAlgorithmNotImplemented, JwtTokenInvalid, JwtTokenNotBefore, JwtTokenExpired, JwtTokenIssuedAt, JwtTokenIssuer, JwtHeaderInvalid, JwtHeaderRequiresKid, JwtTokenSignatureMismatched, CryptoKeyUsage;
+var init_types = __esm({
+  "node_modules/hono/dist/utils/jwt/types.js"() {
+    init_modules_watch_stub();
+    JwtAlgorithmNotImplemented = class extends Error {
+      static {
+        __name(this, "JwtAlgorithmNotImplemented");
+      }
+      constructor(alg) {
+        super(`${alg} is not an implemented algorithm`);
+        this.name = "JwtAlgorithmNotImplemented";
+      }
+    };
+    JwtTokenInvalid = class extends Error {
+      static {
+        __name(this, "JwtTokenInvalid");
+      }
+      constructor(token) {
+        super(`invalid JWT token: ${token}`);
+        this.name = "JwtTokenInvalid";
+      }
+    };
+    JwtTokenNotBefore = class extends Error {
+      static {
+        __name(this, "JwtTokenNotBefore");
+      }
+      constructor(token) {
+        super(`token (${token}) is being used before it's valid`);
+        this.name = "JwtTokenNotBefore";
+      }
+    };
+    JwtTokenExpired = class extends Error {
+      static {
+        __name(this, "JwtTokenExpired");
+      }
+      constructor(token) {
+        super(`token (${token}) expired`);
+        this.name = "JwtTokenExpired";
+      }
+    };
+    JwtTokenIssuedAt = class extends Error {
+      static {
+        __name(this, "JwtTokenIssuedAt");
+      }
+      constructor(currentTimestamp, iat) {
+        super(
+          `Invalid "iat" claim, must be a valid number lower than "${currentTimestamp}" (iat: "${iat}")`
+        );
+        this.name = "JwtTokenIssuedAt";
+      }
+    };
+    JwtTokenIssuer = class extends Error {
+      static {
+        __name(this, "JwtTokenIssuer");
+      }
+      constructor(expected, iss) {
+        super(`expected issuer "${expected}", got ${iss ? `"${iss}"` : "none"} `);
+        this.name = "JwtTokenIssuer";
+      }
+    };
+    JwtHeaderInvalid = class extends Error {
+      static {
+        __name(this, "JwtHeaderInvalid");
+      }
+      constructor(header) {
+        super(`jwt header is invalid: ${JSON.stringify(header)}`);
+        this.name = "JwtHeaderInvalid";
+      }
+    };
+    JwtHeaderRequiresKid = class extends Error {
+      static {
+        __name(this, "JwtHeaderRequiresKid");
+      }
+      constructor(header) {
+        super(`required "kid" in jwt header: ${JSON.stringify(header)}`);
+        this.name = "JwtHeaderRequiresKid";
+      }
+    };
+    JwtTokenSignatureMismatched = class extends Error {
+      static {
+        __name(this, "JwtTokenSignatureMismatched");
+      }
+      constructor(token) {
+        super(`token(${token}) signature mismatched`);
+        this.name = "JwtTokenSignatureMismatched";
+      }
+    };
+    CryptoKeyUsage = /* @__PURE__ */ ((CryptoKeyUsage2) => {
+      CryptoKeyUsage2["Encrypt"] = "encrypt";
+      CryptoKeyUsage2["Decrypt"] = "decrypt";
+      CryptoKeyUsage2["Sign"] = "sign";
+      CryptoKeyUsage2["Verify"] = "verify";
+      CryptoKeyUsage2["DeriveKey"] = "deriveKey";
+      CryptoKeyUsage2["DeriveBits"] = "deriveBits";
+      CryptoKeyUsage2["WrapKey"] = "wrapKey";
+      CryptoKeyUsage2["UnwrapKey"] = "unwrapKey";
+      return CryptoKeyUsage2;
+    })(CryptoKeyUsage || {});
+  }
+});
+
+// node_modules/hono/dist/utils/jwt/utf8.js
+var utf8Encoder, utf8Decoder;
+var init_utf8 = __esm({
+  "node_modules/hono/dist/utils/jwt/utf8.js"() {
+    init_modules_watch_stub();
+    utf8Encoder = new TextEncoder();
+    utf8Decoder = new TextDecoder();
+  }
+});
+
+// node_modules/hono/dist/utils/jwt/jws.js
+async function signing(privateKey, alg, data) {
+  const algorithm = getKeyAlgorithm(alg);
+  const cryptoKey = await importPrivateKey(privateKey, algorithm);
+  return await crypto.subtle.sign(algorithm, cryptoKey, data);
+}
+async function verifying(publicKey, alg, signature, data) {
+  const algorithm = getKeyAlgorithm(alg);
+  const cryptoKey = await importPublicKey(publicKey, algorithm);
+  return await crypto.subtle.verify(algorithm, cryptoKey, signature, data);
+}
+function pemToBinary(pem) {
+  return decodeBase64(pem.replace(/-+(BEGIN|END).*/g, "").replace(/\s/g, ""));
+}
+async function importPrivateKey(key, alg) {
+  if (!crypto.subtle || !crypto.subtle.importKey) {
+    throw new Error("`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.");
+  }
+  if (isCryptoKey(key)) {
+    if (key.type !== "private" && key.type !== "secret") {
+      throw new Error(
+        `unexpected key type: CryptoKey.type is ${key.type}, expected private or secret`
+      );
+    }
+    return key;
+  }
+  const usages = [CryptoKeyUsage.Sign];
+  if (typeof key === "object") {
+    return await crypto.subtle.importKey("jwk", key, alg, false, usages);
+  }
+  if (key.includes("PRIVATE")) {
+    return await crypto.subtle.importKey("pkcs8", pemToBinary(key), alg, false, usages);
+  }
+  return await crypto.subtle.importKey("raw", utf8Encoder.encode(key), alg, false, usages);
+}
+async function importPublicKey(key, alg) {
+  if (!crypto.subtle || !crypto.subtle.importKey) {
+    throw new Error("`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.");
+  }
+  if (isCryptoKey(key)) {
+    if (key.type === "public" || key.type === "secret") {
+      return key;
+    }
+    key = await exportPublicJwkFrom(key);
+  }
+  if (typeof key === "string" && key.includes("PRIVATE")) {
+    const privateKey = await crypto.subtle.importKey("pkcs8", pemToBinary(key), alg, true, [
+      CryptoKeyUsage.Sign
+    ]);
+    key = await exportPublicJwkFrom(privateKey);
+  }
+  const usages = [CryptoKeyUsage.Verify];
+  if (typeof key === "object") {
+    return await crypto.subtle.importKey("jwk", key, alg, false, usages);
+  }
+  if (key.includes("PUBLIC")) {
+    return await crypto.subtle.importKey("spki", pemToBinary(key), alg, false, usages);
+  }
+  return await crypto.subtle.importKey("raw", utf8Encoder.encode(key), alg, false, usages);
+}
+async function exportPublicJwkFrom(privateKey) {
+  if (privateKey.type !== "private") {
+    throw new Error(`unexpected key type: ${privateKey.type}`);
+  }
+  if (!privateKey.extractable) {
+    throw new Error("unexpected private key is unextractable");
+  }
+  const jwk = await crypto.subtle.exportKey("jwk", privateKey);
+  const { kty } = jwk;
+  const { alg, e, n } = jwk;
+  const { crv, x, y } = jwk;
+  return { kty, alg, e, n, crv, x, y, key_ops: [CryptoKeyUsage.Verify] };
+}
+function getKeyAlgorithm(name) {
+  switch (name) {
+    case "HS256":
+      return {
+        name: "HMAC",
+        hash: {
+          name: "SHA-256"
+        }
+      };
+    case "HS384":
+      return {
+        name: "HMAC",
+        hash: {
+          name: "SHA-384"
+        }
+      };
+    case "HS512":
+      return {
+        name: "HMAC",
+        hash: {
+          name: "SHA-512"
+        }
+      };
+    case "RS256":
+      return {
+        name: "RSASSA-PKCS1-v1_5",
+        hash: {
+          name: "SHA-256"
+        }
+      };
+    case "RS384":
+      return {
+        name: "RSASSA-PKCS1-v1_5",
+        hash: {
+          name: "SHA-384"
+        }
+      };
+    case "RS512":
+      return {
+        name: "RSASSA-PKCS1-v1_5",
+        hash: {
+          name: "SHA-512"
+        }
+      };
+    case "PS256":
+      return {
+        name: "RSA-PSS",
+        hash: {
+          name: "SHA-256"
+        },
+        saltLength: 32
+      };
+    case "PS384":
+      return {
+        name: "RSA-PSS",
+        hash: {
+          name: "SHA-384"
+        },
+        saltLength: 48
+      };
+    case "PS512":
+      return {
+        name: "RSA-PSS",
+        hash: {
+          name: "SHA-512"
+        },
+        saltLength: 64
+      };
+    case "ES256":
+      return {
+        name: "ECDSA",
+        hash: {
+          name: "SHA-256"
+        },
+        namedCurve: "P-256"
+      };
+    case "ES384":
+      return {
+        name: "ECDSA",
+        hash: {
+          name: "SHA-384"
+        },
+        namedCurve: "P-384"
+      };
+    case "ES512":
+      return {
+        name: "ECDSA",
+        hash: {
+          name: "SHA-512"
+        },
+        namedCurve: "P-521"
+      };
+    case "EdDSA":
+      return {
+        name: "Ed25519",
+        namedCurve: "Ed25519"
+      };
+    default:
+      throw new JwtAlgorithmNotImplemented(name);
+  }
+}
+function isCryptoKey(key) {
+  const runtime = getRuntimeKey();
+  if (runtime === "node" && !!crypto.webcrypto) {
+    return key instanceof crypto.webcrypto.CryptoKey;
+  }
+  return key instanceof CryptoKey;
+}
+var init_jws = __esm({
+  "node_modules/hono/dist/utils/jwt/jws.js"() {
+    init_modules_watch_stub();
+    init_adapter();
+    init_encode();
+    init_types();
+    init_utf8();
+    __name(signing, "signing");
+    __name(verifying, "verifying");
+    __name(pemToBinary, "pemToBinary");
+    __name(importPrivateKey, "importPrivateKey");
+    __name(importPublicKey, "importPublicKey");
+    __name(exportPublicJwkFrom, "exportPublicJwkFrom");
+    __name(getKeyAlgorithm, "getKeyAlgorithm");
+    __name(isCryptoKey, "isCryptoKey");
+  }
+});
+
+// node_modules/hono/dist/utils/jwt/jwt.js
+function isTokenHeader(obj) {
+  if (typeof obj === "object" && obj !== null) {
+    const objWithAlg = obj;
+    return "alg" in objWithAlg && Object.values(AlgorithmTypes).includes(objWithAlg.alg) && (!("typ" in objWithAlg) || objWithAlg.typ === "JWT");
+  }
+  return false;
+}
+var encodeJwtPart, encodeSignaturePart, decodeJwtPart, sign, verify, verifyWithJwks, decode, decodeHeader;
+var init_jwt = __esm({
+  "node_modules/hono/dist/utils/jwt/jwt.js"() {
+    init_modules_watch_stub();
+    init_encode();
+    init_jwa();
+    init_jws();
+    init_types();
+    init_utf8();
+    encodeJwtPart = /* @__PURE__ */ __name((part) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, ""), "encodeJwtPart");
+    encodeSignaturePart = /* @__PURE__ */ __name((buf) => encodeBase64Url(buf).replace(/=/g, ""), "encodeSignaturePart");
+    decodeJwtPart = /* @__PURE__ */ __name((part) => JSON.parse(utf8Decoder.decode(decodeBase64Url(part))), "decodeJwtPart");
+    __name(isTokenHeader, "isTokenHeader");
+    sign = /* @__PURE__ */ __name(async (payload, privateKey, alg = "HS256") => {
+      const encodedPayload = encodeJwtPart(payload);
+      let encodedHeader;
+      if (typeof privateKey === "object" && "alg" in privateKey) {
+        alg = privateKey.alg;
+        encodedHeader = encodeJwtPart({ alg, typ: "JWT", kid: privateKey.kid });
+      } else {
+        encodedHeader = encodeJwtPart({ alg, typ: "JWT" });
+      }
+      const partialToken = `${encodedHeader}.${encodedPayload}`;
+      const signaturePart = await signing(privateKey, alg, utf8Encoder.encode(partialToken));
+      const signature = encodeSignaturePart(signaturePart);
+      return `${partialToken}.${signature}`;
+    }, "sign");
+    verify = /* @__PURE__ */ __name(async (token, publicKey, algOrOptions) => {
+      const optsIn = typeof algOrOptions === "string" ? { alg: algOrOptions } : algOrOptions || {};
+      const opts = {
+        alg: optsIn.alg ?? "HS256",
+        iss: optsIn.iss,
+        nbf: optsIn.nbf ?? true,
+        exp: optsIn.exp ?? true,
+        iat: optsIn.iat ?? true
+      };
+      const tokenParts = token.split(".");
+      if (tokenParts.length !== 3) {
+        throw new JwtTokenInvalid(token);
+      }
+      const { header, payload } = decode(token);
+      if (!isTokenHeader(header)) {
+        throw new JwtHeaderInvalid(header);
+      }
+      const now = Date.now() / 1e3 | 0;
+      if (opts.nbf && payload.nbf && payload.nbf > now) {
+        throw new JwtTokenNotBefore(token);
+      }
+      if (opts.exp && payload.exp && payload.exp <= now) {
+        throw new JwtTokenExpired(token);
+      }
+      if (opts.iat && payload.iat && now < payload.iat) {
+        throw new JwtTokenIssuedAt(now, payload.iat);
+      }
+      if (opts.iss) {
+        if (!payload.iss) {
+          throw new JwtTokenIssuer(opts.iss, null);
+        }
+        if (typeof opts.iss === "string" && payload.iss !== opts.iss) {
+          throw new JwtTokenIssuer(opts.iss, payload.iss);
+        }
+        if (opts.iss instanceof RegExp && !opts.iss.test(payload.iss)) {
+          throw new JwtTokenIssuer(opts.iss, payload.iss);
+        }
+      }
+      const headerPayload = token.substring(0, token.lastIndexOf("."));
+      const verified = await verifying(
+        publicKey,
+        opts.alg,
+        decodeBase64Url(tokenParts[2]),
+        utf8Encoder.encode(headerPayload)
+      );
+      if (!verified) {
+        throw new JwtTokenSignatureMismatched(token);
+      }
+      return payload;
+    }, "verify");
+    verifyWithJwks = /* @__PURE__ */ __name(async (token, options, init) => {
+      const verifyOpts = options.verification || {};
+      const header = decodeHeader(token);
+      if (!isTokenHeader(header)) {
+        throw new JwtHeaderInvalid(header);
+      }
+      if (!header.kid) {
+        throw new JwtHeaderRequiresKid(header);
+      }
+      if (options.jwks_uri) {
+        const response = await fetch(options.jwks_uri, init);
+        if (!response.ok) {
+          throw new Error(`failed to fetch JWKS from ${options.jwks_uri}`);
+        }
+        const data = await response.json();
+        if (!data.keys) {
+          throw new Error('invalid JWKS response. "keys" field is missing');
+        }
+        if (!Array.isArray(data.keys)) {
+          throw new Error('invalid JWKS response. "keys" field is not an array');
+        }
+        if (options.keys) {
+          options.keys.push(...data.keys);
+        } else {
+          options.keys = data.keys;
+        }
+      } else if (!options.keys) {
+        throw new Error('verifyWithJwks requires options for either "keys" or "jwks_uri" or both');
+      }
+      const matchingKey = options.keys.find((key) => key.kid === header.kid);
+      if (!matchingKey) {
+        throw new JwtTokenInvalid(token);
+      }
+      return await verify(token, matchingKey, {
+        alg: matchingKey.alg || header.alg,
+        ...verifyOpts
+      });
+    }, "verifyWithJwks");
+    decode = /* @__PURE__ */ __name((token) => {
+      try {
+        const [h, p] = token.split(".");
+        const header = decodeJwtPart(h);
+        const payload = decodeJwtPart(p);
+        return {
+          header,
+          payload
+        };
+      } catch {
+        throw new JwtTokenInvalid(token);
+      }
+    }, "decode");
+    decodeHeader = /* @__PURE__ */ __name((token) => {
+      try {
+        const [h] = token.split(".");
+        return decodeJwtPart(h);
+      } catch {
+        throw new JwtTokenInvalid(token);
+      }
+    }, "decodeHeader");
+  }
+});
+
+// node_modules/hono/dist/utils/jwt/index.js
+var Jwt;
+var init_jwt2 = __esm({
+  "node_modules/hono/dist/utils/jwt/index.js"() {
+    init_modules_watch_stub();
+    init_jwt();
+    Jwt = { sign, verify, decode, verifyWithJwks };
+  }
+});
+
+// node_modules/hono/dist/middleware/jwt/jwt.js
+var verifyWithJwks2, verify2, decode2, sign2;
+var init_jwt3 = __esm({
+  "node_modules/hono/dist/middleware/jwt/jwt.js"() {
+    init_modules_watch_stub();
+    init_cookie2();
+    init_http_exception();
+    init_jwt2();
+    init_context();
+    verifyWithJwks2 = Jwt.verifyWithJwks;
+    verify2 = Jwt.verify;
+    decode2 = Jwt.decode;
+    sign2 = Jwt.sign;
+  }
+});
+
+// node_modules/hono/dist/middleware/jwt/index.js
+var init_jwt4 = __esm({
+  "node_modules/hono/dist/middleware/jwt/index.js"() {
+    init_modules_watch_stub();
+    init_jwt3();
+  }
+});
+
+// src/utils/jwt.ts
+var jwt_exports = {};
+__export(jwt_exports, {
+  extractUserId: () => extractUserId,
+  generateEmailAuthToken: () => generateEmailAuthToken,
+  generateOAuthToken: () => generateOAuthToken,
+  generateToken: () => generateToken,
+  isTokenExpiringSoon: () => isTokenExpiringSoon,
+  refreshToken: () => refreshToken,
+  verifyToken: () => verifyToken
+});
+async function generateToken(payload, secret, options = {}) {
+  const mergedOptions = { ...DEFAULT_TOKEN_OPTIONS, ...options };
+  const now = Math.floor(Date.now() / 1e3);
+  let exp;
+  if (typeof mergedOptions.expiresIn === "string") {
+    exp = now + parseExpirationString(mergedOptions.expiresIn);
+  } else if (typeof mergedOptions.expiresIn === "number") {
+    exp = now + mergedOptions.expiresIn;
+  } else {
+    exp = now + 7 * 24 * 60 * 60;
+  }
+  const fullPayload = {
+    ...payload,
+    iat: now,
+    exp
+  };
+  return await sign2(fullPayload, secret);
+}
+async function verifyToken(token, secret) {
+  try {
+    const payload = await verify2(token, secret);
+    if (payload.exp && Math.floor(Date.now() / 1e3) > payload.exp) {
+      throw new Error("Token expired");
+    }
+    return payload;
+  } catch (error) {
+    throw new Error(`Token verification failed: ${error.message}`);
+  }
+}
+async function generateEmailAuthToken(user, secret, options = {}) {
+  const payload = {
+    sub: user.id.toString(),
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    authMethod: "email",
+    emailVerified: user.emailVerified ?? false
+  };
+  return await generateToken(payload, secret, options);
+}
+async function generateOAuthToken(user, oauthData, secret, options = {}) {
+  const payload = {
+    sub: user.id.toString(),
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    authMethod: "oauth",
+    oauthProvider: oauthData.provider,
+    emailVerified: true,
+    // OAuth用户邮箱默认已验证
+    picture: oauthData.picture
+  };
+  if (oauthData.provider === "google" && oauthData.googleId) {
+    payload.googleId = oauthData.googleId;
+  }
+  return await generateToken(payload, secret, options);
+}
+async function refreshToken(oldToken, secret, options = {}) {
+  try {
+    const payload = await verify2(oldToken, secret, false);
+    const { iat, exp, ...userPayload } = payload;
+    return await generateToken(userPayload, secret, options);
+  } catch (error) {
+    throw new Error(`Token refresh failed: ${error.message}`);
+  }
+}
+function parseExpirationString(expiresIn) {
+  const match = expiresIn.match(/^(\d+)([dhms])$/);
+  if (!match) {
+    throw new Error('Invalid expiration format. Use format like "7d", "24h", "60m", "30s"');
+  }
+  const value = parseInt(match[1]);
+  const unit = match[2];
+  switch (unit) {
+    case "d":
+      return value * 24 * 60 * 60;
+    // 天
+    case "h":
+      return value * 60 * 60;
+    // 小时
+    case "m":
+      return value * 60;
+    // 分钟
+    case "s":
+      return value;
+    // 秒
+    default:
+      throw new Error("Invalid time unit");
+  }
+}
+async function extractUserId(token, secret) {
+  const payload = await verifyToken(token, secret);
+  return parseInt(payload.sub);
+}
+async function isTokenExpiringSoon(token, secret, thresholdSeconds = 24 * 60 * 60) {
+  try {
+    const payload = await verifyToken(token, secret);
+    if (!payload.exp) return false;
+    const now = Math.floor(Date.now() / 1e3);
+    return payload.exp - now < thresholdSeconds;
+  } catch {
+    return true;
+  }
+}
+var DEFAULT_TOKEN_OPTIONS;
+var init_jwt5 = __esm({
+  "src/utils/jwt.ts"() {
+    "use strict";
+    init_modules_watch_stub();
+    init_jwt4();
+    DEFAULT_TOKEN_OPTIONS = {
+      expiresIn: "7d",
+      // 7天过期
+      issuer: "tao-ecommerce",
+      audience: "tao-ecommerce-users"
+    };
+    __name(generateToken, "generateToken");
+    __name(verifyToken, "verifyToken");
+    __name(generateEmailAuthToken, "generateEmailAuthToken");
+    __name(generateOAuthToken, "generateOAuthToken");
+    __name(refreshToken, "refreshToken");
+    __name(parseExpirationString, "parseExpirationString");
+    __name(extractUserId, "extractUserId");
+    __name(isTokenExpiringSoon, "isTokenExpiringSoon");
+  }
+});
+
+// .wrangler/tmp/bundle-VAzRFF/middleware-loader.entry.ts
+init_modules_watch_stub();
+
+// .wrangler/tmp/bundle-VAzRFF/middleware-insertion-facade.js
+init_modules_watch_stub();
+
+// src/index.ts
+init_modules_watch_stub();
+
+// node_modules/hono/dist/index.js
+init_modules_watch_stub();
+
+// node_modules/hono/dist/hono.js
+init_modules_watch_stub();
+
+// node_modules/hono/dist/hono-base.js
+init_modules_watch_stub();
+
 // node_modules/hono/dist/compose.js
+init_modules_watch_stub();
 var compose = /* @__PURE__ */ __name((middleware, onError, onNotFound) => {
   return (context, next) => {
     let index = -1;
@@ -50,619 +1487,11 @@ var compose = /* @__PURE__ */ __name((middleware, onError, onNotFound) => {
   };
 }, "compose");
 
-// node_modules/hono/dist/request/constants.js
-var GET_MATCH_RESULT = Symbol();
-
-// node_modules/hono/dist/utils/body.js
-var parseBody = /* @__PURE__ */ __name(async (request, options = /* @__PURE__ */ Object.create(null)) => {
-  const { all = false, dot = false } = options;
-  const headers = request instanceof HonoRequest ? request.raw.headers : request.headers;
-  const contentType = headers.get("Content-Type");
-  if (contentType?.startsWith("multipart/form-data") || contentType?.startsWith("application/x-www-form-urlencoded")) {
-    return parseFormData(request, { all, dot });
-  }
-  return {};
-}, "parseBody");
-async function parseFormData(request, options) {
-  const formData = await request.formData();
-  if (formData) {
-    return convertFormDataToBodyData(formData, options);
-  }
-  return {};
-}
-__name(parseFormData, "parseFormData");
-function convertFormDataToBodyData(formData, options) {
-  const form = /* @__PURE__ */ Object.create(null);
-  formData.forEach((value, key) => {
-    const shouldParseAllValues = options.all || key.endsWith("[]");
-    if (!shouldParseAllValues) {
-      form[key] = value;
-    } else {
-      handleParsingAllValues(form, key, value);
-    }
-  });
-  if (options.dot) {
-    Object.entries(form).forEach(([key, value]) => {
-      const shouldParseDotValues = key.includes(".");
-      if (shouldParseDotValues) {
-        handleParsingNestedValues(form, key, value);
-        delete form[key];
-      }
-    });
-  }
-  return form;
-}
-__name(convertFormDataToBodyData, "convertFormDataToBodyData");
-var handleParsingAllValues = /* @__PURE__ */ __name((form, key, value) => {
-  if (form[key] !== void 0) {
-    if (Array.isArray(form[key])) {
-      ;
-      form[key].push(value);
-    } else {
-      form[key] = [form[key], value];
-    }
-  } else {
-    if (!key.endsWith("[]")) {
-      form[key] = value;
-    } else {
-      form[key] = [value];
-    }
-  }
-}, "handleParsingAllValues");
-var handleParsingNestedValues = /* @__PURE__ */ __name((form, key, value) => {
-  let nestedForm = form;
-  const keys = key.split(".");
-  keys.forEach((key2, index) => {
-    if (index === keys.length - 1) {
-      nestedForm[key2] = value;
-    } else {
-      if (!nestedForm[key2] || typeof nestedForm[key2] !== "object" || Array.isArray(nestedForm[key2]) || nestedForm[key2] instanceof File) {
-        nestedForm[key2] = /* @__PURE__ */ Object.create(null);
-      }
-      nestedForm = nestedForm[key2];
-    }
-  });
-}, "handleParsingNestedValues");
-
-// node_modules/hono/dist/utils/url.js
-var splitPath = /* @__PURE__ */ __name((path) => {
-  const paths = path.split("/");
-  if (paths[0] === "") {
-    paths.shift();
-  }
-  return paths;
-}, "splitPath");
-var splitRoutingPath = /* @__PURE__ */ __name((routePath) => {
-  const { groups, path } = extractGroupsFromPath(routePath);
-  const paths = splitPath(path);
-  return replaceGroupMarks(paths, groups);
-}, "splitRoutingPath");
-var extractGroupsFromPath = /* @__PURE__ */ __name((path) => {
-  const groups = [];
-  path = path.replace(/\{[^}]+\}/g, (match, index) => {
-    const mark = `@${index}`;
-    groups.push([mark, match]);
-    return mark;
-  });
-  return { groups, path };
-}, "extractGroupsFromPath");
-var replaceGroupMarks = /* @__PURE__ */ __name((paths, groups) => {
-  for (let i = groups.length - 1; i >= 0; i--) {
-    const [mark] = groups[i];
-    for (let j = paths.length - 1; j >= 0; j--) {
-      if (paths[j].includes(mark)) {
-        paths[j] = paths[j].replace(mark, groups[i][1]);
-        break;
-      }
-    }
-  }
-  return paths;
-}, "replaceGroupMarks");
-var patternCache = {};
-var getPattern = /* @__PURE__ */ __name((label, next) => {
-  if (label === "*") {
-    return "*";
-  }
-  const match = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/);
-  if (match) {
-    const cacheKey = `${label}#${next}`;
-    if (!patternCache[cacheKey]) {
-      if (match[2]) {
-        patternCache[cacheKey] = next && next[0] !== ":" && next[0] !== "*" ? [cacheKey, match[1], new RegExp(`^${match[2]}(?=/${next})`)] : [label, match[1], new RegExp(`^${match[2]}$`)];
-      } else {
-        patternCache[cacheKey] = [label, match[1], true];
-      }
-    }
-    return patternCache[cacheKey];
-  }
-  return null;
-}, "getPattern");
-var tryDecode = /* @__PURE__ */ __name((str, decoder) => {
-  try {
-    return decoder(str);
-  } catch {
-    return str.replace(/(?:%[0-9A-Fa-f]{2})+/g, (match) => {
-      try {
-        return decoder(match);
-      } catch {
-        return match;
-      }
-    });
-  }
-}, "tryDecode");
-var tryDecodeURI = /* @__PURE__ */ __name((str) => tryDecode(str, decodeURI), "tryDecodeURI");
-var getPath = /* @__PURE__ */ __name((request) => {
-  const url = request.url;
-  const start = url.indexOf(
-    "/",
-    url.charCodeAt(9) === 58 ? 13 : 8
-  );
-  let i = start;
-  for (; i < url.length; i++) {
-    const charCode = url.charCodeAt(i);
-    if (charCode === 37) {
-      const queryIndex = url.indexOf("?", i);
-      const path = url.slice(start, queryIndex === -1 ? void 0 : queryIndex);
-      return tryDecodeURI(path.includes("%25") ? path.replace(/%25/g, "%2525") : path);
-    } else if (charCode === 63) {
-      break;
-    }
-  }
-  return url.slice(start, i);
-}, "getPath");
-var getPathNoStrict = /* @__PURE__ */ __name((request) => {
-  const result = getPath(request);
-  return result.length > 1 && result.at(-1) === "/" ? result.slice(0, -1) : result;
-}, "getPathNoStrict");
-var mergePath = /* @__PURE__ */ __name((base, sub, ...rest) => {
-  if (rest.length) {
-    sub = mergePath(sub, ...rest);
-  }
-  return `${base?.[0] === "/" ? "" : "/"}${base}${sub === "/" ? "" : `${base?.at(-1) === "/" ? "" : "/"}${sub?.[0] === "/" ? sub.slice(1) : sub}`}`;
-}, "mergePath");
-var checkOptionalParameter = /* @__PURE__ */ __name((path) => {
-  if (path.charCodeAt(path.length - 1) !== 63 || !path.includes(":")) {
-    return null;
-  }
-  const segments = path.split("/");
-  const results = [];
-  let basePath = "";
-  segments.forEach((segment) => {
-    if (segment !== "" && !/\:/.test(segment)) {
-      basePath += "/" + segment;
-    } else if (/\:/.test(segment)) {
-      if (/\?/.test(segment)) {
-        if (results.length === 0 && basePath === "") {
-          results.push("/");
-        } else {
-          results.push(basePath);
-        }
-        const optionalSegment = segment.replace("?", "");
-        basePath += "/" + optionalSegment;
-        results.push(basePath);
-      } else {
-        basePath += "/" + segment;
-      }
-    }
-  });
-  return results.filter((v, i, a) => a.indexOf(v) === i);
-}, "checkOptionalParameter");
-var _decodeURI = /* @__PURE__ */ __name((value) => {
-  if (!/[%+]/.test(value)) {
-    return value;
-  }
-  if (value.indexOf("+") !== -1) {
-    value = value.replace(/\+/g, " ");
-  }
-  return value.indexOf("%") !== -1 ? tryDecode(value, decodeURIComponent_) : value;
-}, "_decodeURI");
-var _getQueryParam = /* @__PURE__ */ __name((url, key, multiple) => {
-  let encoded;
-  if (!multiple && key && !/[%+]/.test(key)) {
-    let keyIndex2 = url.indexOf(`?${key}`, 8);
-    if (keyIndex2 === -1) {
-      keyIndex2 = url.indexOf(`&${key}`, 8);
-    }
-    while (keyIndex2 !== -1) {
-      const trailingKeyCode = url.charCodeAt(keyIndex2 + key.length + 1);
-      if (trailingKeyCode === 61) {
-        const valueIndex = keyIndex2 + key.length + 2;
-        const endIndex = url.indexOf("&", valueIndex);
-        return _decodeURI(url.slice(valueIndex, endIndex === -1 ? void 0 : endIndex));
-      } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
-        return "";
-      }
-      keyIndex2 = url.indexOf(`&${key}`, keyIndex2 + 1);
-    }
-    encoded = /[%+]/.test(url);
-    if (!encoded) {
-      return void 0;
-    }
-  }
-  const results = {};
-  encoded ??= /[%+]/.test(url);
-  let keyIndex = url.indexOf("?", 8);
-  while (keyIndex !== -1) {
-    const nextKeyIndex = url.indexOf("&", keyIndex + 1);
-    let valueIndex = url.indexOf("=", keyIndex);
-    if (valueIndex > nextKeyIndex && nextKeyIndex !== -1) {
-      valueIndex = -1;
-    }
-    let name = url.slice(
-      keyIndex + 1,
-      valueIndex === -1 ? nextKeyIndex === -1 ? void 0 : nextKeyIndex : valueIndex
-    );
-    if (encoded) {
-      name = _decodeURI(name);
-    }
-    keyIndex = nextKeyIndex;
-    if (name === "") {
-      continue;
-    }
-    let value;
-    if (valueIndex === -1) {
-      value = "";
-    } else {
-      value = url.slice(valueIndex + 1, nextKeyIndex === -1 ? void 0 : nextKeyIndex);
-      if (encoded) {
-        value = _decodeURI(value);
-      }
-    }
-    if (multiple) {
-      if (!(results[name] && Array.isArray(results[name]))) {
-        results[name] = [];
-      }
-      ;
-      results[name].push(value);
-    } else {
-      results[name] ??= value;
-    }
-  }
-  return key ? results[key] : results;
-}, "_getQueryParam");
-var getQueryParam = _getQueryParam;
-var getQueryParams = /* @__PURE__ */ __name((url, key) => {
-  return _getQueryParam(url, key, true);
-}, "getQueryParams");
-var decodeURIComponent_ = decodeURIComponent;
-
-// node_modules/hono/dist/request.js
-var tryDecodeURIComponent = /* @__PURE__ */ __name((str) => tryDecode(str, decodeURIComponent_), "tryDecodeURIComponent");
-var HonoRequest = class {
-  static {
-    __name(this, "HonoRequest");
-  }
-  raw;
-  #validatedData;
-  #matchResult;
-  routeIndex = 0;
-  path;
-  bodyCache = {};
-  constructor(request, path = "/", matchResult = [[]]) {
-    this.raw = request;
-    this.path = path;
-    this.#matchResult = matchResult;
-    this.#validatedData = {};
-  }
-  param(key) {
-    return key ? this.#getDecodedParam(key) : this.#getAllDecodedParams();
-  }
-  #getDecodedParam(key) {
-    const paramKey = this.#matchResult[0][this.routeIndex][1][key];
-    const param = this.#getParamValue(paramKey);
-    return param ? /\%/.test(param) ? tryDecodeURIComponent(param) : param : void 0;
-  }
-  #getAllDecodedParams() {
-    const decoded = {};
-    const keys = Object.keys(this.#matchResult[0][this.routeIndex][1]);
-    for (const key of keys) {
-      const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key]);
-      if (value && typeof value === "string") {
-        decoded[key] = /\%/.test(value) ? tryDecodeURIComponent(value) : value;
-      }
-    }
-    return decoded;
-  }
-  #getParamValue(paramKey) {
-    return this.#matchResult[1] ? this.#matchResult[1][paramKey] : paramKey;
-  }
-  query(key) {
-    return getQueryParam(this.url, key);
-  }
-  queries(key) {
-    return getQueryParams(this.url, key);
-  }
-  header(name) {
-    if (name) {
-      return this.raw.headers.get(name) ?? void 0;
-    }
-    const headerData = {};
-    this.raw.headers.forEach((value, key) => {
-      headerData[key] = value;
-    });
-    return headerData;
-  }
-  async parseBody(options) {
-    return this.bodyCache.parsedBody ??= await parseBody(this, options);
-  }
-  #cachedBody = /* @__PURE__ */ __name((key) => {
-    const { bodyCache, raw: raw2 } = this;
-    const cachedBody = bodyCache[key];
-    if (cachedBody) {
-      return cachedBody;
-    }
-    const anyCachedKey = Object.keys(bodyCache)[0];
-    if (anyCachedKey) {
-      return bodyCache[anyCachedKey].then((body) => {
-        if (anyCachedKey === "json") {
-          body = JSON.stringify(body);
-        }
-        return new Response(body)[key]();
-      });
-    }
-    return bodyCache[key] = raw2[key]();
-  }, "#cachedBody");
-  json() {
-    return this.#cachedBody("text").then((text2) => JSON.parse(text2));
-  }
-  text() {
-    return this.#cachedBody("text");
-  }
-  arrayBuffer() {
-    return this.#cachedBody("arrayBuffer");
-  }
-  blob() {
-    return this.#cachedBody("blob");
-  }
-  formData() {
-    return this.#cachedBody("formData");
-  }
-  addValidatedData(target, data) {
-    this.#validatedData[target] = data;
-  }
-  valid(target) {
-    return this.#validatedData[target];
-  }
-  get url() {
-    return this.raw.url;
-  }
-  get method() {
-    return this.raw.method;
-  }
-  get [GET_MATCH_RESULT]() {
-    return this.#matchResult;
-  }
-  get matchedRoutes() {
-    return this.#matchResult[0].map(([[, route]]) => route);
-  }
-  get routePath() {
-    return this.#matchResult[0].map(([[, route]]) => route)[this.routeIndex].path;
-  }
-};
-
-// node_modules/hono/dist/utils/html.js
-var HtmlEscapedCallbackPhase = {
-  Stringify: 1,
-  BeforeStream: 2,
-  Stream: 3
-};
-var raw = /* @__PURE__ */ __name((value, callbacks) => {
-  const escapedString = new String(value);
-  escapedString.isEscaped = true;
-  escapedString.callbacks = callbacks;
-  return escapedString;
-}, "raw");
-var resolveCallback = /* @__PURE__ */ __name(async (str, phase, preserveCallbacks, context, buffer) => {
-  if (typeof str === "object" && !(str instanceof String)) {
-    if (!(str instanceof Promise)) {
-      str = str.toString();
-    }
-    if (str instanceof Promise) {
-      str = await str;
-    }
-  }
-  const callbacks = str.callbacks;
-  if (!callbacks?.length) {
-    return Promise.resolve(str);
-  }
-  if (buffer) {
-    buffer[0] += str;
-  } else {
-    buffer = [str];
-  }
-  const resStr = Promise.all(callbacks.map((c) => c({ phase, buffer, context }))).then(
-    (res) => Promise.all(
-      res.filter(Boolean).map((str2) => resolveCallback(str2, phase, false, context, buffer))
-    ).then(() => buffer[0])
-  );
-  if (preserveCallbacks) {
-    return raw(await resStr, callbacks);
-  } else {
-    return resStr;
-  }
-}, "resolveCallback");
-
-// node_modules/hono/dist/context.js
-var TEXT_PLAIN = "text/plain; charset=UTF-8";
-var setDefaultContentType = /* @__PURE__ */ __name((contentType, headers) => {
-  return {
-    "Content-Type": contentType,
-    ...headers
-  };
-}, "setDefaultContentType");
-var Context = class {
-  static {
-    __name(this, "Context");
-  }
-  #rawRequest;
-  #req;
-  env = {};
-  #var;
-  finalized = false;
-  error;
-  #status;
-  #executionCtx;
-  #res;
-  #layout;
-  #renderer;
-  #notFoundHandler;
-  #preparedHeaders;
-  #matchResult;
-  #path;
-  constructor(req, options) {
-    this.#rawRequest = req;
-    if (options) {
-      this.#executionCtx = options.executionCtx;
-      this.env = options.env;
-      this.#notFoundHandler = options.notFoundHandler;
-      this.#path = options.path;
-      this.#matchResult = options.matchResult;
-    }
-  }
-  get req() {
-    this.#req ??= new HonoRequest(this.#rawRequest, this.#path, this.#matchResult);
-    return this.#req;
-  }
-  get event() {
-    if (this.#executionCtx && "respondWith" in this.#executionCtx) {
-      return this.#executionCtx;
-    } else {
-      throw Error("This context has no FetchEvent");
-    }
-  }
-  get executionCtx() {
-    if (this.#executionCtx) {
-      return this.#executionCtx;
-    } else {
-      throw Error("This context has no ExecutionContext");
-    }
-  }
-  get res() {
-    return this.#res ||= new Response(null, {
-      headers: this.#preparedHeaders ??= new Headers()
-    });
-  }
-  set res(_res) {
-    if (this.#res && _res) {
-      _res = new Response(_res.body, _res);
-      for (const [k, v] of this.#res.headers.entries()) {
-        if (k === "content-type") {
-          continue;
-        }
-        if (k === "set-cookie") {
-          const cookies = this.#res.headers.getSetCookie();
-          _res.headers.delete("set-cookie");
-          for (const cookie of cookies) {
-            _res.headers.append("set-cookie", cookie);
-          }
-        } else {
-          _res.headers.set(k, v);
-        }
-      }
-    }
-    this.#res = _res;
-    this.finalized = true;
-  }
-  render = /* @__PURE__ */ __name((...args) => {
-    this.#renderer ??= (content) => this.html(content);
-    return this.#renderer(...args);
-  }, "render");
-  setLayout = /* @__PURE__ */ __name((layout) => this.#layout = layout, "setLayout");
-  getLayout = /* @__PURE__ */ __name(() => this.#layout, "getLayout");
-  setRenderer = /* @__PURE__ */ __name((renderer) => {
-    this.#renderer = renderer;
-  }, "setRenderer");
-  header = /* @__PURE__ */ __name((name, value, options) => {
-    if (this.finalized) {
-      this.#res = new Response(this.#res.body, this.#res);
-    }
-    const headers = this.#res ? this.#res.headers : this.#preparedHeaders ??= new Headers();
-    if (value === void 0) {
-      headers.delete(name);
-    } else if (options?.append) {
-      headers.append(name, value);
-    } else {
-      headers.set(name, value);
-    }
-  }, "header");
-  status = /* @__PURE__ */ __name((status) => {
-    this.#status = status;
-  }, "status");
-  set = /* @__PURE__ */ __name((key, value) => {
-    this.#var ??= /* @__PURE__ */ new Map();
-    this.#var.set(key, value);
-  }, "set");
-  get = /* @__PURE__ */ __name((key) => {
-    return this.#var ? this.#var.get(key) : void 0;
-  }, "get");
-  get var() {
-    if (!this.#var) {
-      return {};
-    }
-    return Object.fromEntries(this.#var);
-  }
-  #newResponse(data, arg, headers) {
-    const responseHeaders = this.#res ? new Headers(this.#res.headers) : this.#preparedHeaders ?? new Headers();
-    if (typeof arg === "object" && "headers" in arg) {
-      const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers);
-      for (const [key, value] of argHeaders) {
-        if (key.toLowerCase() === "set-cookie") {
-          responseHeaders.append(key, value);
-        } else {
-          responseHeaders.set(key, value);
-        }
-      }
-    }
-    if (headers) {
-      for (const [k, v] of Object.entries(headers)) {
-        if (typeof v === "string") {
-          responseHeaders.set(k, v);
-        } else {
-          responseHeaders.delete(k);
-          for (const v2 of v) {
-            responseHeaders.append(k, v2);
-          }
-        }
-      }
-    }
-    const status = typeof arg === "number" ? arg : arg?.status ?? this.#status;
-    return new Response(data, { status, headers: responseHeaders });
-  }
-  newResponse = /* @__PURE__ */ __name((...args) => this.#newResponse(...args), "newResponse");
-  body = /* @__PURE__ */ __name((data, arg, headers) => this.#newResponse(data, arg, headers), "body");
-  text = /* @__PURE__ */ __name((text2, arg, headers) => {
-    return !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized ? new Response(text2) : this.#newResponse(
-      text2,
-      arg,
-      setDefaultContentType(TEXT_PLAIN, headers)
-    );
-  }, "text");
-  json = /* @__PURE__ */ __name((object, arg, headers) => {
-    return this.#newResponse(
-      JSON.stringify(object),
-      arg,
-      setDefaultContentType("application/json", headers)
-    );
-  }, "json");
-  html = /* @__PURE__ */ __name((html2, arg, headers) => {
-    const res = /* @__PURE__ */ __name((html22) => this.#newResponse(html22, arg, setDefaultContentType("text/html; charset=UTF-8", headers)), "res");
-    return typeof html2 === "object" ? resolveCallback(html2, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res) : res(html2);
-  }, "html");
-  redirect = /* @__PURE__ */ __name((location, status) => {
-    const locationString = String(location);
-    this.header(
-      "Location",
-      !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
-    );
-    return this.newResponse(null, status ?? 302);
-  }, "redirect");
-  notFound = /* @__PURE__ */ __name(() => {
-    this.#notFoundHandler ??= () => new Response();
-    return this.#notFoundHandler(this);
-  }, "notFound");
-};
+// node_modules/hono/dist/hono-base.js
+init_context();
 
 // node_modules/hono/dist/router.js
+init_modules_watch_stub();
 var METHOD_NAME_ALL = "ALL";
 var METHOD_NAME_ALL_LOWERCASE = "all";
 var METHODS = ["get", "post", "put", "delete", "options", "patch"];
@@ -674,9 +1503,11 @@ var UnsupportedPathError = class extends Error {
 };
 
 // node_modules/hono/dist/utils/constants.js
+init_modules_watch_stub();
 var COMPOSED_HANDLER = "__COMPOSED_HANDLER";
 
 // node_modules/hono/dist/hono-base.js
+init_url();
 var notFoundHandler = /* @__PURE__ */ __name((c) => {
   return c.text("404 Not Found", 404);
 }, "notFoundHandler");
@@ -910,7 +1741,15 @@ var Hono = class {
   }, "fire");
 };
 
+// node_modules/hono/dist/router/reg-exp-router/index.js
+init_modules_watch_stub();
+
+// node_modules/hono/dist/router/reg-exp-router/router.js
+init_modules_watch_stub();
+init_url();
+
 // node_modules/hono/dist/router/reg-exp-router/node.js
+init_modules_watch_stub();
 var LABEL_REG_EXP_STR = "[^/]+";
 var ONLY_WILDCARD_REG_EXP_STR = ".*";
 var TAIL_WILDCARD_REG_EXP_STR = "(?:|/.*)";
@@ -1023,6 +1862,7 @@ var Node = class {
 };
 
 // node_modules/hono/dist/router/reg-exp-router/trie.js
+init_modules_watch_stub();
 var Trie = class {
   static {
     __name(this, "Trie");
@@ -1284,7 +2124,11 @@ var RegExpRouter = class {
   }
 };
 
+// node_modules/hono/dist/router/smart-router/index.js
+init_modules_watch_stub();
+
 // node_modules/hono/dist/router/smart-router/router.js
+init_modules_watch_stub();
 var SmartRouter = class {
   static {
     __name(this, "SmartRouter");
@@ -1342,7 +2186,16 @@ var SmartRouter = class {
   }
 };
 
+// node_modules/hono/dist/router/trie-router/index.js
+init_modules_watch_stub();
+
+// node_modules/hono/dist/router/trie-router/router.js
+init_modules_watch_stub();
+init_url();
+
 // node_modules/hono/dist/router/trie-router/node.js
+init_modules_watch_stub();
+init_url();
 var emptyParams = /* @__PURE__ */ Object.create(null);
 var Node2 = class {
   static {
@@ -1541,517 +2394,12 @@ var Hono2 = class extends Hono {
   }
 };
 
-// node_modules/hono/dist/utils/encode.js
-var decodeBase64Url = /* @__PURE__ */ __name((str) => {
-  return decodeBase64(str.replace(/_|-/g, (m) => ({ _: "/", "-": "+" })[m] ?? m));
-}, "decodeBase64Url");
-var encodeBase64Url = /* @__PURE__ */ __name((buf) => encodeBase64(buf).replace(/\/|\+/g, (m) => ({ "/": "_", "+": "-" })[m] ?? m), "encodeBase64Url");
-var encodeBase64 = /* @__PURE__ */ __name((buf) => {
-  let binary = "";
-  const bytes = new Uint8Array(buf);
-  for (let i = 0, len = bytes.length; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}, "encodeBase64");
-var decodeBase64 = /* @__PURE__ */ __name((str) => {
-  const binary = atob(str);
-  const bytes = new Uint8Array(new ArrayBuffer(binary.length));
-  const half = binary.length / 2;
-  for (let i = 0, j = binary.length - 1; i <= half; i++, j--) {
-    bytes[i] = binary.charCodeAt(i);
-    bytes[j] = binary.charCodeAt(j);
-  }
-  return bytes;
-}, "decodeBase64");
-
-// node_modules/hono/dist/utils/jwt/jwa.js
-var AlgorithmTypes = /* @__PURE__ */ ((AlgorithmTypes2) => {
-  AlgorithmTypes2["HS256"] = "HS256";
-  AlgorithmTypes2["HS384"] = "HS384";
-  AlgorithmTypes2["HS512"] = "HS512";
-  AlgorithmTypes2["RS256"] = "RS256";
-  AlgorithmTypes2["RS384"] = "RS384";
-  AlgorithmTypes2["RS512"] = "RS512";
-  AlgorithmTypes2["PS256"] = "PS256";
-  AlgorithmTypes2["PS384"] = "PS384";
-  AlgorithmTypes2["PS512"] = "PS512";
-  AlgorithmTypes2["ES256"] = "ES256";
-  AlgorithmTypes2["ES384"] = "ES384";
-  AlgorithmTypes2["ES512"] = "ES512";
-  AlgorithmTypes2["EdDSA"] = "EdDSA";
-  return AlgorithmTypes2;
-})(AlgorithmTypes || {});
-
-// node_modules/hono/dist/helper/adapter/index.js
-var knownUserAgents = {
-  deno: "Deno",
-  bun: "Bun",
-  workerd: "Cloudflare-Workers",
-  node: "Node.js"
-};
-var getRuntimeKey = /* @__PURE__ */ __name(() => {
-  const global = globalThis;
-  const userAgentSupported = typeof navigator !== "undefined" && true;
-  if (userAgentSupported) {
-    for (const [runtimeKey, userAgent] of Object.entries(knownUserAgents)) {
-      if (checkUserAgentEquals(userAgent)) {
-        return runtimeKey;
-      }
-    }
-  }
-  if (typeof global?.EdgeRuntime === "string") {
-    return "edge-light";
-  }
-  if (global?.fastly !== void 0) {
-    return "fastly";
-  }
-  if (global?.process?.release?.name === "node") {
-    return "node";
-  }
-  return "other";
-}, "getRuntimeKey");
-var checkUserAgentEquals = /* @__PURE__ */ __name((platform) => {
-  const userAgent = "Cloudflare-Workers";
-  return userAgent.startsWith(platform);
-}, "checkUserAgentEquals");
-
-// node_modules/hono/dist/utils/jwt/types.js
-var JwtAlgorithmNotImplemented = class extends Error {
-  static {
-    __name(this, "JwtAlgorithmNotImplemented");
-  }
-  constructor(alg) {
-    super(`${alg} is not an implemented algorithm`);
-    this.name = "JwtAlgorithmNotImplemented";
-  }
-};
-var JwtTokenInvalid = class extends Error {
-  static {
-    __name(this, "JwtTokenInvalid");
-  }
-  constructor(token) {
-    super(`invalid JWT token: ${token}`);
-    this.name = "JwtTokenInvalid";
-  }
-};
-var JwtTokenNotBefore = class extends Error {
-  static {
-    __name(this, "JwtTokenNotBefore");
-  }
-  constructor(token) {
-    super(`token (${token}) is being used before it's valid`);
-    this.name = "JwtTokenNotBefore";
-  }
-};
-var JwtTokenExpired = class extends Error {
-  static {
-    __name(this, "JwtTokenExpired");
-  }
-  constructor(token) {
-    super(`token (${token}) expired`);
-    this.name = "JwtTokenExpired";
-  }
-};
-var JwtTokenIssuedAt = class extends Error {
-  static {
-    __name(this, "JwtTokenIssuedAt");
-  }
-  constructor(currentTimestamp, iat) {
-    super(
-      `Invalid "iat" claim, must be a valid number lower than "${currentTimestamp}" (iat: "${iat}")`
-    );
-    this.name = "JwtTokenIssuedAt";
-  }
-};
-var JwtTokenIssuer = class extends Error {
-  static {
-    __name(this, "JwtTokenIssuer");
-  }
-  constructor(expected, iss) {
-    super(`expected issuer "${expected}", got ${iss ? `"${iss}"` : "none"} `);
-    this.name = "JwtTokenIssuer";
-  }
-};
-var JwtHeaderInvalid = class extends Error {
-  static {
-    __name(this, "JwtHeaderInvalid");
-  }
-  constructor(header) {
-    super(`jwt header is invalid: ${JSON.stringify(header)}`);
-    this.name = "JwtHeaderInvalid";
-  }
-};
-var JwtHeaderRequiresKid = class extends Error {
-  static {
-    __name(this, "JwtHeaderRequiresKid");
-  }
-  constructor(header) {
-    super(`required "kid" in jwt header: ${JSON.stringify(header)}`);
-    this.name = "JwtHeaderRequiresKid";
-  }
-};
-var JwtTokenSignatureMismatched = class extends Error {
-  static {
-    __name(this, "JwtTokenSignatureMismatched");
-  }
-  constructor(token) {
-    super(`token(${token}) signature mismatched`);
-    this.name = "JwtTokenSignatureMismatched";
-  }
-};
-var CryptoKeyUsage = /* @__PURE__ */ ((CryptoKeyUsage2) => {
-  CryptoKeyUsage2["Encrypt"] = "encrypt";
-  CryptoKeyUsage2["Decrypt"] = "decrypt";
-  CryptoKeyUsage2["Sign"] = "sign";
-  CryptoKeyUsage2["Verify"] = "verify";
-  CryptoKeyUsage2["DeriveKey"] = "deriveKey";
-  CryptoKeyUsage2["DeriveBits"] = "deriveBits";
-  CryptoKeyUsage2["WrapKey"] = "wrapKey";
-  CryptoKeyUsage2["UnwrapKey"] = "unwrapKey";
-  return CryptoKeyUsage2;
-})(CryptoKeyUsage || {});
-
-// node_modules/hono/dist/utils/jwt/utf8.js
-var utf8Encoder = new TextEncoder();
-var utf8Decoder = new TextDecoder();
-
-// node_modules/hono/dist/utils/jwt/jws.js
-async function signing(privateKey, alg, data) {
-  const algorithm = getKeyAlgorithm(alg);
-  const cryptoKey = await importPrivateKey(privateKey, algorithm);
-  return await crypto.subtle.sign(algorithm, cryptoKey, data);
-}
-__name(signing, "signing");
-async function verifying(publicKey, alg, signature, data) {
-  const algorithm = getKeyAlgorithm(alg);
-  const cryptoKey = await importPublicKey(publicKey, algorithm);
-  return await crypto.subtle.verify(algorithm, cryptoKey, signature, data);
-}
-__name(verifying, "verifying");
-function pemToBinary(pem) {
-  return decodeBase64(pem.replace(/-+(BEGIN|END).*/g, "").replace(/\s/g, ""));
-}
-__name(pemToBinary, "pemToBinary");
-async function importPrivateKey(key, alg) {
-  if (!crypto.subtle || !crypto.subtle.importKey) {
-    throw new Error("`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.");
-  }
-  if (isCryptoKey(key)) {
-    if (key.type !== "private" && key.type !== "secret") {
-      throw new Error(
-        `unexpected key type: CryptoKey.type is ${key.type}, expected private or secret`
-      );
-    }
-    return key;
-  }
-  const usages = [CryptoKeyUsage.Sign];
-  if (typeof key === "object") {
-    return await crypto.subtle.importKey("jwk", key, alg, false, usages);
-  }
-  if (key.includes("PRIVATE")) {
-    return await crypto.subtle.importKey("pkcs8", pemToBinary(key), alg, false, usages);
-  }
-  return await crypto.subtle.importKey("raw", utf8Encoder.encode(key), alg, false, usages);
-}
-__name(importPrivateKey, "importPrivateKey");
-async function importPublicKey(key, alg) {
-  if (!crypto.subtle || !crypto.subtle.importKey) {
-    throw new Error("`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.");
-  }
-  if (isCryptoKey(key)) {
-    if (key.type === "public" || key.type === "secret") {
-      return key;
-    }
-    key = await exportPublicJwkFrom(key);
-  }
-  if (typeof key === "string" && key.includes("PRIVATE")) {
-    const privateKey = await crypto.subtle.importKey("pkcs8", pemToBinary(key), alg, true, [
-      CryptoKeyUsage.Sign
-    ]);
-    key = await exportPublicJwkFrom(privateKey);
-  }
-  const usages = [CryptoKeyUsage.Verify];
-  if (typeof key === "object") {
-    return await crypto.subtle.importKey("jwk", key, alg, false, usages);
-  }
-  if (key.includes("PUBLIC")) {
-    return await crypto.subtle.importKey("spki", pemToBinary(key), alg, false, usages);
-  }
-  return await crypto.subtle.importKey("raw", utf8Encoder.encode(key), alg, false, usages);
-}
-__name(importPublicKey, "importPublicKey");
-async function exportPublicJwkFrom(privateKey) {
-  if (privateKey.type !== "private") {
-    throw new Error(`unexpected key type: ${privateKey.type}`);
-  }
-  if (!privateKey.extractable) {
-    throw new Error("unexpected private key is unextractable");
-  }
-  const jwk = await crypto.subtle.exportKey("jwk", privateKey);
-  const { kty } = jwk;
-  const { alg, e, n } = jwk;
-  const { crv, x, y } = jwk;
-  return { kty, alg, e, n, crv, x, y, key_ops: [CryptoKeyUsage.Verify] };
-}
-__name(exportPublicJwkFrom, "exportPublicJwkFrom");
-function getKeyAlgorithm(name) {
-  switch (name) {
-    case "HS256":
-      return {
-        name: "HMAC",
-        hash: {
-          name: "SHA-256"
-        }
-      };
-    case "HS384":
-      return {
-        name: "HMAC",
-        hash: {
-          name: "SHA-384"
-        }
-      };
-    case "HS512":
-      return {
-        name: "HMAC",
-        hash: {
-          name: "SHA-512"
-        }
-      };
-    case "RS256":
-      return {
-        name: "RSASSA-PKCS1-v1_5",
-        hash: {
-          name: "SHA-256"
-        }
-      };
-    case "RS384":
-      return {
-        name: "RSASSA-PKCS1-v1_5",
-        hash: {
-          name: "SHA-384"
-        }
-      };
-    case "RS512":
-      return {
-        name: "RSASSA-PKCS1-v1_5",
-        hash: {
-          name: "SHA-512"
-        }
-      };
-    case "PS256":
-      return {
-        name: "RSA-PSS",
-        hash: {
-          name: "SHA-256"
-        },
-        saltLength: 32
-      };
-    case "PS384":
-      return {
-        name: "RSA-PSS",
-        hash: {
-          name: "SHA-384"
-        },
-        saltLength: 48
-      };
-    case "PS512":
-      return {
-        name: "RSA-PSS",
-        hash: {
-          name: "SHA-512"
-        },
-        saltLength: 64
-      };
-    case "ES256":
-      return {
-        name: "ECDSA",
-        hash: {
-          name: "SHA-256"
-        },
-        namedCurve: "P-256"
-      };
-    case "ES384":
-      return {
-        name: "ECDSA",
-        hash: {
-          name: "SHA-384"
-        },
-        namedCurve: "P-384"
-      };
-    case "ES512":
-      return {
-        name: "ECDSA",
-        hash: {
-          name: "SHA-512"
-        },
-        namedCurve: "P-521"
-      };
-    case "EdDSA":
-      return {
-        name: "Ed25519",
-        namedCurve: "Ed25519"
-      };
-    default:
-      throw new JwtAlgorithmNotImplemented(name);
-  }
-}
-__name(getKeyAlgorithm, "getKeyAlgorithm");
-function isCryptoKey(key) {
-  const runtime = getRuntimeKey();
-  if (runtime === "node" && !!crypto.webcrypto) {
-    return key instanceof crypto.webcrypto.CryptoKey;
-  }
-  return key instanceof CryptoKey;
-}
-__name(isCryptoKey, "isCryptoKey");
-
-// node_modules/hono/dist/utils/jwt/jwt.js
-var encodeJwtPart = /* @__PURE__ */ __name((part) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, ""), "encodeJwtPart");
-var encodeSignaturePart = /* @__PURE__ */ __name((buf) => encodeBase64Url(buf).replace(/=/g, ""), "encodeSignaturePart");
-var decodeJwtPart = /* @__PURE__ */ __name((part) => JSON.parse(utf8Decoder.decode(decodeBase64Url(part))), "decodeJwtPart");
-function isTokenHeader(obj) {
-  if (typeof obj === "object" && obj !== null) {
-    const objWithAlg = obj;
-    return "alg" in objWithAlg && Object.values(AlgorithmTypes).includes(objWithAlg.alg) && (!("typ" in objWithAlg) || objWithAlg.typ === "JWT");
-  }
-  return false;
-}
-__name(isTokenHeader, "isTokenHeader");
-var sign = /* @__PURE__ */ __name(async (payload, privateKey, alg = "HS256") => {
-  const encodedPayload = encodeJwtPart(payload);
-  let encodedHeader;
-  if (typeof privateKey === "object" && "alg" in privateKey) {
-    alg = privateKey.alg;
-    encodedHeader = encodeJwtPart({ alg, typ: "JWT", kid: privateKey.kid });
-  } else {
-    encodedHeader = encodeJwtPart({ alg, typ: "JWT" });
-  }
-  const partialToken = `${encodedHeader}.${encodedPayload}`;
-  const signaturePart = await signing(privateKey, alg, utf8Encoder.encode(partialToken));
-  const signature = encodeSignaturePart(signaturePart);
-  return `${partialToken}.${signature}`;
-}, "sign");
-var verify = /* @__PURE__ */ __name(async (token, publicKey, algOrOptions) => {
-  const optsIn = typeof algOrOptions === "string" ? { alg: algOrOptions } : algOrOptions || {};
-  const opts = {
-    alg: optsIn.alg ?? "HS256",
-    iss: optsIn.iss,
-    nbf: optsIn.nbf ?? true,
-    exp: optsIn.exp ?? true,
-    iat: optsIn.iat ?? true
-  };
-  const tokenParts = token.split(".");
-  if (tokenParts.length !== 3) {
-    throw new JwtTokenInvalid(token);
-  }
-  const { header, payload } = decode(token);
-  if (!isTokenHeader(header)) {
-    throw new JwtHeaderInvalid(header);
-  }
-  const now = Date.now() / 1e3 | 0;
-  if (opts.nbf && payload.nbf && payload.nbf > now) {
-    throw new JwtTokenNotBefore(token);
-  }
-  if (opts.exp && payload.exp && payload.exp <= now) {
-    throw new JwtTokenExpired(token);
-  }
-  if (opts.iat && payload.iat && now < payload.iat) {
-    throw new JwtTokenIssuedAt(now, payload.iat);
-  }
-  if (opts.iss) {
-    if (!payload.iss) {
-      throw new JwtTokenIssuer(opts.iss, null);
-    }
-    if (typeof opts.iss === "string" && payload.iss !== opts.iss) {
-      throw new JwtTokenIssuer(opts.iss, payload.iss);
-    }
-    if (opts.iss instanceof RegExp && !opts.iss.test(payload.iss)) {
-      throw new JwtTokenIssuer(opts.iss, payload.iss);
-    }
-  }
-  const headerPayload = token.substring(0, token.lastIndexOf("."));
-  const verified = await verifying(
-    publicKey,
-    opts.alg,
-    decodeBase64Url(tokenParts[2]),
-    utf8Encoder.encode(headerPayload)
-  );
-  if (!verified) {
-    throw new JwtTokenSignatureMismatched(token);
-  }
-  return payload;
-}, "verify");
-var verifyWithJwks = /* @__PURE__ */ __name(async (token, options, init) => {
-  const verifyOpts = options.verification || {};
-  const header = decodeHeader(token);
-  if (!isTokenHeader(header)) {
-    throw new JwtHeaderInvalid(header);
-  }
-  if (!header.kid) {
-    throw new JwtHeaderRequiresKid(header);
-  }
-  if (options.jwks_uri) {
-    const response = await fetch(options.jwks_uri, init);
-    if (!response.ok) {
-      throw new Error(`failed to fetch JWKS from ${options.jwks_uri}`);
-    }
-    const data = await response.json();
-    if (!data.keys) {
-      throw new Error('invalid JWKS response. "keys" field is missing');
-    }
-    if (!Array.isArray(data.keys)) {
-      throw new Error('invalid JWKS response. "keys" field is not an array');
-    }
-    if (options.keys) {
-      options.keys.push(...data.keys);
-    } else {
-      options.keys = data.keys;
-    }
-  } else if (!options.keys) {
-    throw new Error('verifyWithJwks requires options for either "keys" or "jwks_uri" or both');
-  }
-  const matchingKey = options.keys.find((key) => key.kid === header.kid);
-  if (!matchingKey) {
-    throw new JwtTokenInvalid(token);
-  }
-  return await verify(token, matchingKey, {
-    alg: matchingKey.alg || header.alg,
-    ...verifyOpts
-  });
-}, "verifyWithJwks");
-var decode = /* @__PURE__ */ __name((token) => {
-  try {
-    const [h, p] = token.split(".");
-    const header = decodeJwtPart(h);
-    const payload = decodeJwtPart(p);
-    return {
-      header,
-      payload
-    };
-  } catch {
-    throw new JwtTokenInvalid(token);
-  }
-}, "decode");
-var decodeHeader = /* @__PURE__ */ __name((token) => {
-  try {
-    const [h] = token.split(".");
-    return decodeJwtPart(h);
-  } catch {
-    throw new JwtTokenInvalid(token);
-  }
-}, "decodeHeader");
-
-// node_modules/hono/dist/utils/jwt/index.js
-var Jwt = { sign, verify, decode, verifyWithJwks };
-
-// node_modules/hono/dist/middleware/jwt/jwt.js
-var verifyWithJwks2 = Jwt.verifyWithJwks;
-var verify2 = Jwt.verify;
-var decode2 = Jwt.decode;
-var sign2 = Jwt.sign;
+// src/middleware/index.ts
+init_modules_watch_stub();
 
 // src/middleware/auth.ts
+init_modules_watch_stub();
+init_jwt5();
 var authMiddleware = /* @__PURE__ */ __name(async (c, next) => {
   const authHeader = c.req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -2060,15 +2408,25 @@ var authMiddleware = /* @__PURE__ */ __name(async (c, next) => {
   const token = authHeader.substring(7);
   const secret = c.env.JWT_SECRET || "a-very-secret-key";
   try {
-    const decodedPayload = await verify2(token, secret);
-    c.set("userId", parseInt(decodedPayload.sub, 10));
+    const payload = await verifyToken(token, secret);
+    c.set("userId", parseInt(payload.sub, 10));
+    c.set("userEmail", payload.email);
+    c.set("userRole", payload.role);
+    c.set("authMethod", payload.authMethod);
     await next();
   } catch (error) {
     return c.json({ error: "Invalid token" }, 401);
   }
 }, "authMiddleware");
 
+// src/middleware/admin.ts
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/d1/driver.js
+init_modules_watch_stub();
+
 // node_modules/drizzle-orm/entity.js
+init_modules_watch_stub();
 var entityKind = Symbol.for("drizzle:entityKind");
 var hasOwnEntityKind = Symbol.for("drizzle:hasOwnEntityKind");
 function is(value, type) {
@@ -2097,6 +2455,7 @@ function is(value, type) {
 __name(is, "is");
 
 // node_modules/drizzle-orm/logger.js
+init_modules_watch_stub();
 var ConsoleLogWriter = class {
   static {
     __name(this, "ConsoleLogWriter");
@@ -2136,7 +2495,14 @@ var NoopLogger = class {
   }
 };
 
+// node_modules/drizzle-orm/relations.js
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/table.js
+init_modules_watch_stub();
+
 // node_modules/drizzle-orm/table.utils.js
+init_modules_watch_stub();
 var TableName = Symbol.for("drizzle:Name");
 
 // node_modules/drizzle-orm/table.js
@@ -2207,6 +2573,7 @@ function getTableUniqueName(table) {
 __name(getTableUniqueName, "getTableUniqueName");
 
 // node_modules/drizzle-orm/column.js
+init_modules_watch_stub();
 var Column = class {
   static {
     __name(this, "Column");
@@ -2260,7 +2627,26 @@ var Column = class {
   }
 };
 
+// node_modules/drizzle-orm/pg-core/primary-keys.js
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/pg-core/table.js
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/utils.js
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/sql/sql.js
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/pg-core/columns/enum.js
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/pg-core/columns/common.js
+init_modules_watch_stub();
+
 // node_modules/drizzle-orm/column-builder.js
+init_modules_watch_stub();
 var ColumnBuilder = class {
   static {
     __name(this, "ColumnBuilder");
@@ -2367,6 +2753,7 @@ var ColumnBuilder = class {
 };
 
 // node_modules/drizzle-orm/pg-core/foreign-keys.js
+init_modules_watch_stub();
 var ForeignKeyBuilder = class {
   static {
     __name(this, "ForeignKeyBuilder");
@@ -2430,12 +2817,14 @@ var ForeignKey = class {
 };
 
 // node_modules/drizzle-orm/tracing-utils.js
+init_modules_watch_stub();
 function iife(fn, ...args) {
   return fn(...args);
 }
 __name(iife, "iife");
 
 // node_modules/drizzle-orm/pg-core/unique-constraint.js
+init_modules_watch_stub();
 function uniqueKeyName(table, columns) {
   return `${table[TableName]}_${columns.join("_")}_unique`;
 }
@@ -2496,6 +2885,7 @@ var UniqueConstraint = class {
 };
 
 // node_modules/drizzle-orm/pg-core/utils/array.js
+init_modules_watch_stub();
 function parsePgArrayValue(arrayString, startFrom, inQuotes) {
   for (let i = startFrom; i < arrayString.length; i++) {
     const char = arrayString[i];
@@ -2849,6 +3239,7 @@ var PgEnumColumn = class extends PgColumn {
 };
 
 // node_modules/drizzle-orm/subquery.js
+init_modules_watch_stub();
 var Subquery = class {
   static {
     __name(this, "Subquery");
@@ -2875,7 +3266,11 @@ var WithSubquery = class extends Subquery {
   static [entityKind] = "WithSubquery";
 };
 
+// node_modules/drizzle-orm/tracing.js
+init_modules_watch_stub();
+
 // node_modules/drizzle-orm/version.js
+init_modules_watch_stub();
 var version = "0.44.4";
 
 // node_modules/drizzle-orm/tracing.js
@@ -2914,6 +3309,7 @@ var tracer = {
 };
 
 // node_modules/drizzle-orm/view-common.js
+init_modules_watch_stub();
 var ViewBaseConfig = Symbol.for("drizzle:ViewBaseConfig");
 
 // node_modules/drizzle-orm/sql/sql.js
@@ -3527,6 +3923,7 @@ var PrimaryKey = class {
 };
 
 // node_modules/drizzle-orm/sql/expressions/conditions.js
+init_modules_watch_stub();
 function bindIfParam(value, column) {
   if (isDriverValueEncoder(column) && !isSQLWrapper(value) && !is(value, Param) && !is(value, Placeholder) && !is(value, Column) && !is(value, Table) && !is(value, View)) {
     return new Param(value, column);
@@ -3658,6 +4055,7 @@ function notIlike(column, value) {
 __name(notIlike, "notIlike");
 
 // node_modules/drizzle-orm/sql/expressions/select.js
+init_modules_watch_stub();
 function asc(column) {
   return sql`${column} asc`;
 }
@@ -3960,7 +4358,14 @@ function mapRelationalRow(tablesConfig, tableConfig, row, buildQueryResultSelect
 }
 __name(mapRelationalRow, "mapRelationalRow");
 
+// node_modules/drizzle-orm/sqlite-core/db.js
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/selection-proxy.js
+init_modules_watch_stub();
+
 // node_modules/drizzle-orm/alias.js
+init_modules_watch_stub();
 var ColumnAliasProxyHandler = class {
   static {
     __name(this, "ColumnAliasProxyHandler");
@@ -4140,7 +4545,11 @@ var SelectionProxyHandler = class _SelectionProxyHandler {
   }
 };
 
+// node_modules/drizzle-orm/sqlite-core/query-builders/delete.js
+init_modules_watch_stub();
+
 // node_modules/drizzle-orm/query-promise.js
+init_modules_watch_stub();
 var QueryPromise = class {
   static {
     __name(this, "QueryPromise");
@@ -4167,7 +4576,20 @@ var QueryPromise = class {
   }
 };
 
+// node_modules/drizzle-orm/sqlite-core/table.js
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/sqlite-core/columns/all.js
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/sqlite-core/columns/blob.js
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/sqlite-core/columns/common.js
+init_modules_watch_stub();
+
 // node_modules/drizzle-orm/sqlite-core/foreign-keys.js
+init_modules_watch_stub();
 var ForeignKeyBuilder2 = class {
   static {
     __name(this, "ForeignKeyBuilder");
@@ -4231,6 +4653,7 @@ var ForeignKey2 = class {
 };
 
 // node_modules/drizzle-orm/sqlite-core/unique-constraint.js
+init_modules_watch_stub();
 function uniqueKeyName2(table, columns) {
   return `${table[TableName]}_${columns.join("_")}_unique`;
 }
@@ -4454,6 +4877,7 @@ function blob(a, b) {
 __name(blob, "blob");
 
 // node_modules/drizzle-orm/sqlite-core/columns/custom.js
+init_modules_watch_stub();
 var SQLiteCustomColumnBuilder = class extends SQLiteColumnBuilder {
   static {
     __name(this, "SQLiteCustomColumnBuilder");
@@ -4509,6 +4933,7 @@ function customType(customTypeParams) {
 __name(customType, "customType");
 
 // node_modules/drizzle-orm/sqlite-core/columns/integer.js
+init_modules_watch_stub();
 var SQLiteBaseIntegerBuilder = class extends SQLiteColumnBuilder {
   static {
     __name(this, "SQLiteBaseIntegerBuilder");
@@ -4643,6 +5068,7 @@ function integer(a, b) {
 __name(integer, "integer");
 
 // node_modules/drizzle-orm/sqlite-core/columns/numeric.js
+init_modules_watch_stub();
 var SQLiteNumericBuilder = class extends SQLiteColumnBuilder {
   static {
     __name(this, "SQLiteNumericBuilder");
@@ -4737,6 +5163,7 @@ function numeric(a, b) {
 __name(numeric, "numeric");
 
 // node_modules/drizzle-orm/sqlite-core/columns/real.js
+init_modules_watch_stub();
 var SQLiteRealBuilder = class extends SQLiteColumnBuilder {
   static {
     __name(this, "SQLiteRealBuilder");
@@ -4765,6 +5192,7 @@ function real(name) {
 __name(real, "real");
 
 // node_modules/drizzle-orm/sqlite-core/columns/text.js
+init_modules_watch_stub();
 var SQLiteTextBuilder = class extends SQLiteColumnBuilder {
   static {
     __name(this, "SQLiteTextBuilder");
@@ -4893,7 +5321,11 @@ var sqliteTable = /* @__PURE__ */ __name((name, columns, extraConfig) => {
   return sqliteTableBase(name, columns, extraConfig);
 }, "sqliteTable");
 
+// node_modules/drizzle-orm/sqlite-core/utils.js
+init_modules_watch_stub();
+
 // node_modules/drizzle-orm/sqlite-core/indexes.js
+init_modules_watch_stub();
 var IndexBuilderOn = class {
   static {
     __name(this, "IndexBuilderOn");
@@ -5081,7 +5513,17 @@ var SQLiteDeleteBase = class extends QueryPromise {
   }
 };
 
+// node_modules/drizzle-orm/sqlite-core/query-builders/insert.js
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/sqlite-core/query-builders/query-builder.js
+init_modules_watch_stub();
+
+// node_modules/drizzle-orm/sqlite-core/dialect.js
+init_modules_watch_stub();
+
 // node_modules/drizzle-orm/casing.js
+init_modules_watch_stub();
 function toSnakeCase(input) {
   const words = input.replace(/['\u2019]/g, "").match(/[\da-z]+|[A-Z]+(?![a-z])|[A-Z][\da-z]+/g) ?? [];
   return words.map((word) => word.toLowerCase()).join("_");
@@ -5140,6 +5582,7 @@ var CasingCache = class {
 };
 
 // node_modules/drizzle-orm/errors.js
+init_modules_watch_stub();
 var DrizzleError = class extends Error {
   static {
     __name(this, "DrizzleError");
@@ -5176,12 +5619,14 @@ var TransactionRollbackError = class extends DrizzleError {
 };
 
 // node_modules/drizzle-orm/sql/functions/aggregate.js
+init_modules_watch_stub();
 function count(expression) {
   return sql`count(${expression || sql.raw("*")})`.mapWith(Number);
 }
 __name(count, "count");
 
 // node_modules/drizzle-orm/sqlite-core/view-base.js
+init_modules_watch_stub();
 var SQLiteViewBase = class extends View {
   static {
     __name(this, "SQLiteViewBase");
@@ -5817,7 +6262,11 @@ var SQLiteAsyncDialect = class extends SQLiteDialect {
   }
 };
 
+// node_modules/drizzle-orm/sqlite-core/query-builders/select.js
+init_modules_watch_stub();
+
 // node_modules/drizzle-orm/query-builders/query-builder.js
+init_modules_watch_stub();
 var TypedQueryBuilder = class {
   static {
     __name(this, "TypedQueryBuilder");
@@ -6757,6 +7206,7 @@ var SQLiteInsertBase = class extends QueryPromise {
 };
 
 // node_modules/drizzle-orm/sqlite-core/query-builders/update.js
+init_modules_watch_stub();
 var SQLiteUpdateBuilder = class {
   static {
     __name(this, "SQLiteUpdateBuilder");
@@ -6929,6 +7379,7 @@ var SQLiteUpdateBase = class extends QueryPromise {
 };
 
 // node_modules/drizzle-orm/sqlite-core/query-builders/count.js
+init_modules_watch_stub();
 var SQLiteCountBuilder = class _SQLiteCountBuilder extends SQL {
   static {
     __name(this, "SQLiteCountBuilder");
@@ -6976,6 +7427,7 @@ var SQLiteCountBuilder = class _SQLiteCountBuilder extends SQL {
 };
 
 // node_modules/drizzle-orm/sqlite-core/query-builders/query.js
+init_modules_watch_stub();
 var RelationalQueryBuilder = class {
   static {
     __name(this, "RelationalQueryBuilder");
@@ -7129,6 +7581,7 @@ var SQLiteSyncRelationalQuery = class extends SQLiteRelationalQuery {
 };
 
 // node_modules/drizzle-orm/sqlite-core/query-builders/raw.js
+init_modules_watch_stub();
 var SQLiteRaw = class extends QueryPromise {
   static {
     __name(this, "SQLiteRaw");
@@ -7458,7 +7911,11 @@ var BaseSQLiteDatabase = class {
   }
 };
 
+// node_modules/drizzle-orm/d1/session.js
+init_modules_watch_stub();
+
 // node_modules/drizzle-orm/cache/core/cache.js
+init_modules_watch_stub();
 var Cache = class {
   static {
     __name(this, "Cache");
@@ -7493,6 +7950,7 @@ async function hashQuery(sql2, params) {
 __name(hashQuery, "hashQuery");
 
 // node_modules/drizzle-orm/sqlite-core/session.js
+init_modules_watch_stub();
 var ExecuteResultSync = class extends QueryPromise {
   static {
     __name(this, "ExecuteResultSync");
@@ -7949,6 +8407,8 @@ __export(schema_exports, {
   categoryTranslationsRelations: () => categoryTranslationsRelations,
   mediaAssets: () => mediaAssets,
   mediaAssetsRelations: () => mediaAssetsRelations,
+  oauthSessions: () => oauthSessions,
+  oauthSessionsRelations: () => oauthSessionsRelations,
   orderItems: () => orderItems,
   orderItemsRelations: () => orderItemsRelations,
   orders: () => orders,
@@ -7966,11 +8426,22 @@ __export(schema_exports, {
   users: () => users,
   usersRelations: () => usersRelations
 });
+init_modules_watch_stub();
 var users = sqliteTable("users", {
   id: integer("id").primaryKey(),
   email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  // This will store the hashed password
+  password: text("password"),
+  // Optional for OAuth users
+  googleId: text("google_id").unique(),
+  // Google OAuth ID
+  oauthProvider: text("oauth_provider"),
+  // OAuth provider ('google', 'github', 'facebook', etc.)
+  oauthPicture: text("oauth_picture"),
+  // OAuth profile picture URL
+  authMethod: text("auth_method", { enum: ["email", "oauth"] }).default("email"),
+  // Authentication method
+  emailVerified: integer("email_verified", { mode: "boolean" }).default(false),
+  // Email verification status
   role: text("role", { enum: ["user", "admin", "super_admin", "moderator"] }).default("user"),
   status: text("status", { enum: ["active", "disabled", "suspended", "deleted"] }).default("active"),
   lastLoginAt: integer("last_login_at", { mode: "timestamp" }),
@@ -8107,12 +8578,33 @@ var adminLogs = sqliteTable("admin_logs", {
   userAgent: text("user_agent"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull()
 });
+var oauthSessions = sqliteTable("oauth_sessions", {
+  id: integer("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  provider: text("provider").notNull(),
+  // 'google', 'github', 'facebook', etc.
+  providerUserId: text("provider_user_id").notNull(),
+  // OAuth provider's user ID
+  accessToken: text("access_token"),
+  // OAuth access token
+  refreshToken: text("refresh_token"),
+  // OAuth refresh token
+  tokenExpiresAt: integer("token_expires_at", { mode: "timestamp" }),
+  // Access token expiration
+  scope: text("scope"),
+  // OAuth permissions scope
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => /* @__PURE__ */ new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => /* @__PURE__ */ new Date())
+}, (table) => ({
+  providerUserIdx: uniqueIndex("provider_user_idx").on(table.provider, table.providerUserId)
+}));
 var usersRelations = relations(users, ({ many, one }) => ({
   orders: many(orders),
   cart: one(carts),
   profile: one(userProfiles),
   addresses: many(userAddresses),
   adminLogs: many(adminLogs),
+  oauthSessions: many(oauthSessions),
   createdByUser: one(users, { fields: [users.createdBy], references: [users.id] }),
   createdUsers: many(users, { foreignKey: users.createdBy })
 }));
@@ -8207,6 +8699,12 @@ var adminLogsRelations = relations(adminLogs, ({ one }) => ({
     references: [users.id]
   })
 }));
+var oauthSessionsRelations = relations(oauthSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [oauthSessions.userId],
+    references: [users.id]
+  })
+}));
 
 // src/middleware/admin.ts
 async function logAdminAction(db, adminId, action, ipAddress, userAgent, targetType, targetId, details) {
@@ -8261,7 +8759,11 @@ var superAdminMiddleware = /* @__PURE__ */ __name(async (c, next) => {
   await next();
 }, "superAdminMiddleware");
 
+// src/middleware/cors.ts
+init_modules_watch_stub();
+
 // node_modules/hono/dist/middleware/cors/index.js
+init_modules_watch_stub();
 var cors = /* @__PURE__ */ __name((options) => {
   const defaults = {
     origin: "*",
@@ -8357,7 +8859,17 @@ var corsMiddleware = cors({
   credentials: true
 });
 
+// src/routes/index.ts
+init_modules_watch_stub();
+
+// src/routes/auth.ts
+init_modules_watch_stub();
+
+// src/types/schemas.ts
+init_modules_watch_stub();
+
 // node_modules/zod/lib/index.mjs
+init_modules_watch_stub();
 var util;
 (function(util2) {
   util2.assertEqual = (val) => val;
@@ -12286,7 +12798,11 @@ var ChangePasswordSchema = z.object({
   newPassword: z.string().min(8)
 });
 
+// src/utils/index.ts
+init_modules_watch_stub();
+
 // src/utils/crypto.ts
+init_modules_watch_stub();
 async function hash(data, algorithm = "SHA-256") {
   const hashBuffer = await crypto.subtle.digest(algorithm, data);
   return bufferToHex(hashBuffer);
@@ -12302,6 +12818,12 @@ function bufferToHex(buffer) {
   return [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 __name(bufferToHex, "bufferToHex");
+
+// src/utils/file.ts
+init_modules_watch_stub();
+
+// src/utils/index.ts
+init_jwt5();
 
 // src/routes/auth.ts
 var authRoutes = new Hono2();
@@ -12324,15 +12846,27 @@ authRoutes.post("/register", async (c) => {
     const newUser = await db.insert(users).values({
       email,
       password: hashedPassword,
+      authMethod: "email",
+      emailVerified: false,
+      // 需要邮箱验证
       lastLoginAt: /* @__PURE__ */ new Date()
-    }).returning({ id: users.id });
+    }).returning({ id: users.id, email: users.email, role: users.role, status: users.status });
     if (!newUser || newUser.length === 0) {
       return c.json({ error: "Failed to create user" }, 500);
     }
-    const userId = newUser[0].id;
+    const user = newUser[0];
     const secret = c.env.JWT_SECRET || "a-very-secret-key";
-    const token = await sign2({ sub: userId.toString(), email }, secret);
-    return c.json({ token, user: { id: userId, email } }, 201);
+    const token = await generateEmailAuthToken(user, secret);
+    return c.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        authMethod: "email",
+        emailVerified: false
+      }
+    }, 201);
   } catch (e) {
     return c.json({ error: "Registration failed", details: e.message }, 500);
   }
@@ -12364,18 +12898,21 @@ authRoutes.post("/admin-login", async (c) => {
     }
     await db.update(users).set({ lastLoginAt: /* @__PURE__ */ new Date() }).where(eq(users.id, user.id));
     const secret = c.env.JWT_SECRET || "a-very-secret-key";
-    const token = await sign2({
-      sub: user.id.toString(),
+    const token = await generateEmailAuthToken({
+      id: user.id,
       email: user.email,
-      role: user.role
-      // 在token中包含角色信息
+      role: user.role,
+      status: user.status,
+      emailVerified: user.emailVerified ?? true
+      // 管理员默认已验证
     }, secret);
     return c.json({
       token,
       user: {
         id: user.id,
         email: user.email,
-        role: user.role
+        role: user.role,
+        authMethod: "email"
       }
     });
   } catch (e) {
@@ -12406,23 +12943,28 @@ authRoutes.post("/login", async (c) => {
     }
     await db.update(users).set({ lastLoginAt: /* @__PURE__ */ new Date() }).where(eq(users.id, user.id));
     const secret = c.env.JWT_SECRET || "a-very-secret-key";
-    const token = await sign2({
-      sub: user.id.toString(),
-      email: user.email
+    const token = await generateEmailAuthToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      emailVerified: user.emailVerified ?? false
     }, secret);
     return c.json({
       token,
       user: {
         id: user.id,
         email: user.email,
-        role: user.role
+        role: user.role,
+        authMethod: user.authMethod || "email",
+        emailVerified: user.emailVerified ?? false
       }
     });
   } catch (e) {
     return c.json({ error: "Login failed", details: e.message }, 500);
   }
 });
-authRoutes.get("/me", authMiddleware, async (c) => {
+var getUserInfo = /* @__PURE__ */ __name(async (c) => {
   const userId = c.get("userId");
   if (!userId) {
     return c.json({ error: "User not found" }, 404);
@@ -12443,49 +12985,220 @@ authRoutes.get("/me", authMiddleware, async (c) => {
     if (!user) {
       return c.json({ error: "User not found" }, 404);
     }
-    return c.json(user);
+    return c.json({ success: true, user });
   } catch (e) {
     return c.json({ error: "Failed to get user info", details: e.message }, 500);
+  }
+}, "getUserInfo");
+authRoutes.get("/me", authMiddleware, getUserInfo);
+authRoutes.get("/profile", authMiddleware, getUserInfo);
+authRoutes.post("/logout", async (c) => {
+  try {
+    const authHeader = c.req.header("Authorization");
+    let userId = null;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      try {
+        const token = authHeader.substring(7);
+        const secret = c.env.JWT_SECRET || "a-very-secret-key";
+        const payload = await verifyToken(token, secret);
+        userId = parseInt(payload.sub, 10);
+      } catch (error) {
+        console.log("Token invalid during logout, but continuing logout process");
+      }
+    }
+    if (userId) {
+      try {
+        const db = drizzle(c.env.DB, { schema: schema_exports });
+        await db.delete(oauthSessions).where(eq(oauthSessions.userId, userId));
+        console.log(`User ${userId} logged out`);
+      } catch (dbError) {
+        console.error("Failed to cleanup OAuth sessions:", dbError);
+      }
+    }
+    return c.json({
+      success: true,
+      message: "Logged out successfully"
+    });
+  } catch (e) {
+    console.error("Logout error:", e);
+    return c.json({
+      success: true,
+      message: "Logged out"
+    });
+  }
+});
+authRoutes.post("/oauth/google", async (c) => {
+  const body = await c.req.json();
+  const { googleToken, googleUser } = body;
+  if (!googleToken || !googleUser || !googleUser.email) {
+    return c.json({ error: "Invalid Google OAuth data" }, 400);
+  }
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    let user = await db.query.users.findFirst({
+      where: eq(users.googleId, googleUser.id)
+    });
+    if (!user) {
+      user = await db.query.users.findFirst({
+        where: eq(users.email, googleUser.email)
+      });
+      if (user) {
+        const updatedUsers = await db.update(users).set({
+          googleId: googleUser.id,
+          oauthProvider: "google",
+          oauthPicture: googleUser.picture,
+          authMethod: "oauth",
+          emailVerified: true,
+          lastLoginAt: /* @__PURE__ */ new Date()
+        }).where(eq(users.id, user.id)).returning();
+        if (updatedUsers.length > 0) {
+          user = updatedUsers[0];
+        }
+      } else {
+        const newUsers = await db.insert(users).values({
+          email: googleUser.email,
+          googleId: googleUser.id,
+          oauthProvider: "google",
+          oauthPicture: googleUser.picture,
+          authMethod: "oauth",
+          emailVerified: true,
+          role: "user",
+          status: "active",
+          lastLoginAt: /* @__PURE__ */ new Date()
+        }).returning();
+        if (newUsers.length > 0) {
+          user = newUsers[0];
+        }
+      }
+    } else {
+      await db.update(users).set({ lastLoginAt: /* @__PURE__ */ new Date() }).where(eq(users.id, user.id));
+    }
+    if (!user) {
+      return c.json({ error: "Failed to create or update user" }, 500);
+    }
+    if (user.status !== "active") {
+      return c.json({ error: "Account is disabled" }, 403);
+    }
+    try {
+      await db.insert(oauthSessions).values({
+        userId: user.id,
+        provider: "google",
+        providerUserId: googleUser.id,
+        accessToken: googleToken,
+        scope: "email profile",
+        createdAt: /* @__PURE__ */ new Date(),
+        updatedAt: /* @__PURE__ */ new Date()
+      });
+    } catch (conflictError) {
+      await db.update(oauthSessions).set({
+        accessToken: googleToken,
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq(oauthSessions.providerUserId, googleUser.id));
+    }
+    const secret = c.env.JWT_SECRET || "a-very-secret-key";
+    const token = await generateOAuthToken(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role || "user",
+        status: user.status || "active"
+      },
+      {
+        provider: "google",
+        googleId: googleUser.id,
+        picture: googleUser.picture
+      },
+      secret
+    );
+    return c.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role || "user",
+        authMethod: "oauth",
+        oauthProvider: "google",
+        picture: googleUser.picture,
+        emailVerified: true
+      }
+    });
+  } catch (e) {
+    console.error("Google OAuth error:", e);
+    return c.json({ error: "OAuth authentication failed", details: e.message }, 500);
+  }
+});
+authRoutes.post("/refresh", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader || !userId) {
+    return c.json({ error: "Invalid request" }, 400);
+  }
+  const oldToken = authHeader.substring(7);
+  const secret = c.env.JWT_SECRET || "a-very-secret-key";
+  try {
+    const { refreshToken: refreshToken2 } = await Promise.resolve().then(() => (init_jwt5(), jwt_exports));
+    const newToken = await refreshToken2(oldToken, secret);
+    return c.json({
+      success: true,
+      token: newToken
+    });
+  } catch (e) {
+    return c.json({ error: "Token refresh failed", details: e.message }, 401);
   }
 });
 
 // src/routes/products.ts
+init_modules_watch_stub();
 var productRoutes = new Hono2();
 productRoutes.get("/", async (c) => {
-  const db = drizzle(c.env.DB, { schema: schema_exports });
-  const lang = c.req.query("lang") || "en";
-  const categoryId = c.req.query("categoryId");
-  let whereCondition;
-  if (categoryId && !isNaN(Number(categoryId))) {
-    whereCondition = eq(products.categoryId, Number(categoryId));
-  }
-  const results = await db.query.products.findMany({
-    where: whereCondition,
-    with: {
-      media: {
-        with: { asset: true },
-        orderBy: [productMedia.displayOrder]
-      },
-      translations: {
-        where: eq(productTranslations.language, lang)
-      },
-      category: {
-        with: {
-          translations: {
-            where: eq(categoryTranslations.language, lang)
+  try {
+    console.log("\u{1F50D} Product list request received");
+    const db = drizzle(c.env.DB, { schema: schema_exports });
+    const lang = c.req.query("lang") || "en";
+    const categoryId = c.req.query("categoryId");
+    console.log("\u{1F4CB} Query params:", { lang, categoryId });
+    let whereCondition;
+    if (categoryId && !isNaN(Number(categoryId))) {
+      whereCondition = eq(products.categoryId, Number(categoryId));
+    }
+    console.log("\u{1F5C3}\uFE0F Querying database...");
+    const results = await db.query.products.findMany({
+      where: whereCondition,
+      with: {
+        media: {
+          with: { asset: true },
+          orderBy: [productMedia.displayOrder]
+        },
+        translations: {
+          where: eq(productTranslations.language, lang)
+        },
+        category: {
+          with: {
+            translations: {
+              where: eq(categoryTranslations.language, lang)
+            }
           }
         }
       }
-    }
-  });
-  const formatted = results.map((p) => ({
-    ...p,
-    name: p.translations[0]?.name,
-    description: p.translations[0]?.description,
-    categoryName: p.category?.translations?.[0]?.name,
-    price: p.price
-  }));
-  return c.json(formatted);
+    });
+    console.log(`\u{1F4E6} Found ${results.length} products`);
+    const formatted = results.map((p) => ({
+      ...p,
+      name: p.translations[0]?.name,
+      description: p.translations[0]?.description,
+      categoryName: p.category?.translations?.[0]?.name,
+      price: p.price
+    }));
+    console.log("\u2705 Product list response ready");
+    return c.json(formatted);
+  } catch (error) {
+    console.error("\u274C Product list error:", error);
+    return c.json({
+      error: "Failed to fetch products",
+      details: error.message,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    }, 500);
+  }
 });
 productRoutes.post("/", authMiddleware, async (c) => {
   const body = await c.req.json();
@@ -12722,6 +13435,7 @@ productRoutes.post("/:id/media", authMiddleware, async (c) => {
 });
 
 // src/routes/cart.ts
+init_modules_watch_stub();
 var cartRoutes = new Hono2();
 cartRoutes.get("/", authMiddleware, async (c) => {
   const userId = c.get("userId");
@@ -12884,8 +13598,25 @@ cartRoutes.delete("/items/:itemId", authMiddleware, async (c) => {
     return c.json({ error: "Failed to remove cart item", details: error.message }, 500);
   }
 });
+cartRoutes.delete("/", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const cart = await db.query.carts.findFirst({
+      where: eq(carts.userId, userId)
+    });
+    if (!cart) {
+      return c.json({ message: "Cart is already empty" });
+    }
+    await db.delete(cartItems).where(eq(cartItems.cartId, cart.id));
+    return c.json({ message: "Cart cleared successfully" });
+  } catch (error) {
+    return c.json({ error: "Failed to clear cart", details: error.message }, 500);
+  }
+});
 
 // src/routes/admin.ts
+init_modules_watch_stub();
 var adminRoutes = new Hono2();
 adminRoutes.get("/users", authMiddleware, adminMiddleware, async (c) => {
   const db = drizzle(c.env.DB, { schema: schema_exports });
@@ -13895,6 +14626,7 @@ adminRoutes.delete("/categories/:id", authMiddleware, adminMiddleware, async (c)
 });
 
 // src/routes/static.ts
+init_modules_watch_stub();
 var staticRoutes = new Hono2();
 staticRoutes.get("/docs", (c) => {
   const swaggerUI = `
@@ -13934,24 +14666,164 @@ staticRoutes.get("/docs", (c) => {
 </html>`;
   return c.html(swaggerUI);
 });
+staticRoutes.get("/placeholder/:width/:height", async (c) => {
+  const width = c.req.param("width") || "300";
+  const height = c.req.param("height") || "250";
+  try {
+    const svg = await c.env.ASSETS.get("placeholder.svg");
+    if (svg) {
+      return new Response(await svg.text(), {
+        headers: {
+          "Content-Type": "image/svg+xml",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error loading placeholder SVG:", error);
+  }
+  const placeholderSvg = `
+        <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#1C1C1C"/>
+            <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="18" fill="#A88F5A" text-anchor="middle" dominant-baseline="middle">No Image</text>
+        </svg>
+    `;
+  return new Response(placeholderSvg, {
+    headers: {
+      "Content-Type": "image/svg+xml",
+      "Access-Control-Allow-Origin": "*"
+    }
+  });
+});
+staticRoutes.get("/placeholder.svg", async (c) => {
+  try {
+    const svg = await c.env.ASSETS.get("placeholder.svg");
+    if (svg) {
+      return new Response(await svg.text(), {
+        headers: {
+          "Content-Type": "image/svg+xml",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error loading placeholder SVG:", error);
+  }
+  const defaultSvg = `
+        <svg width="300" height="250" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#1C1C1C"/>
+            <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="18" fill="#A88F5A" text-anchor="middle" dominant-baseline="middle">No Image</text>
+        </svg>
+    `;
+  return new Response(defaultSvg, {
+    headers: {
+      "Content-Type": "image/svg+xml",
+      "Access-Control-Allow-Origin": "*"
+    }
+  });
+});
+staticRoutes.get("/user/*", async (c) => {
+  const path = c.req.path.replace("/user/", "user/");
+  try {
+    const file = await c.env.ASSETS.get(path);
+    if (!file) {
+      console.log("Static file not found:", path);
+      return c.json({ error: "File not found" }, 404);
+    }
+    const headers = new Headers();
+    if (path.endsWith(".html")) {
+      headers.set("Content-Type", "text/html; charset=utf-8");
+    } else if (path.endsWith(".css")) {
+      headers.set("Content-Type", "text/css");
+    } else if (path.endsWith(".js")) {
+      headers.set("Content-Type", "application/javascript");
+    } else if (path.endsWith(".json")) {
+      headers.set("Content-Type", "application/json");
+    }
+    headers.set("Access-Control-Allow-Origin", "*");
+    return new Response(await file.text(), { headers });
+  } catch (error) {
+    console.error("Error serving static file:", error);
+    return c.json({ error: "Error loading file" }, 500);
+  }
+});
+staticRoutes.get("/admin/*", async (c) => {
+  const path = c.req.path.replace("/admin/", "admin/");
+  try {
+    const file = await c.env.ASSETS.get(path);
+    if (!file) {
+      console.log("Admin file not found:", path);
+      return c.json({ error: "File not found" }, 404);
+    }
+    const headers = new Headers();
+    if (path.endsWith(".html")) {
+      headers.set("Content-Type", "text/html; charset=utf-8");
+    } else if (path.endsWith(".css")) {
+      headers.set("Content-Type", "text/css");
+    } else if (path.endsWith(".js")) {
+      headers.set("Content-Type", "application/javascript");
+    }
+    headers.set("Access-Control-Allow-Origin", "*");
+    return new Response(await file.text(), { headers });
+  } catch (error) {
+    console.error("Error serving admin file:", error);
+    return c.json({ error: "Error loading file" }, 500);
+  }
+});
+staticRoutes.get("/media/:key", async (c) => {
+  const key = c.req.param("key");
+  console.log("\u8BF7\u6C42\u5A92\u4F53\u6587\u4EF6:", key);
+  let object = await c.env.IMAGES_BUCKET.get(key);
+  if (object === null) {
+    console.log("\u5728\u56FE\u7247\u6876\u4E2D\u672A\u627E\u5230\uFF0C\u5C1D\u8BD5\u89C6\u9891\u6876:", key);
+    object = await c.env.VIDEOS_BUCKET.get(key);
+  }
+  if (object === null) {
+    console.log("\u5A92\u4F53\u6587\u4EF6\u672A\u627E\u5230:", key);
+    return c.json({ error: "Media not found" }, 404);
+  }
+  console.log("\u5A92\u4F53\u6587\u4EF6\u627E\u5230:", key, "\u7C7B\u578B:", object.httpMetadata?.contentType);
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("etag", object.httpEtag);
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Access-Control-Allow-Methods", "GET");
+  headers.set("Access-Control-Allow-Headers", "Content-Type");
+  return new Response(object.body, {
+    headers
+  });
+});
 staticRoutes.get("/:key", async (c) => {
   const key = c.req.param("key");
+  if (!/\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|webm)$/i.test(key)) {
+    return c.json({ error: "Not a media file" }, 404);
+  }
+  console.log("\u901A\u7528\u8DEF\u7531\u8BF7\u6C42\u5A92\u4F53\u6587\u4EF6:", key);
   let object = await c.env.IMAGES_BUCKET.get(key);
   if (object === null) {
     object = await c.env.VIDEOS_BUCKET.get(key);
   }
   if (object === null) {
+    console.log("\u901A\u7528\u8DEF\u7531\uFF1A\u5A92\u4F53\u6587\u4EF6\u672A\u627E\u5230:", key);
     return c.json({ error: "Media not found" }, 404);
   }
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
+  headers.set("Access-Control-Allow-Origin", "*");
   return new Response(object.body, {
     headers
   });
 });
 
+// src/services/index.ts
+init_modules_watch_stub();
+
+// src/services/openapi.ts
+init_modules_watch_stub();
+
 // src/services/openapi/base.ts
+init_modules_watch_stub();
 var openApiConfig = {
   "openapi": "3.0.3",
   "info": {
@@ -14039,6 +14911,7 @@ var commonSchemas = {
 };
 
 // src/services/openapi/auth.ts
+init_modules_watch_stub();
 var authSchemas = {
   "User": {
     "type": "object",
@@ -14236,6 +15109,7 @@ var authPaths = {
 };
 
 // src/services/openapi/products.ts
+init_modules_watch_stub();
 var productSchemas = {
   "Product": {
     "type": "object",
@@ -14551,6 +15425,7 @@ var productPaths = {
 };
 
 // src/services/openapi/cart.ts
+init_modules_watch_stub();
 var cartSchemas = {
   "Cart": {
     "type": "object",
@@ -14693,6 +15568,7 @@ var cartPaths = {
 };
 
 // src/services/openapi/admin.ts
+init_modules_watch_stub();
 var adminSchemas = {
   "AdminLog": {
     "type": "object",
@@ -15410,6 +16286,7 @@ var adminPaths = {
 };
 
 // src/services/openapi/orders.ts
+init_modules_watch_stub();
 var orderSchemas = {
   "OrderItem": {
     "type": "object",
@@ -15640,6 +16517,7 @@ var orderPaths = {
 };
 
 // src/services/openapi/categories.ts
+init_modules_watch_stub();
 var categorySchemas = {
   "CategoryDetail": {
     "type": "object",
@@ -15770,6 +16648,7 @@ var categoryPaths = {
 };
 
 // src/services/openapi/users.ts
+init_modules_watch_stub();
 var userSchemas = {
   "UserProfile": {
     "type": "object",
@@ -16065,6 +16944,7 @@ function generateOpenApiSpec() {
 __name(generateOpenApiSpec, "generateOpenApiSpec");
 
 // src/services/admin-dashboard.ts
+init_modules_watch_stub();
 function generateAdminDashboard() {
   return `
         <!DOCTYPE html>
@@ -16084,15 +16964,39 @@ function generateAdminDashboard() {
 __name(generateAdminDashboard, "generateAdminDashboard");
 
 // src/index.ts
-import html from "./90be59d0d379f725ca0b44b6f0c9c12cdecd8e15-frontend.html";
+import html from "./5759aa23656c7919b1eeae34e17e26ce94ff4092-frontend.html";
 var app = new Hono2();
 app.use("/api/*", corsMiddleware);
-app.get("/", (c) => c.html(html));
+app.get("/", (c) => {
+  return c.redirect("/user/", 302);
+});
+app.get("/user/", async (c) => {
+  try {
+    const html2 = await c.env.ASSETS.get("user/index.html");
+    if (!html2) {
+      return c.text("User interface not found", 404);
+    }
+    return c.html(await html2.text());
+  } catch (error) {
+    console.error("Error serving user interface:", error);
+    return c.text("Error loading user interface", 500);
+  }
+});
+app.get("/legacy", (c) => c.html(html));
 app.get("/admin", (c) => {
   return c.html(generateAdminDashboard());
 });
-app.get("/admin/user-management", (c) => {
-  return c.redirect("/static/admin/user-management.html", 302);
+app.get("/admin/user-management", async (c) => {
+  try {
+    const html2 = await c.env.ASSETS.get("admin/user-management.html");
+    if (!html2) {
+      return c.text("Admin interface not found", 404);
+    }
+    return c.html(await html2.text());
+  } catch (error) {
+    console.error("Error serving admin interface:", error);
+    return c.text("Error loading admin interface", 500);
+  }
 });
 app.get("/api/docs", (c) => {
   const swaggerUI = `<!DOCTYPE html>
@@ -16135,8 +17039,15 @@ app.get("/openapi.json", (c) => {
   const openApiSpec = generateOpenApiSpec();
   return c.json(openApiSpec);
 });
+app.get("/api/health", (c) => {
+  return c.json({
+    status: "healthy",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    version: "1.0.0",
+    environment: "development"
+  });
+});
 app.route("/media", staticRoutes);
-app.route("/static", staticRoutes);
 app.route("/", staticRoutes);
 app.route("/api/auth", authRoutes);
 app.route("/api/products", productRoutes);
@@ -16145,6 +17056,7 @@ app.route("/api/admin", adminRoutes);
 var src_default = app;
 
 // node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
+init_modules_watch_stub();
 var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
   try {
     return await middlewareCtx.next(request, env);
@@ -16163,6 +17075,7 @@ var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 var middleware_ensure_req_body_drained_default = drainBody;
 
 // node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
+init_modules_watch_stub();
 function reduceError(e) {
   return {
     name: e?.name,
@@ -16185,7 +17098,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-VS3yoD/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-VAzRFF/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -16193,6 +17106,7 @@ var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
 var middleware_insertion_facade_default = src_default;
 
 // node_modules/wrangler/templates/middleware/common.ts
+init_modules_watch_stub();
 var __facade_middleware__ = [];
 function __facade_register__(...args) {
   __facade_middleware__.push(...args.flat());
@@ -16217,7 +17131,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-VS3yoD/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-VAzRFF/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
