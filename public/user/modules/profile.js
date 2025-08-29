@@ -139,41 +139,48 @@ window.ProfileModule = {
             <div class="bg-gray-800 rounded-lg p-6">
                 <h2 class="text-xl font-semibold mb-6 text-gold" data-lang-key="personalInfo">Personal Information</h2>
                 
-                <form id="profile-form">
+                <form id="profile-form" class="profile-form">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="form-group">
                             <label for="profile-email" class="form-label" data-lang-key="email">Email</label>
                             <input type="email" id="profile-email" class="form-input" 
-                                   value="${this.currentUser?.email || ''}" readonly>
+                                   value="${this.currentUser?.email || ''}" 
+                                   placeholder="your@email.com"
+                                   readonly>
                         </div>
                         
                         <div class="form-group">
                             <label for="profile-username" class="form-label" data-lang-key="username">Username</label>
                             <input type="text" id="profile-username" class="form-input" 
-                                   value="${this.currentUser?.username || ''}">
+                                   value="${this.currentUser?.username || ''}"
+                                   placeholder="Enter your username">
                         </div>
                         
                         <div class="form-group">
                             <label for="profile-first-name" class="form-label" data-lang-key="firstName">First Name</label>
                             <input type="text" id="profile-first-name" class="form-input" 
-                                   value="${this.currentUser?.firstName || ''}">
+                                   value="${this.currentUser?.firstName || ''}"
+                                   placeholder="Enter your first name">
                         </div>
                         
                         <div class="form-group">
                             <label for="profile-last-name" class="form-label" data-lang-key="lastName">Last Name</label>
                             <input type="text" id="profile-last-name" class="form-input" 
-                                   value="${this.currentUser?.lastName || ''}">
+                                   value="${this.currentUser?.lastName || ''}"
+                                   placeholder="Enter your last name">
                         </div>
                         
                         <div class="form-group md:col-span-2">
                             <label for="profile-phone" class="form-label" data-lang-key="phone">Phone</label>
                             <input type="tel" id="profile-phone" class="form-input" 
-                                   value="${this.currentUser?.phone || ''}">
+                                   value="${this.currentUser?.phone || ''}"
+                                   placeholder="Enter your phone number">
                         </div>
                         
                         <div class="form-group md:col-span-2">
                             <label for="profile-address" class="form-label" data-lang-key="address">Address</label>
-                            <textarea id="profile-address" class="form-input" rows="3">${this.currentUser?.address || ''}</textarea>
+                            <textarea id="profile-address" class="form-input" rows="3" 
+                                      placeholder="Enter your address">${this.currentUser?.address || ''}</textarea>
                         </div>
                     </div>
                     

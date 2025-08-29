@@ -198,6 +198,15 @@ window.translations_zh = {
     noFavorites: '暂无收藏。',
     failedToLoadOrders: '加载订单失败。',
     failedToLoadFavorites: '加载收藏失败。',
+    
+    // 视频播放器模式
+    videoModeContain: '完整',
+    videoModeCover: '填充',
+    videoModeFill: '拉伸',
+    videoModeTitle: '视频显示模式',
+    videoModeContainDesc: '显示完整视频，可能有黑边',
+    videoModeCoverDesc: '填满容器，可能裁剪内容',
+    videoModeFillDesc: '拉伸填充，可能变形',
     loginRequired: '需要登录',
     loginRequiredDesc: '请登录以访问您的个人资料。',
     

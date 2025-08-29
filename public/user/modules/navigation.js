@@ -72,14 +72,61 @@ window.NavigationModule = {
         const hash = window.location.hash.substring(1); // 去掉 # 号
         const params = window.URLUtils.getParams();
         
-        // 支持多种URL格式
+        window.DEBUG_UTILS.log('navigation', 'NavigationModule.getPageFromUrl 被调用');
+        window.DEBUG_UTILS.log('navigation', '  - hash:', hash);
+        window.DEBUG_UTILS.log('navigation', '  - params:', params);
+        
+        // 支持多种 URL 格式
         if (hash) {
+            // 检查是否是产品页面，并提取产品ID
+            if (hash.startsWith('product')) {
+                window.DEBUG_UTILS.log('navigation', '检测到产品页面hash:', hash);
+                // 提取产品ID并设置到APP_STATE
+                const productIdMatch = hash.match(/[?&]id=([^&]+)/);
+                if (productIdMatch) {
+                    const productId = parseInt(productIdMatch[1]);
+                    window.DEBUG_UTILS.success('navigation', '从 URL 提取到产品ID:', productId);
+                    window.APP_STATE.currentProductId = productId;
+                    window.DEBUG_UTILS.log('navigation', '从 URL 恢复产品ID:', productId);
+                } else {
+                    window.DEBUG_UTILS.warn('navigation', 'hash中没有找到产品ID参数');
+                }
+                return 'product';
+            }
+            
+            // 检查是否是纯数字hash（可能是产品ID）
+            if (/^[0-9]+$/.test(hash)) {
+                window.DEBUG_UTILS.log('navigation', '检测到数字hash，可能是产品ID:', hash);
+                const productId = parseInt(hash);
+                window.APP_STATE.currentProductId = productId;
+                window.DEBUG_UTILS.log('navigation', '将数字hash作为产品ID:', productId);
+                return 'product';
+            }
+            
             return hash;
         }
+        
+        // 检查URL查询参数
         if (params.page) {
+            if (params.page === 'product' && params.id) {
+                const productId = parseInt(params.id);
+                window.DEBUG_UTILS.success('navigation', '从查询参数获取产品ID:', productId);
+                window.APP_STATE.currentProductId = productId;
+                window.DEBUG_UTILS.log('navigation', '从查询参数恢复产品ID:', productId);
+            }
             return params.page;
         }
         
+        // 检查是否有单独的产品ID参数
+        if (params.id) {
+            const productId = parseInt(params.id);
+            window.DEBUG_UTILS.success('navigation', '检测到单独的产品ID参数:', productId);
+            window.APP_STATE.currentProductId = productId;
+            window.DEBUG_UTILS.log('navigation', '从单独参数恢复产品ID:', productId);
+            return 'product';
+        }
+        
+        window.DEBUG_UTILS.log('navigation', '未找到任何页面信息');
         return null;
     },
     

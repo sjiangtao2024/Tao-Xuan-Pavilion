@@ -296,22 +296,118 @@
         }
         
         function showProductDetail(productId) {
-            console.log('🔍 showProductDetail called with productId:', productId);
+            window.DEBUG_UTILS.log('product', 'showProductDetail called with productId:', productId);
             
-            if (window.ProductModule) {
-                // 确保productId是数字类型
-                const numericProductId = typeof productId === 'string' ? parseInt(productId) : productId;
-                console.log('📝 Setting currentProductId to:', numericProductId);
-                
-                window.APP_STATE.currentProductId = numericProductId;
-                
-                // 验证设置是否成功
-                console.log('✅ APP_STATE.currentProductId is now:', window.APP_STATE.currentProductId);
-                
-                window.NavigationModule.navigateTo('product');
-            } else {
-                console.error('❌ ProductModule not available!');
+            if (!window.ProductModule) {
+                window.DEBUG_UTILS.error('product', 'ProductModule not available!');
+                return;
             }
+            
+            if (!window.NavigationModule) {
+                window.DEBUG_UTILS.error('product', 'NavigationModule not available!');
+                return;
+            }
+            
+            // 确保 productId 是数字类型
+            const numericProductId = typeof productId === 'string' ? parseInt(productId) : productId;
+            window.DEBUG_UTILS.log('product', 'Setting currentProductId to:', numericProductId);
+            
+            // 设置当前产品ID
+            window.APP_STATE.currentProductId = numericProductId;
+            
+            // 检查 updateUrlWithProductId 函数是否存在
+            window.DEBUG_UTILS.log('product', '检查 updateUrlWithProductId 函数:', typeof updateUrlWithProductId);
+            
+            // 验证设置是否成功
+            window.DEBUG_UTILS.success('product', 'APP_STATE.currentProductId is now:', window.APP_STATE.currentProductId);
+            
+            // 先导航到产品页面，但不更新URL历史
+            window.DEBUG_UTILS.log('product', '导航到产品页面...');
+            window.NavigationModule.navigateTo('product', false); // false = 不推送到历史记录
+            
+            // 然后更新 URL 以保持产品ID（支持刷新）
+            try {
+                window.DEBUG_UTILS.log('product', '准备调用 updateUrlWithProductId...');
+                updateUrlWithProductId(numericProductId);
+                window.DEBUG_UTILS.success('product', 'updateUrlWithProductId 调用完成');
+            } catch (error) {
+                window.DEBUG_UTILS.error('product', 'updateUrlWithProductId 调用失败:', error);
+            }
+        }
+        
+        // 更新 URL 以包含产品 ID
+        function updateUrlWithProductId(productId) {
+            window.DEBUG_UTILS.log('product', 'updateUrlWithProductId 被调用，产品ID:', productId);
+            window.DEBUG_UTILS.log('product', '当前 URL:', window.location.href);
+            
+            const newUrl = `${window.location.origin}${window.location.pathname}#product?id=${productId}`;
+            window.DEBUG_UTILS.log('product', '新 URL:', newUrl);
+            
+            try {
+                // 使用 replaceState 而不是 pushState，避免产生额外的历史记录
+                window.history.replaceState({ page: 'product', productId: productId }, '', newUrl);
+                window.DEBUG_UTILS.success('product', 'URL 更新成功 (replaceState)');
+                window.DEBUG_UTILS.log('product', '更新后的 URL:', window.location.href);
+                
+                // 验证 hash 是否正确设置
+                window.DEBUG_UTILS.log('product', '验证 window.location.hash:', window.location.hash);
+                window.DEBUG_UTILS.log('product', '验证 window.location.search:', window.location.search);
+                
+                // 手动设置 hash，确保浏览器正确识别
+                if (!window.location.hash.includes(`id=${productId}`)) {
+                    window.DEBUG_UTILS.warn('product', 'Hash 参数未正确设置，手动修正...');
+                    window.location.hash = `product?id=${productId}`;
+                    window.DEBUG_UTILS.log('product', '手动设置后的 hash:', window.location.hash);
+                }
+                
+            } catch (error) {
+                window.DEBUG_UTILS.error('product', 'URL 更新失败:', error);
+                // 如果 history API 失败，直接设置 hash
+                window.DEBUG_UTILS.log('product', '尝试直接设置 hash...');
+                window.location.hash = `product?id=${productId}`;
+            }
+        }
+        
+        // 从 URL 中获取产品 ID
+        function getProductIdFromUrl() {
+            window.DEBUG_UTILS.log('product', '全局 getProductIdFromUrl 被调用');
+            window.DEBUG_UTILS.log('product', '当前 URL 信息:', {
+                href: window.location.href,
+                hash: window.location.hash,
+                search: window.location.search
+            });
+            
+            const hash = window.location.hash;
+            
+            // 支持多种 URL 格式
+            const patterns = [
+                /[#&]product.*[?&]id=([^&]+)/,  // #product?id=123 或 #product&id=123
+                /#product\?id=([^&]+)/,          // #product?id=123
+                /#product&id=([^&]+)/,           // #product&id=123  
+                /\?id=([^&]+)/,                  // ?id=123
+                /&id=([^&]+)/                    // &id=123
+            ];
+            
+            for (let i = 0; i < patterns.length; i++) {
+                const match = hash.match(patterns[i]);
+                if (match) {
+                    const productId = parseInt(match[1]);
+                    window.DEBUG_UTILS.success('product', `使用模式 ${i + 1} 找到产品ID:`, productId);
+                    return productId;
+                }
+            }
+            
+            // 如果 hash中没有，检查 search 参数
+            const searchParams = new URLSearchParams(window.location.search);
+            const searchId = searchParams.get('id');
+            if (searchId) {
+                const productId = parseInt(searchId);
+                window.DEBUG_UTILS.success('product', '从 search 参数找到产品ID:', productId);
+                return productId;
+            }
+            
+            window.DEBUG_UTILS.warn('product', '未找到产品ID');
+            return null;
         }
         
         function addToCart(productId, quantity = 1) {
@@ -340,6 +436,21 @@
     
     <!-- 核心JavaScript文件（按依赖顺序加载） -->
     <script src="js/config.js"></script>
+    <script>
+        // 🎯 调试输出控制说明
+        // 默认情况下，调试输出是关闭的
+        // 要启用调试输出，请在浏览器控制台中输入以下命令：
+        // 
+        // enableDebug()     - 启用全局调试模式
+        // debugDev()        - 开发者模式（显示所有调试信息）
+        // debugProd()       - 生产模式（关闭所有调试信息）
+        // debugModule('product', true)  - 只显示产品模块的调试信息
+        // debugHelp()       - 显示完整的调试帮助
+        //
+        // 示例：要只查看产品相关的调试信息，执行：
+        // debugModule('product', true)
+        // debugModule('navigation', true)
+    </script>
     <script src="js/utils.js"></script>
     <script src="i18n/zh.js"></script>
     <script src="i18n/en.js"></script>

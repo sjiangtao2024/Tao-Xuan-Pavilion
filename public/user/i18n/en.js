@@ -198,6 +198,15 @@ window.translations_en = {
     noFavorites: 'No favorites found.',
     failedToLoadOrders: 'Failed to load orders.',
     failedToLoadFavorites: 'Failed to load favorites.',
+    
+    // Video player modes
+    videoModeContain: 'Fit',
+    videoModeCover: 'Fill',
+    videoModeFill: 'Stretch',
+    videoModeTitle: 'Video Display Mode',
+    videoModeContainDesc: 'Show complete video with possible letterboxing',
+    videoModeCoverDesc: 'Fill container, may crop content',
+    videoModeFillDesc: 'Stretch to fill, may distort',
     loginRequired: 'Login Required',
     loginRequiredDesc: 'Please login to access your profile.',
     

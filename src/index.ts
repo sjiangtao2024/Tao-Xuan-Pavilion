@@ -3,10 +3,16 @@ import type { AppContext } from './types';
 import { corsMiddleware } from './middleware';
 import { authRoutes, productRoutes, cartRoutes, adminRoutes, staticRoutes } from './routes';
 import { generateAdminDashboard, generateOpenApiSpec } from './services';
+import { initServerDebugConfig, ServerDebugControls } from './utils/debug';
 
 import html from './frontend.html';
 
 const app = new Hono<AppContext>();
+
+// 初始化服务器端调试系统
+initServerDebugConfig();
+// 强制确保关闭所有调试输出
+ServerDebugControls.prodMode();
 
 // 应用 CORS 中间件
 app.use('/api/*', corsMiddleware);

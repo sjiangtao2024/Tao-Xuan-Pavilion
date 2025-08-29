@@ -14,25 +14,26 @@ import {
     productMedia, 
     mediaAssets 
 } from '../db/schema';
+import { ServerDebug } from '../utils/debug';
 
 export const productRoutes = new Hono<AppContext>();
 
 // 获取所有产品
 productRoutes.get('/', async (c) => {
     try {
-        console.log('🔍 Product list request received');
+        ServerDebug.debug('products', 'Product list request received');
         const db = drizzle(c.env.DB, { schema });
         const lang = c.req.query('lang') || 'en';
         const categoryId = c.req.query('categoryId');
         
-        console.log('📋 Query params:', { lang, categoryId });
+        ServerDebug.log('products', 'Query params:', { lang, categoryId });
         
         let whereCondition;
         if (categoryId && !isNaN(Number(categoryId))) {
             whereCondition = eq(products.categoryId, Number(categoryId));
         }
         
-        console.log('🗃️ Querying database...');
+        ServerDebug.log('products', 'Querying database...');
         const results = await db.query.products.findMany({ 
             where: whereCondition,
             with: { 
@@ -53,7 +54,7 @@ productRoutes.get('/', async (c) => {
             } 
         });
         
-        console.log(`📦 Found ${results.length} products`);
+        ServerDebug.log('products', `Found ${results.length} products`);
         
         const formatted = results.map(p => ({ 
             ...p, 
@@ -63,10 +64,10 @@ productRoutes.get('/', async (c) => {
             price: p.price
         }));
         
-        console.log('✅ Product list response ready');
+        ServerDebug.success('products', 'Product list response ready');
         return c.json(formatted);
     } catch (error: any) {
-        console.error('❌ Product list error:', error);
+        ServerDebug.error('products', 'Product list error:', error);
         return c.json({ 
             error: 'Failed to fetch products', 
             details: error.message,
