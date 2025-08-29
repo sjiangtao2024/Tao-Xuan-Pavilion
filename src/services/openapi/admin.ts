@@ -119,7 +119,7 @@ export const adminPaths = {
                     "name": "status",
                     "in": "query",
                     "description": "用户状态筛选",
-                    "schema": { "type": "string", "enum": ["active", "disabled", "suspended", "deleted"] }
+                    "schema": { "type": "string", "enum": ["active", "disabled", "suspended", "deleted", "anonymized"] }
                 }
             ],
             "responses": {
@@ -694,6 +694,229 @@ export const adminPaths = {
                 "401": { "description": "未授权" },
                 "403": { "description": "无管理员权限" },
                 "404": { "description": "分类未找到" }
+            }
+        }
+    },
+    "/admin/users/{id}/soft-delete": {
+        "put": {
+            "summary": "软删除用户",
+            "description": "将用户标记为删除状态，不会真正删除数据，可以恢复",
+            "tags": ["Admin"],
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "description": "用户ID",
+                    "schema": { "type": "integer" }
+                }
+            ],
+            "requestBody": {
+                "required": false,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "reason": { "type": "string", "description": "删除原因" }
+                            }
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "用户软删除成功",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "success": { "type": "boolean" },
+                                    "message": { "type": "string" },
+                                    "user": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": { "type": "integer" },
+                                            "email": { "type": "string" },
+                                            "status": { "type": "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "400": { "description": "用户已是删除状态" },
+                "401": { "description": "未授权" },
+                "403": { "description": "无超级管理员权限" },
+                "404": { "description": "用户未找到" }
+            }
+        }
+    },
+    "/admin/users/{id}/anonymize": {
+        "put": {
+            "summary": "用户数据脱敏",
+            "description": "对用户个人数据进行脱敏处理，符合GDPR合规要求",
+            "tags": ["Admin"],
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "description": "用户ID",
+                    "schema": { "type": "integer" }
+                }
+            ],
+            "requestBody": {
+                "required": false,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "reason": { "type": "string", "description": "脱敏原因" }
+                            }
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "用户数据脱敏成功",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "success": { "type": "boolean" },
+                                    "message": { "type": "string" },
+                                    "note": { "type": "string" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "401": { "description": "未授权" },
+                "403": { "description": "无超级管理员权限或无法匿名化管理员账户" },
+                "404": { "description": "用户未找到" }
+            }
+        }
+    },
+    "/admin/users/{id}/restore": {
+        "put": {
+            "summary": "恢复用户账户",
+            "description": "恢复软删除的用户账户，将状态改为正常",
+            "tags": ["Admin"],
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "description": "用户ID",
+                    "schema": { "type": "integer" }
+                }
+            ],
+            "requestBody": {
+                "required": false,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "reason": { "type": "string", "description": "恢复原因" }
+                            }
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "用户账户恢复成功",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "success": { "type": "boolean" },
+                                    "message": { "type": "string" },
+                                    "user": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": { "type": "integer" },
+                                            "email": { "type": "string" },
+                                            "status": { "type": "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "400": { "description": "用户不是删除状态" },
+                "401": { "description": "未授权" },
+                "403": { "description": "无超级管理员权限" },
+                "404": { "description": "用户未找到" }
+            }
+        }
+    },
+    "/admin/users/{id}/force-delete": {
+        "delete": {
+            "summary": "硬删除用户（危险操作）",
+            "description": "永久删除用户数据，此操作不可恢复，需要明确确认",
+            "tags": ["Admin"],
+            "security": [{ "BearerAuth": [] }],
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "description": "用户ID",
+                    "schema": { "type": "integer" }
+                }
+            ],
+            "requestBody": {
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "required": ["confirmation"],
+                            "properties": {
+                                "confirmation": {
+                                    "type": "string",
+                                    "description": "必须为: I_UNDERSTAND_THE_RISKS_AND_WANT_TO_PERMANENTLY_DELETE_THIS_USER",
+                                    "example": "I_UNDERSTAND_THE_RISKS_AND_WANT_TO_PERMANENTLY_DELETE_THIS_USER"
+                                },
+                                "reason": { "type": "string", "description": "删除原因" }
+                            }
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "用户永久删除成功",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "success": { "type": "boolean" },
+                                    "message": { "type": "string" },
+                                    "warning": { "type": "string" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "400": { "description": "确认字符串错误或用户有订单记录" },
+                "401": { "description": "未授权" },
+                "403": { "description": "无超级管理员权限或无法删除管理员账户" },
+                "404": { "description": "用户未找到" }
             }
         }
     },

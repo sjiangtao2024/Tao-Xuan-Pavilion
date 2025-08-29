@@ -3,8 +3,10 @@
   "main": "src/index.ts",
   "compatibility_date": "2025-08-17",
   "assets": {
-    "directory": "./public"
+    "directory": "./public",
+    "binding": "ASSETS"
   },
+
   "d1_databases": [
     {
       "binding": "DB",

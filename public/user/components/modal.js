@@ -228,10 +228,12 @@ window.ModalComponent = {
         const googleSection = window.DOMUtils.get('#google-oauth-section');
         const googleContainer = window.DOMUtils.get('#google-signin-container');
         
+        window.DEBUG_UTILS.log('modal', 'Setting up Google OAuth...');
+        
         // 检查是否启用Google OAuth
         if (window.APP_CONFIG && window.APP_CONFIG.GOOGLE_OAUTH && window.APP_CONFIG.GOOGLE_OAUTH.ENABLED) {
             if (window.GoogleOAuth && window.GoogleOAuth.isInitialized) {
-                // Google OAuth已初始化，渲染按钮
+                // Google OAuth已初始化，显示按钮
                 if (googleSection) {
                     googleSection.style.display = 'block';
                 }
@@ -248,22 +250,49 @@ window.ModalComponent = {
                             text: 'signin_with',
                             width: '300'
                         });
+                        window.DEBUG_UTILS.log('modal', 'Google OAuth button rendered successfully');
                     }, 100);
                 }
-                
-                window.DEBUG_UTILS.log('modal', 'Google OAuth button rendered');
             } else if (window.GoogleOAuth) {
-                // Google OAuth未初始化，等待初始化完成
-                window.EventUtils.on('google-oauth-ready', () => {
-                    this.setupGoogleOAuth();
-                });
+                // Google OAuth未初始化，监听初始化完成事件
+                window.DEBUG_UTILS.log('modal', 'Waiting for Google OAuth initialization...');
                 
-                window.DEBUG_UTILS.log('modal', 'Waiting for Google OAuth initialization');
+                // 移除之前可能存在的监听器
+                window.EventUtils.off('google-oauth-ready', this._googleOAuthReadyHandler);
+                
+                // 创建新的事件处理器
+                this._googleOAuthReadyHandler = () => {
+                    window.DEBUG_UTILS.log('modal', 'Google OAuth ready event received');
+                    if (window.DOMUtils.get('#google-signin-container')) {
+                        this.setupGoogleOAuth();
+                    }
+                };
+                
+                window.EventUtils.on('google-oauth-ready', this._googleOAuthReadyHandler);
+                
+                // 如果GoogleOAuth模块存在但未初始化，尝试初始化
+                if (window.GoogleOAuth && !window.GoogleOAuth.isInitialized) {
+                    window.DEBUG_UTILS.log('modal', 'Attempting to initialize Google OAuth...');
+                    window.GoogleOAuth.init();
+                }
+                
+                // 临时隐藏Google OAuth部分，等待初始化完成
+                if (googleSection) {
+                    googleSection.style.display = 'none';
+                }
             } else {
                 window.DEBUG_UTILS.warn('modal', 'GoogleOAuth module not loaded');
+                // 隐藏Google OAuth部分
+                if (googleSection) {
+                    googleSection.style.display = 'none';
+                }
             }
         } else {
-            window.DEBUG_UTILS.log('modal', 'Google OAuth not enabled');
+            window.DEBUG_UTILS.log('modal', 'Google OAuth not enabled in configuration');
+            // 隐藏Google OAuth部分
+            if (googleSection) {
+                googleSection.style.display = 'none';
+            }
         }
     },
     
@@ -318,7 +347,10 @@ window.ModalComponent = {
                 this.close();
             }
         } catch (error) {
-            window.MessageComponent.show(error.message, 'error');
+            window.DEBUG_UTILS.error('modal', 'Login failed:', error);
+            // 显示具体的错误消息
+            const errorMessage = error.message || window.I18nManager.t('loginFailed') || 'Login failed';
+            window.MessageComponent.error(errorMessage);
         }
     },
     
@@ -341,13 +373,39 @@ window.ModalComponent = {
         try {
             // 调用认证模块的注册方法
             if (window.AuthModule) {
-                await window.AuthModule.register(email, password);
+                const result = await window.AuthModule.register(email, password);
+                
+                // 关闭注册模态框
                 this.close();
-                this.open('login-modal');
-                window.MessageComponent.show(window.t('registerSuccess'), 'success');
+                
+                // 检查是否自动登录
+                if (result.autoLogin) {
+                    // 已自动登录，显示明确的自动登录消息
+                    const autoLoginMessage = window.I18nManager.t('registerAndLoginSuccess') || '注册成功！您已自动登录，欢迎加入道玄阁！';
+                    window.MessageComponent.success(autoLoginMessage);
+                    window.DEBUG_UTILS.log('modal', 'Registration successful with auto-login');
+                } else {
+                    // 需要手动登录，打开登录模态框并显示消息
+                    window.MessageComponent.success(result.message || window.I18nManager.t('registerSuccess') || 'Registration successful! Please login.');
+                    
+                    // 稍微延迟打开登录模态框，让用户看到成功消息
+                    setTimeout(() => {
+                        this.open('login-modal');
+                        // 在登录表单中预填邮箱
+                        const loginEmailInput = window.DOMUtils.get('#login-email');
+                        if (loginEmailInput) {
+                            loginEmailInput.value = email;
+                        }
+                    }, 1500);
+                    
+                    window.DEBUG_UTILS.log('modal', 'Registration successful - login required');
+                }
             }
         } catch (error) {
-            window.MessageComponent.show(error.message, 'error');
+            window.DEBUG_UTILS.error('modal', 'Registration failed:', error);
+            // 显示具体的错误消息
+            const errorMessage = error.message || window.I18nManager.t('registerFailed') || 'Registration failed';
+            window.MessageComponent.error(errorMessage);
         }
     },
     
@@ -356,15 +414,15 @@ window.ModalComponent = {
         const errors = {};
         
         if (!email) {
-            errors.email = window.t('emailRequired');
+            errors.email = window.I18nManager.t('emailRequired');
         } else if (!window.ValidationUtils.email(email)) {
-            errors.email = window.t('emailInvalid');
+            errors.email = window.I18nManager.t('emailInvalid');
         }
         
         if (!password) {
-            errors.password = window.t('passwordRequired');
+            errors.password = window.I18nManager.t('passwordRequired');
         } else if (!window.ValidationUtils.password(password)) {
-            errors.password = window.t('passwordTooShort');
+            errors.password = window.I18nManager.t('passwordTooShort');
         }
         
         return errors;
@@ -375,21 +433,21 @@ window.ModalComponent = {
         const errors = {};
         
         if (!email) {
-            errors.email = window.t('emailRequired');
+            errors.email = window.I18nManager.t('emailRequired');
         } else if (!window.ValidationUtils.email(email)) {
-            errors.email = window.t('emailInvalid');
+            errors.email = window.I18nManager.t('emailInvalid');
         }
         
         if (!password) {
-            errors.password = window.t('passwordRequired');
+            errors.password = window.I18nManager.t('passwordRequired');
         } else if (!window.ValidationUtils.password(password)) {
-            errors.password = window.t('passwordTooShort');
+            errors.password = window.I18nManager.t('passwordTooShort');
         }
         
         if (!confirmPassword) {
-            errors.confirmPassword = window.t('passwordRequired');
+            errors.confirmPassword = window.I18nManager.t('passwordRequired');
         } else if (password !== confirmPassword) {
-            errors.confirmPassword = window.t('passwordMismatch');
+            errors.confirmPassword = window.I18nManager.t('passwordMismatch');
         }
         
         return errors;

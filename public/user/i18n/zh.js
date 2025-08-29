@@ -78,7 +78,10 @@ window.translations_zh = {
     // 消息提示
     loginSuccess: '登录成功！',
     logoutSuccess: '退出成功！',
-    registerSuccess: '注册成功！请登录。',
+    registerSuccess: '注册成功！欢迎加入道玄阁！',
+    registerAndLoginSuccess: '注册成功！您已自动登录，欢迎加入道玄阁！',
+    loginFailed: '登录失败',
+    registerFailed: '注册失败',
     profileUpdated: '资料更新成功！',
     itemAddedToCart: '法器已加入购物车！',
     itemRemovedFromCart: '法器已从购物车移除。',
@@ -100,6 +103,21 @@ window.translations_zh = {
     cartFull: '购物车已满。最大允许数量：' + (window.APP_CONFIG ? window.APP_CONFIG.MAX_CART_ITEMS : 99),
     productNotAvailable: '此法器暂时无法购买。',
     loginRequired: '请先登录以添加法器到购物车。',
+    
+    // 具体的API错误信息翻译
+    'Email already exists': '该邮箱已被注册，请使用其他邮箱或尝试登录',
+    'Invalid email or password': '邮箱或密码错误，请检查后重试',
+    'Invalid data': '输入数据无效，请检查邮箱和密码格式',
+    'User not found': '用户不存在',
+    'Invalid password': '密码错误',
+    'Email is required': '请输入邮箱地址',
+    'Password is required': '请输入密码',
+    'Invalid email format': '邮箱格式不正确',
+    'Password too short': '密码太短，至少需要8个字符，请使用更安全的密码',
+    'Internal server error': '服务器内部错误，请稍后重试',
+    'Bad request': '请求参数错误',
+    'Service unavailable': '服务暂时不可用，请稍后重试',
+    'Network error': '网络连接错误，请检查网络连接',
     
     // 验证错误
     emailRequired: '请输入邮箱地址',

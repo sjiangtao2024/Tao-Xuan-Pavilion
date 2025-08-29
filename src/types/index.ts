@@ -4,6 +4,7 @@ export interface Env {
     JWT_SECRET: string;
     IMAGES_BUCKET: R2Bucket;
     VIDEOS_BUCKET: R2Bucket;
+    ASSETS?: { get(path: string): Promise<{ text(): Promise<string> } | null> }; // Cloudflare Workers Assets 绑定
     IS_PROD?: string;
 }
 

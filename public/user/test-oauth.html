@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google OAuth 测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background: #2563eb; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .status.success { background: #d1fae5; color: #065f46; }
+        .status.error { background: #fee2e2; color: #991b1b; }
+        .status.info { background: #dbeafe; color: #1e3a8a; }
+        #google-oauth-section {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            background: #f9f9f9;
+        }
+        #google-signin-container {
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Google OAuth 功能测试</h1>
+    
+    <div class="test-section">
+        <h3>1. 配置检查</h3>
+        <div id="config-status"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 模块状态</h3>
+        <div id="module-status"></div>
+        <button class="btn" onclick="checkModuleStatus()">刷新模块状态</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Google OAuth 按钮测试</h3>
+        <div id="google-oauth-section">
+            <div id="google-signin-container">加载中...</div>
+        </div>
+        <button class="btn" onclick="initializeOAuth()">重新初始化 OAuth</button>
+        <button class="btn" onclick="renderButton()">重新渲染按钮</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. 登录模态框测试</h3>
+        <button class="btn" onclick="testLoginModal()">测试登录模态框</button>
+        <div id="modal-test-status"></div>
+    </div>
+
+    <!-- 模态框 -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center"></div>
+
+    <!-- 加载必要的脚本 -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="i18n/zh.js"></script>
+    <script src="i18n/en.js"></script>
+    <script src="i18n/i18n.js"></script>
+    <script src="components/modal.js"></script>
+    <script src="components/message.js"></script>
+    <script src="modules/google-oauth.js"></script>
+
+    <script>
+        let statusLog = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            statusLog.push(`[${timestamp}] ${message}`);
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+
+        function showStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = `<div class="status ${type}">${message}</div>`;
+            }
+        }
+
+        function checkConfiguration() {
+            log('检查配置...');
+            
+            if (window.APP_CONFIG) {
+                const oauth = window.APP_CONFIG.GOOGLE_OAUTH;
+                if (oauth && oauth.ENABLED) {
+                    showStatus('config-status', 
+                        `✅ Google OAuth 已启用<br>
+                         Client ID: ${oauth.CLIENT_ID}<br>
+                         Redirect URI: ${oauth.REDIRECT_URI}`, 
+                        'success');
+                    log('配置检查通过');
+                } else {
+                    showStatus('config-status', '❌ Google OAuth 未启用', 'error');
+                    log('Google OAuth 未启用', 'error');
+                }
+            } else {
+                showStatus('config-status', '❌ APP_CONFIG 未找到', 'error');
+                log('APP_CONFIG 未找到', 'error');
+            }
+        }
+
+        function checkModuleStatus() {
+            log('检查模块状态...');
+            
+            let status = '';
+            
+            if (window.GoogleOAuth) {
+                status += `✅ GoogleOAuth 模块已加载<br>`;
+                status += `初始化状态: ${window.GoogleOAuth.isInitialized ? '✅ 已初始化' : '❌ 未初始化'}<br>`;
+                status += `演示模式: ${window.GoogleOAuth.isDemoMode ? '✅ 是' : '❌ 否'}<br>`;
+                status += `配置: ${JSON.stringify(window.GoogleOAuth.config)}<br>`;
+            } else {
+                status += `❌ GoogleOAuth 模块未加载<br>`;
+            }
+            
+            if (window.ModalComponent) {
+                status += `✅ ModalComponent 已加载<br>`;
+                status += `初始化状态: ${window.ModalComponent.isInitialized ? '✅ 已初始化' : '❌ 未初始化'}<br>`;
+            } else {
+                status += `❌ ModalComponent 未加载<br>`;
+            }
+            
+            showStatus('module-status', status, 'info');
+            log('模块状态检查完成');
+        }
+
+        function initializeOAuth() {
+            log('手动初始化 Google OAuth...');
+            
+            if (window.GoogleOAuth) {
+                // 重置状态
+                window.GoogleOAuth.isInitialized = false;
+                window.GoogleOAuth.isDemoMode = false;
+                
+                // 重新初始化
+                window.GoogleOAuth.init();
+                log('Google OAuth 重新初始化完成');
+                
+                // 延迟检查状态
+                setTimeout(() => {
+                    checkModuleStatus();
+                    renderButton();
+                }, 1000);
+            } else {
+                log('GoogleOAuth 模块未加载', 'error');
+            }
+        }
+
+        function renderButton() {
+            log('渲染 Google OAuth 按钮...');
+            
+            const container = document.getElementById('google-signin-container');
+            if (!container) {
+                log('容器未找到', 'error');
+                return;
+            }
+            
+            if (window.GoogleOAuth && window.GoogleOAuth.isInitialized) {
+                container.innerHTML = '正在渲染按钮...';
+                
+                setTimeout(() => {
+                    window.GoogleOAuth.renderSignInButton('google-signin-container', {
+                        theme: 'outline',
+                        size: 'large',
+                        text: 'signin_with',
+                        width: '300'
+                    });
+                    log('Google OAuth 按钮渲染完成');
+                }, 200);
+            } else {
+                container.innerHTML = '❌ Google OAuth 未初始化';
+                log('Google OAuth 未初始化，无法渲染按钮', 'error');
+            }
+        }
+
+        function testLoginModal() {
+            log('测试登录模态框...');
+            
+            if (!window.ModalComponent) {
+                showStatus('modal-test-status', '❌ ModalComponent 未加载', 'error');
+                return;
+            }
+            
+            try {
+                // 初始化模态框组件（如果未初始化）
+                if (!window.ModalComponent.isInitialized) {
+                    window.ModalComponent.init();
+                }
+                
+                // 创建登录模态框
+                window.ModalComponent.createLoginModal();
+                
+                // 打开模态框
+                window.ModalComponent.open('login-modal');
+                
+                showStatus('modal-test-status', '✅ 登录模态框已打开，请检查 Google OAuth 按钮', 'success');
+                log('登录模态框测试完成');
+                
+                // 延迟检查 Google 按钮
+                setTimeout(() => {
+                    const googleContainer = document.getElementById('google-signin-container');
+                    if (googleContainer && googleContainer.innerHTML.trim()) {
+                        log(`Google 容器内容: ${googleContainer.innerHTML}`);
+                    } else {
+                        log('Google 容器为空或未找到', 'error');
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                showStatus('modal-test-status', `❌ 模态框测试失败: ${error.message}`, 'error');
+                log(`模态框测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('测试页面加载完成');
+            
+            // 等待模块加载
+            setTimeout(() => {
+                checkConfiguration();
+                checkModuleStatus();
+                
+                // 监听 OAuth 初始化事件
+                if (window.EventUtils) {
+                    window.EventUtils.on('google-oauth-ready', () => {
+                        log('收到 google-oauth-ready 事件');
+                        checkModuleStatus();
+                        renderButton();
+                    });
+                }
+                
+                // 尝试渲染按钮
+                renderButton();
+            }, 500);
+        });
+
+        // 监听控制台输出
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            if (args.length > 0 && typeof args[0] === 'string' && 
+                (args[0].includes('oauth') || args[0].includes('OAuth') || args[0].includes('Google'))) {
+                log(`Console: ${args.join(' ')}`);
+            }
+            originalConsoleLog.apply(console, args);
+        };
+        
+        // 添加全局样式
+        const style = document.createElement('style');
+        style.textContent = `
+            .fixed { position: fixed; }
+            .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+            .bg-black { background-color: black; }
+            .bg-opacity-70 { background-color: rgba(0, 0, 0, 0.7); }
+            .z-50 { z-index: 50; }
+            .hidden { display: none; }
+            .flex { display: flex; }
+            .items-center { align-items: center; }
+            .justify-center { justify-content: center; }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

@@ -134,9 +134,10 @@ adminRoutes.put('/users/:id/status', authMiddleware, adminMiddleware, async (c) 
     }
 });
 
-// 删除用户 (软删除)
-adminRoutes.delete('/users/:id', authMiddleware, superAdminMiddleware, async (c) => {
+// 软删除用户账户（推荐方式）
+adminRoutes.put('/users/:id/soft-delete', authMiddleware, superAdminMiddleware, async (c) => {
     const userId = Number(c.req.param('id'));
+    const { reason } = await c.req.json();
     const adminUser = c.get('adminUser');
     const db = drizzle(c.env.DB, { schema });
     
@@ -149,21 +150,222 @@ adminRoutes.delete('/users/:id', authMiddleware, superAdminMiddleware, async (c)
             return c.json({ error: 'User not found' }, 404);
         }
         
+        // 防止删除管理员账户
         if (['admin', 'super_admin', 'moderator'].includes(user.role)) {
             return c.json({ error: 'Cannot delete admin accounts' }, 403);
         }
         
+        // 检查用户是否有未完成的订单
+        const activeOrders = await db.query.orders.findMany({
+            where: and(
+                eq(orders.userId, userId),
+                eq(orders.status, 'pending' as any)
+            )
+        });
+        
+        if (activeOrders.length > 0) {
+            return c.json({ 
+                error: 'Cannot delete user with active orders', 
+                details: `User has ${activeOrders.length} pending orders` 
+            }, 400);
+        }
+        
+        // 软删除：设置状态为 deleted
         await db.update(users)
-            .set({ status: 'deleted', updatedAt: new Date() })
+            .set({ 
+                status: 'deleted', 
+                updatedAt: new Date()
+            })
             .where(eq(users.id, userId));
         
-        await logAdminAction(db, adminUser.id, 'delete_user', 
+        await logAdminAction(db, adminUser.id, 'soft_delete_user', 
             c.req.header('CF-Connecting-IP'), c.req.header('User-Agent'), 
-            'user', userId, { email: user.email });
+            'user', userId, { 
+                email: user.email, 
+                reason: reason || 'No reason provided',
+                hasActiveOrders: activeOrders.length > 0
+            });
         
-        return c.json({ success: true, message: 'User deleted successfully' });
+        return c.json({ 
+            success: true, 
+            message: 'User account has been deactivated (soft deleted)',
+            note: 'User data is preserved for compliance and business continuity'
+        });
     } catch (error: any) {
         return c.json({ error: 'Failed to delete user', details: error.message }, 500);
+    }
+});
+
+// 数据脱敏（用于GDPR合规）
+adminRoutes.put('/users/:id/anonymize', authMiddleware, superAdminMiddleware, async (c) => {
+    const userId = Number(c.req.param('id'));
+    const { reason } = await c.req.json();
+    const adminUser = c.get('adminUser');
+    const db = drizzle(c.env.DB, { schema });
+    
+    try {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId)
+        });
+        
+        if (!user) {
+            return c.json({ error: 'User not found' }, 404);
+        }
+        
+        // 防止匿名化管理员账户
+        if (['admin', 'super_admin', 'moderator'].includes(user.role)) {
+            return c.json({ error: 'Cannot anonymize admin accounts' }, 403);
+        }
+        
+        // 数据脱敏：替换敏感信息但保留数据结构
+        const anonymizedEmail = `deleted_user_${userId}@anonymized.local`;
+        
+        await db.update(users)
+            .set({ 
+                email: anonymizedEmail,
+                status: 'anonymized',
+                updatedAt: new Date()
+            })
+            .where(eq(users.id, userId));
+        
+        await logAdminAction(db, adminUser.id, 'anonymize_user', 
+            c.req.header('CF-Connecting-IP'), c.req.header('User-Agent'), 
+            'user', userId, { 
+                originalEmail: user.email,
+                anonymizedEmail: anonymizedEmail,
+                reason: reason || 'GDPR compliance or user request'
+            });
+        
+        return c.json({ 
+            success: true, 
+            message: 'User data has been anonymized',
+            note: 'Personal data removed while preserving business records'
+        });
+    } catch (error: any) {
+        return c.json({ error: 'Failed to anonymize user', details: error.message }, 500);
+    }
+});
+
+// 硬删除用户（仅限紧急情况，需要额外确认）
+adminRoutes.delete('/users/:id/force-delete', authMiddleware, superAdminMiddleware, async (c) => {
+    const userId = Number(c.req.param('id'));
+    const { confirmation, reason } = await c.req.json();
+    const adminUser = c.get('adminUser');
+    const db = drizzle(c.env.DB, { schema });
+    
+    // 需要明确的确认字符串
+    if (confirmation !== 'I_UNDERSTAND_THE_RISKS_AND_WANT_TO_PERMANENTLY_DELETE_THIS_USER') {
+        return c.json({ 
+            error: 'Missing or invalid confirmation', 
+            required: 'confirmation field must contain: I_UNDERSTAND_THE_RISKS_AND_WANT_TO_PERMANENTLY_DELETE_THIS_USER'
+        }, 400);
+    }
+    
+    try {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId)
+        });
+        
+        if (!user) {
+            return c.json({ error: 'User not found' }, 404);
+        }
+        
+        // 绝对禁止删除管理员账户
+        if (['admin', 'super_admin', 'moderator'].includes(user.role)) {
+            return c.json({ error: 'Cannot permanently delete admin accounts' }, 403);
+        }
+        
+        // 检查关联数据
+        const relatedOrders = await db.query.orders.findMany({
+            where: eq(orders.userId, userId)
+        });
+        
+        // 记录删除前的状态
+        await logAdminAction(db, adminUser.id, 'force_delete_user_attempt', 
+            c.req.header('CF-Connecting-IP'), c.req.header('User-Agent'), 
+            'user', userId, { 
+                email: user.email,
+                reason: reason || 'No reason provided',
+                relatedOrdersCount: relatedOrders.length,
+                warning: 'This action will cause data integrity issues'
+            });
+        
+        // 警告：这会破坏数据完整性
+        if (relatedOrders.length > 0) {
+            return c.json({ 
+                error: 'Cannot permanently delete user with order history',
+                details: `User has ${relatedOrders.length} orders that would become orphaned`,
+                recommendation: 'Use soft delete or anonymization instead'
+            }, 400);
+        }
+        
+        // 执行硬删除（仅在没有关联数据时）
+        await db.delete(users).where(eq(users.id, userId));
+        
+        await logAdminAction(db, adminUser.id, 'force_delete_user_completed', 
+            c.req.header('CF-Connecting-IP'), c.req.header('User-Agent'), 
+            'user', userId, { 
+                email: user.email,
+                reason: reason,
+                warning: 'User permanently deleted - data cannot be recovered'
+            });
+        
+        return c.json({ 
+            success: true, 
+            message: 'User permanently deleted',
+            warning: 'This action cannot be undone'
+        });
+    } catch (error: any) {
+        return c.json({ error: 'Failed to delete user permanently', details: error.message }, 500);
+    }
+});
+
+// 恢复软删除的用户
+adminRoutes.put('/users/:id/restore', authMiddleware, superAdminMiddleware, async (c) => {
+    const userId = Number(c.req.param('id'));
+    const { reason } = await c.req.json();
+    const adminUser = c.get('adminUser');
+    const db = drizzle(c.env.DB, { schema });
+    
+    try {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId)
+        });
+        
+        if (!user) {
+            return c.json({ error: 'User not found' }, 404);
+        }
+        
+        if (user.status !== 'deleted') {
+            return c.json({ error: 'User is not in deleted status' }, 400);
+        }
+        
+        // 恢复用户账户
+        await db.update(users)
+            .set({ 
+                status: 'active',
+                updatedAt: new Date()
+            })
+            .where(eq(users.id, userId));
+        
+        await logAdminAction(db, adminUser.id, 'restore_user', 
+            c.req.header('CF-Connecting-IP'), c.req.header('User-Agent'), 
+            'user', userId, { 
+                email: user.email,
+                reason: reason || 'User account restored'
+            });
+        
+        return c.json({ 
+            success: true, 
+            message: 'User account has been restored',
+            user: {
+                id: user.id,
+                email: user.email,
+                status: 'active'
+            }
+        });
+    } catch (error: any) {
+        return c.json({ error: 'Failed to restore user', details: error.message }, 500);
     }
 });
 

@@ -126,8 +126,13 @@ function injectUserManagementStyles() {
             color: white;
         }
 
-        .status-suspended {
-            background: linear-gradient(135deg, #f39c12, #e67e22);
+        .status-deleted {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+        
+        .status-anonymized {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
             color: white;
         }
 
@@ -284,6 +289,15 @@ function createUserManagementModals() {
                     </button>
                     <button class="user-action-btn danger" onclick="resetUserPassword()">
                         重置密码
+                    </button>
+                    <button id="soft-delete-btn" class="user-action-btn danger" onclick="softDeleteUser()">
+                        软删除
+                    </button>
+                    <button id="anonymize-btn" class="user-action-btn warning" onclick="anonymizeUser()">
+                        数据脱敏
+                    </button>
+                    <button id="restore-btn" class="user-action-btn success" onclick="restoreUser()" style="display: none;">
+                        恢复账户
                     </button>
                     <button class="user-action-btn" onclick="closeUserModal()">
                         关闭
@@ -451,7 +465,8 @@ function getStatusDisplayName(status) {
         'active': '正常',
         'disabled': '已禁用',
         'suspended': '已暂停',
-        'deleted': '已删除'
+        'deleted': '已删除',
+        'anonymized': '已脱敏'
     };
     return statusMap[status] || status;
 }
@@ -483,26 +498,50 @@ function formatDateTime(dateTime) {
  */
 function updateActionButtons(userData) {
     const toggleBtn = document.getElementById('toggle-status-btn');
+    const softDeleteBtn = document.getElementById('soft-delete-btn');
+    const anonymizeBtn = document.getElementById('anonymize-btn');
+    const restoreBtn = document.getElementById('restore-btn');
     
     if (!toggleBtn) return;
     
-    // 超级管理员账户不允许修改状态
-    if (userData.role === 'super_admin') {
+    // 超级管理员账户的特殊处理
+    const isProtectedAccount = userData.role === 'super_admin';
+    const isDeletedOrAnonymized = ['deleted', 'anonymized'].includes(userData.status);
+    
+    // 基本操作按钮
+    if (isProtectedAccount) {
         toggleBtn.disabled = true;
         toggleBtn.textContent = '无法修改';
         toggleBtn.title = '超级管理员账户不可修改状态';
     } else {
-        toggleBtn.disabled = false;
+        toggleBtn.disabled = isDeletedOrAnonymized;
         toggleBtn.title = '';
         
-        // 根据当前状态设置按钮文本和样式
         if (userData.status === 'active') {
             toggleBtn.textContent = '禁用账户';
             toggleBtn.className = 'user-action-btn danger';
-        } else {
+        } else if (userData.status === 'disabled') {
             toggleBtn.textContent = '启用账户';
             toggleBtn.className = 'user-action-btn success';
+        } else {
+            toggleBtn.textContent = '修改状态';
+            toggleBtn.className = 'user-action-btn warning';
         }
+    }
+    
+    // 软删除按钮
+    if (softDeleteBtn) {
+        softDeleteBtn.style.display = (isProtectedAccount || userData.status === 'deleted' || userData.status === 'anonymized') ? 'none' : 'inline-block';
+    }
+    
+    // 数据脱敏按钮
+    if (anonymizeBtn) {
+        anonymizeBtn.style.display = (isProtectedAccount || userData.status === 'anonymized') ? 'none' : 'inline-block';
+    }
+    
+    // 恢复按钮
+    if (restoreBtn) {
+        restoreBtn.style.display = (userData.status === 'deleted') ? 'inline-block' : 'none';
     }
 }
 
@@ -604,6 +643,203 @@ async function resetUserPassword() {
     }
 }
 
+/**
+ * 软删除用户账户
+ */
+async function softDeleteUser() {
+    if (!currentUserData) {
+        alert('用户数据不可用');
+        return;
+    }
+    
+    const userId = currentUserData.id;
+    
+    // 获取删除原因
+    const reason = prompt('请输入删除原因（可选）：', '');
+    
+    // 确认操作
+    const confirmMsg = `确定要软删除用户 ${currentUserData.email} 吗？\n\n软删除将：\n- 设置账户状态为“已删除”\n- 保留所有业务数据和历史记录\n- 用户无法登录但数据可恢复`;
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    try {
+        console.log(`正在软删除用户 ${userId}...`);
+        
+        const response = await fetch(`/api/admin/users/${userId}/soft-delete`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: '软删除失败' }));
+            throw new Error(errorData.error || `HTTP错误: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // 更新当前用户数据
+        currentUserData.status = 'deleted';
+        
+        // 重新填充模态框
+        populateUserModal(currentUserData);
+        
+        // 刷新用户列表
+        if (typeof loadUsersData === 'function') {
+            loadUsersData();
+        }
+        
+        alert(`${result.message}\n\n注意：${result.note}`);
+        
+    } catch (error) {
+        console.error('软删除用户失败:', error);
+        alert(`软删除失败: ${error.message}`);
+    }
+}
+
+/**
+ * 数据脱敏处理
+ */
+async function anonymizeUser() {
+    if (!currentUserData) {
+        alert('用户数据不可用');
+        return;
+    }
+    
+    const userId = currentUserData.id;
+    
+    // 获取脱敏原因
+    const reason = prompt('请输入数据脱敏原因（如GDPR申请、用户要求等）：', 'GDPR合规要求');
+    
+    if (!reason || reason.trim() === '') {
+        alert('请输入数据脱敏的原因');
+        return;
+    }
+    
+    // 确认操作
+    const confirmMsg = `确定要对用户 ${currentUserData.email} 进行数据脱敏处理吗？\n\n数据脱敏将：\n- 清除个人敏感信息（邮箱等）\n- 保留业务记录结构\n- 操作不可逆转！`;
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    // 二次确认
+    if (!confirm('最后确认：数据脱敏操作不可逆转，确定继续吗？')) {
+        return;
+    }
+    
+    try {
+        console.log(`正在对用户 ${userId} 进行数据脱敏处理...`);
+        
+        const response = await fetch(`/api/admin/users/${userId}/anonymize`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: '数据脱敏失败' }));
+            throw new Error(errorData.error || `HTTP错误: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // 更新当前用户数据
+        currentUserData.status = 'anonymized';
+        currentUserData.email = '已脱敏';
+        
+        // 重新填充模态框
+        populateUserModal(currentUserData);
+        
+        // 刷新用户列表
+        if (typeof loadUsersData === 'function') {
+            loadUsersData();
+        }
+        
+        alert(`${result.message}\n\n注意：${result.note}`);
+        
+    } catch (error) {
+        console.error('数据脱敏失败:', error);
+        alert(`数据脱敏失败: ${error.message}`);
+    }
+}
+
+/**
+ * 恢复已删除的用户账户
+ */
+async function restoreUser() {
+    if (!currentUserData) {
+        alert('用户数据不可用');
+        return;
+    }
+    
+    const userId = currentUserData.id;
+    
+    if (currentUserData.status !== 'deleted') {
+        alert('只能恢复已删除的用户账户');
+        return;
+    }
+    
+    // 获取恢复原因
+    const reason = prompt('请输入恢复原因：', '用户账户恢复');
+    
+    // 确认操作
+    if (!confirm(`确定要恢复用户 ${currentUserData.email} 的账户吗？`)) {
+        return;
+    }
+    
+    try {
+        console.log(`正在恢复用户 ${userId}...`);
+        
+        const response = await fetch(`/api/admin/users/${userId}/restore`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: '恢复失败' }));
+            throw new Error(errorData.error || `HTTP错误: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // 更新当前用户数据
+        currentUserData.status = 'active';
+        
+        // 重新填充模态框
+        populateUserModal(currentUserData);
+        
+        // 刷新用户列表
+        if (typeof loadUsersData === 'function') {
+            loadUsersData();
+        }
+        
+        alert(result.message);
+        
+    } catch (error) {
+        console.error('恢复用户失败:', error);
+        alert(`恢复失败: ${error.message}`);
+    }
+}
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('user-detail-modal');
+    if (event.target === modal) {
+        closeUserModal();
+    }
+});
+
 // 点击模态框外部关闭
 document.addEventListener('click', function(event) {
     const modal = document.getElementById('user-detail-modal');
@@ -618,6 +854,9 @@ window.viewUser = viewUser;
 window.closeUserModal = closeUserModal;
 window.toggleUserStatus = toggleUserStatus;
 window.resetUserPassword = resetUserPassword;
+window.softDeleteUser = softDeleteUser;
+window.anonymizeUser = anonymizeUser;
+window.restoreUser = restoreUser;
 
 // CommonJS 模块导出
 if (typeof module !== 'undefined' && module.exports) {
@@ -626,7 +865,10 @@ if (typeof module !== 'undefined' && module.exports) {
         viewUser,
         closeUserModal,
         toggleUserStatus,
-        resetUserPassword
+        resetUserPassword,
+        softDeleteUser,
+        anonymizeUser,
+        restoreUser
     };
 }
 

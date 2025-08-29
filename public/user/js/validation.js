@@ -153,70 +153,75 @@
     
     // 生成验证报告
     function generateReport() {
-        console.group('🔍 模块化系统验证报告');
+        // 只在调试模式开启时输出详细报告
+        if (window.DEBUG_UTILS && window.DEBUG_UTILS.isEnabled('validation')) {
+            console.group('🔍 模块化系统验证报告');
+            
+            // 总体状态
+            const totalModules = VALIDATION_CONFIG.requiredModules.length + VALIDATION_CONFIG.requiredTranslations.length;
+            const successRate = ((validationResults.passed / totalModules) * 100).toFixed(1);
+            
+            console.log(`📊 总体状态: ${validationResults.passed}/${totalModules} 通过 (${successRate}%)`);
+            
+            if (validationResults.failed > 0) {
+                console.log(`❌ 失败: ${validationResults.failed}`);
+            }
+            
+            if (validationResults.warnings.length > 0) {
+                console.log(`⚠️ 警告: ${validationResults.warnings.length}`);
+            }
+            
+            // 模块验证结果
+            console.group('📦 模块验证结果');
+            Object.entries(validationResults.modules).forEach(([moduleName, result]) => {
+                const icon = result.status === 'passed' ? '✅' : result.status === 'warning' ? '⚠️' : '❌';
+                const message = result.message || result.error || '';
+                console.log(`${icon} ${moduleName}: ${message}`);
+            });
+            console.groupEnd();
+            
+            // 翻译文件验证结果
+            console.group('🌍 翻译文件验证结果');
+            Object.entries(validationResults.translations).forEach(([translationName, result]) => {
+                const icon = result.status === 'passed' ? '✅' : '❌';
+                const message = result.message || result.error || '';
+                console.log(`${icon} ${translationName}: ${message}`);
+            });
+            console.groupEnd();
+            
+            // 错误列表
+            if (validationResults.errors.length > 0) {
+                console.group('❌ 错误列表');
+                validationResults.errors.forEach(error => console.error(error));
+                console.groupEnd();
+            }
+            
+            // 警告列表
+            if (validationResults.warnings.length > 0) {
+                console.group('⚠️ 警告列表');
+                validationResults.warnings.forEach(warning => console.warn(warning));
+                console.groupEnd();
+            }
+            
+            // 建议
+            console.group('💡 建议');
+            if (validationResults.failed > 0) {
+                console.log('- 请检查失败的模块，确保所有JavaScript文件都已正确加载');
+                console.log('- 查看浏览器控制台是否有加载错误');
+            }
+            if (validationResults.warnings.length > 0) {
+                console.log('- 检查警告项目，虽然不影响基本功能，但建议解决');
+            }
+            if (validationResults.passed === totalModules) {
+                console.log('🎉 所有模块验证通过！系统已准备就绪。');
+            }
+            console.groupEnd();
+            
+            console.groupEnd();
+        }
         
-        // 总体状态
         const totalModules = VALIDATION_CONFIG.requiredModules.length + VALIDATION_CONFIG.requiredTranslations.length;
         const successRate = ((validationResults.passed / totalModules) * 100).toFixed(1);
-        
-        console.log(`📊 总体状态: ${validationResults.passed}/${totalModules} 通过 (${successRate}%)`);
-        
-        if (validationResults.failed > 0) {
-            console.log(`❌ 失败: ${validationResults.failed}`);
-        }
-        
-        if (validationResults.warnings.length > 0) {
-            console.log(`⚠️ 警告: ${validationResults.warnings.length}`);
-        }
-        
-        // 模块验证结果
-        console.group('📦 模块验证结果');
-        Object.entries(validationResults.modules).forEach(([moduleName, result]) => {
-            const icon = result.status === 'passed' ? '✅' : result.status === 'warning' ? '⚠️' : '❌';
-            const message = result.message || result.error || '';
-            console.log(`${icon} ${moduleName}: ${message}`);
-        });
-        console.groupEnd();
-        
-        // 翻译文件验证结果
-        console.group('🌍 翻译文件验证结果');
-        Object.entries(validationResults.translations).forEach(([translationName, result]) => {
-            const icon = result.status === 'passed' ? '✅' : '❌';
-            const message = result.message || result.error || '';
-            console.log(`${icon} ${translationName}: ${message}`);
-        });
-        console.groupEnd();
-        
-        // 错误列表
-        if (validationResults.errors.length > 0) {
-            console.group('❌ 错误列表');
-            validationResults.errors.forEach(error => console.error(error));
-            console.groupEnd();
-        }
-        
-        // 警告列表
-        if (validationResults.warnings.length > 0) {
-            console.group('⚠️ 警告列表');
-            validationResults.warnings.forEach(warning => console.warn(warning));
-            console.groupEnd();
-        }
-        
-        // 建议
-        console.group('💡 建议');
-        if (validationResults.failed > 0) {
-            console.log('- 请检查失败的模块，确保所有JavaScript文件都已正确加载');
-            console.log('- 查看浏览器控制台是否有加载错误');
-        }
-        if (validationResults.warnings.length > 0) {
-            console.log('- 检查警告项目，虽然不影响基本功能，但建议解决');
-        }
-        if (validationResults.passed === totalModules) {
-            console.log('🎉 所有模块验证通过！系统已准备就绪。');
-        }
-        console.groupEnd();
-        
-        console.groupEnd();
-        
         return successRate >= 90;
     }
     

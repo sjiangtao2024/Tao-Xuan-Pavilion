@@ -675,7 +675,11 @@
                 if (data && data.rates && data.rates.CNY) {
                     exchangeRate = data.rates.CNY;
                     exchangeRateLastUpdate = now;
-                    console.log(`Updated exchange rate: 1 USD = ${exchangeRate} CNY`);
+                    
+                    // 使用调试系统输出
+                    if (window.DEBUG_UTILS && window.DEBUG_UTILS.isEnabled && window.DEBUG_UTILS.isEnabled('shop')) {
+                        console.log(`Updated exchange rate: 1 USD = ${exchangeRate} CNY`);
+                    }
                     return exchangeRate;
                 }
             } catch (error) {
@@ -685,7 +689,11 @@
             // 备用汇率
             exchangeRate = 7.17;
             exchangeRateLastUpdate = now;
-            console.log(`Using fallback exchange rate: 1 USD = ${exchangeRate} CNY`);
+            
+            // 使用调试系统输出
+            if (window.DEBUG_UTILS && window.DEBUG_UTILS.isEnabled && window.DEBUG_UTILS.isEnabled('shop')) {
+                console.log(`Using fallback exchange rate: 1 USD = ${exchangeRate} CNY`);
+            }
             return exchangeRate;
         }
 
@@ -1497,7 +1505,11 @@
                 webm: video.canPlayType('video/webm'),
                 ogg: video.canPlayType('video/ogg')
             };
-            console.log('Supported video formats:', formats);
+            
+            // 使用调试系统输出
+            if (window.DEBUG_UTILS && window.DEBUG_UTILS.isEnabled && window.DEBUG_UTILS.isEnabled('carousel')) {
+                console.log('Supported video formats:', formats);
+            }
             return formats;
         }
 

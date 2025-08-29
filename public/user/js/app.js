@@ -84,9 +84,9 @@ window.App = {
         
     // 初始化Google OAuth
     initializeGoogleOAuth: function() {
-        if (window.APP_CONFIG.GOOGLE_OAUTH.ENABLED && window.APP_CONFIG.GOOGLE_OAUTH.CLIENT_ID) {
+        if (window.APP_CONFIG.GOOGLE_OAUTH.ENABLED) {
             if (window.GoogleOAuth) {
-                window.GoogleOAuth.init(window.APP_CONFIG.GOOGLE_OAUTH.CLIENT_ID);
+                window.GoogleOAuth.init();
                 window.DEBUG_UTILS.log('app', 'Google OAuth initialization started');
             } else {
                 window.DEBUG_UTILS.warn('app', 'GoogleOAuth module not found');

@@ -58,8 +58,12 @@ window.NavigationModule = {
         if (urlPage && urlPage !== this.currentPage) {
             this.navigateTo(urlPage, false);
         } else {
-            // 显示当前页面
-            this.showPage(this.currentPage);
+            // 如果是根路径且没有哈希，直接显示主页而不更新URL
+            if (!window.location.hash && window.location.pathname === '/') {
+                this.showPage(this.currentPage);
+            } else {
+                this.navigateTo(this.currentPage, false);
+            }
         }
     },
     
@@ -338,7 +342,14 @@ window.NavigationModule = {
     // 更新URL
     updateUrl: function(page) {
         const url = new URL(window.location);
-        url.hash = page;
+        
+        // 如果是主页，不设置哈希，保持URL简洁
+        if (page === 'home') {
+            url.hash = '';
+        } else {
+            url.hash = page;
+        }
+        
         window.history.pushState({ page: page }, '', url);
     },
     

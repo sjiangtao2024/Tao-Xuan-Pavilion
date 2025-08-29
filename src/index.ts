@@ -11,7 +11,7 @@ const app = new Hono<AppContext>();
 // 应用 CORS 中间件
 app.use('/api/*', corsMiddleware);
 
-// 主页路由 - 重定向到模块化界面
+// 主页路由 - 重定向到用户界面
 app.get('/', (c) => {
     return c.redirect('/user/', 302);
 });
@@ -19,14 +19,22 @@ app.get('/', (c) => {
 // 模块化用户界面路由
 app.get('/user/', async (c) => {
     try {
+        // 检查 ASSETS 绑定是否可用
+        if (!c.env?.ASSETS) {
+            console.warn('ASSETS binding not available for /user/ route');
+            // 在开发环境中，重定向到静态文件服务
+            return c.redirect('/user/index.html', 302);
+        }
+        
         const html = await c.env.ASSETS.get('user/index.html');
         if (!html) {
-            return c.text('User interface not found', 404);
+            console.warn('User interface file not found in ASSETS for /user/');
+            return c.redirect('/user/index.html', 302);
         }
         return c.html(await html.text());
     } catch (error) {
         console.error('Error serving user interface:', error);
-        return c.text('Error loading user interface', 500);
+        return c.redirect('/user/index.html', 302);
     }
 });
 
@@ -41,6 +49,13 @@ app.get('/admin', (c) => {
 // 用户管理路由
 app.get('/admin/user-management', async (c) => {
     try {
+        // 检查 ASSETS 绑定是否可用
+        if (!c.env?.ASSETS) {
+            console.warn('ASSETS binding not available for admin route');
+            // 在开发环境中，返回简单的错误消息
+            return c.text('Admin interface not available in development mode', 503);
+        }
+        
         const html = await c.env.ASSETS.get('admin/user-management.html');
         if (!html) {
             return c.text('Admin interface not found', 404);

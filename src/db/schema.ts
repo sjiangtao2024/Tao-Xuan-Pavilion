@@ -13,7 +13,7 @@ export const users = sqliteTable('users', {
     authMethod: text('auth_method', { enum: ['email', 'oauth'] }).default('email'), // Authentication method
     emailVerified: integer('email_verified', { mode: 'boolean' }).default(false), // Email verification status
     role: text('role', { enum: ['user', 'admin', 'super_admin', 'moderator'] }).default('user'),
-    status: text('status', { enum: ['active', 'disabled', 'suspended', 'deleted'] }).default('active'),
+    status: text('status', { enum: ['active', 'disabled', 'suspended', 'deleted', 'anonymized'] }).default('active'),
     lastLoginAt: integer('last_login_at', { mode: 'timestamp' }),
     createdAt: integer('created_at', { mode: 'timestamp' }),
     updatedAt: integer('updated_at', { mode: 'timestamp' }),

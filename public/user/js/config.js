@@ -1,18 +1,60 @@
 /**
  * 应用配置文件
  * 包含全局变量、API配置和应用设置
+ * 支持多种环境变量配置方式
  */
+
+// 环境检测
+const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const isProduction = !isDevelopment;
+
+// 🔧 环境变量获取函数
+function getEnvVar(varName, defaultValue = '') {
+    // 优先级顺序：
+    // 1. 构建时注入的全局变量
+    if (window[varName]) {
+        return window[varName];
+    }
+    
+    // 2. 手动配置的开发环境变量（在下方修改）
+    const devConfig = getDevelopmentConfig();
+    if (isDevelopment && devConfig[varName]) {
+        return devConfig[varName];
+    }
+    
+    // 3. 默认值
+    return defaultValue;
+}
+
+// 🚧 开发环境配置 - 在这里修改您的开发环境设置
+function getDevelopmentConfig() {
+    return {
+        // Google OAuth 开发环境 Client ID
+        GOOGLE_OAUTH_CLIENT_ID: '666469521040-4h90el1j347n7iojaur0a9jjpv8n245k.apps.googleusercontent.com',
+        
+        // 其他开发环境配置可以在这里添加
+        // STRIPE_PUBLISHABLE_KEY: 'pk_test_xxxxx',
+        // ANALYTICS_ID: 'G-DEV-XXXXXXXXXX'
+    };
+}
 
 // 应用配置
 window.APP_CONFIG = {
+    // 环境信息
+    ENVIRONMENT: {
+        IS_DEVELOPMENT: isDevelopment,
+        IS_PRODUCTION: isProduction,
+        HOSTNAME: window.location.hostname
+    },
+    
     // API配置
     API_BASE_URL: window.location.origin,
     
     // Google OAuth 配置
     GOOGLE_OAUTH: {
-        CLIENT_ID: 'your-google-client-id.googleusercontent.com', // 更换为真实的Google OAuth Client ID
-        ENABLED: true, // 设置为true以启用Google OAuth（当前为演示模式）
-        REDIRECT_URI: window.location.origin + '/oauth/callback' // OAuth重定向URI
+        CLIENT_ID: getEnvVar('GOOGLE_OAUTH_CLIENT_ID'),
+        ENABLED: true, // ✅ 启用 OAuth 功能
+        REDIRECT_URI: window.location.origin + '/oauth/callback'
     },
     
     // 应用设置
@@ -35,13 +77,13 @@ window.APP_CONFIG = {
     ANIMATION_DURATION: 300,
     MESSAGE_DISPLAY_DURATION: 3000,
     
-    // 调试模式配置
-    DEBUG: true,
+    // 调试模式配置 - 手动控制优先
+    DEBUG: false, // 🎯 主要控制开关
     DEBUG_MODULES: {
         all: false,
         app: false,
-        auth: true,
-        cart: true,
+        auth: false,
+        cart: false,
         shop: false,
         product: false,
         profile: false,
@@ -52,7 +94,8 @@ window.APP_CONFIG = {
         i18n: false,
         config: false,
         api: false,
-        utils: false
+        utils: false,
+        validation: false
     },
     
     // 本地存储键名
@@ -174,6 +217,12 @@ window.SUCCESS_MESSAGES = {
 window.DEBUG_UTILS = {
     // 检查模块调试是否开启
     isEnabled: function(module) {
+        // 如果全局DEBUG为false，则关闭所有调试信息
+        if (window.APP_CONFIG.DEBUG === false) {
+            return false;
+        }
+        
+        // 如果全局DEBUG为true，则根据模块设置决定
         return window.APP_CONFIG.DEBUG || 
                window.APP_CONFIG.DEBUG_MODULES.all || 
                window.APP_CONFIG.DEBUG_MODULES[module.toLowerCase()];
@@ -446,3 +495,40 @@ if (window.APP_CONFIG.DEBUG || window.APP_CONFIG.DEBUG_MODULES.all) {
     console.log('🔧 调试控制命令已可用，输入 debugHelp() 查看帮助');
     console.log('');
 }
+
+// 📝 配置说明和验证
+(function validateAndLogConfig() {
+    const config = window.APP_CONFIG;
+    
+    // 验证环境配置
+    if (config.ENVIRONMENT.IS_DEVELOPMENT) {
+        console.log('🚧 开发环境模式');
+        
+        // 检查 Google OAuth 配置
+        if (!config.GOOGLE_OAUTH.CLIENT_ID || config.GOOGLE_OAUTH.CLIENT_ID.includes('your-dev-')) {
+            console.warn('⚠️ 请在 config.js 中配置真实的 Google OAuth Client ID');
+            console.log('📝 配置步骤：');
+            console.log('1. 在 getDevelopmentConfig() 函数中设置 GOOGLE_OAUTH_CLIENT_ID');
+            console.log('2. 将 GOOGLE_OAUTH.ENABLED 设置为 true');
+        } else if (config.GOOGLE_OAUTH.ENABLED) {
+            console.log('✅ Google OAuth 已配置并启用');
+        }
+    } else {
+        console.log('🚀 生产环境模式');
+        
+        // 生产环境检查
+        if (!config.GOOGLE_OAUTH.CLIENT_ID) {
+            console.warn('⚠️ 生产环境缺少 Google OAuth Client ID');
+            console.log('📝 请通过构建流程注入环境变量：');
+            console.log('window.GOOGLE_OAUTH_CLIENT_ID = "your-prod-client-id";');
+        }
+    }
+    
+    // 显示配置摘要
+    window.DEBUG_UTILS.log('config', '配置摘要', {
+        环境: config.ENVIRONMENT.IS_DEVELOPMENT ? '开发' : '生产',
+        域名: config.ENVIRONMENT.HOSTNAME,
+        调试模式: config.DEBUG,
+        GoogleOAuth: config.GOOGLE_OAUTH.ENABLED ? '已启用' : '已禁用'
+    });
+})();

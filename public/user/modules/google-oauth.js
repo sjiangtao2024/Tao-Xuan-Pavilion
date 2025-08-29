@@ -7,9 +7,6 @@ window.GoogleOAuth = {
     // 模块初始化状态
     isInitialized: false,
     
-    // 演示模式状态
-    isDemoMode: false,
-    
     // Google OAuth 配置
     config: {
         clientId: null,
@@ -35,11 +32,9 @@ window.GoogleOAuth = {
                         })
                         .catch((error) => {
                             window.DEBUG_UTILS.error('oauth', 'Failed to initialize Google OAuth:', error);
-                            this.initializeDemoMode();
                         });
                 } else {
-                    // 演示模式：没有真实的Client ID
-                    this.initializeDemoMode();
+                    window.DEBUG_UTILS.log('oauth', 'Google OAuth Client ID not configured');
                 }
             } else {
                 window.DEBUG_UTILS.log('oauth', 'Google OAuth disabled in configuration');
@@ -49,6 +44,7 @@ window.GoogleOAuth = {
         }
     },
     
+
     // 加载Google Identity Services脚本
     loadGoogleScript: function() {
         return new Promise((resolve, reject) => {
@@ -76,17 +72,7 @@ window.GoogleOAuth = {
         });
     },
     
-    // 初始化演示模式
-    initializeDemoMode: function() {
-        this.isInitialized = true;
-        this.isDemoMode = true;
-        
-        window.DEBUG_UTILS.log('oauth', 'Google OAuth demo mode initialized');
-        
-        // 触发初始化完成事件
-        window.EventUtils.emit('google-oauth-ready');
-    },
-    
+
     // 初始化Google认证
     initializeGoogleAuth: function() {
         try {
@@ -94,8 +80,7 @@ window.GoogleOAuth = {
             if (!this.config.clientId || 
                 this.config.clientId === 'your-google-client-id.googleusercontent.com' ||
                 this.config.clientId === 'your-google-client-id') {
-                window.DEBUG_UTILS.warn('oauth', 'Invalid or placeholder Google Client ID detected, switching to demo mode');
-                this.initializeDemoMode();
+                window.DEBUG_UTILS.warn('oauth', 'Invalid or placeholder Google Client ID detected');
                 return;
             }
             
@@ -115,8 +100,6 @@ window.GoogleOAuth = {
             
         } catch (error) {
             window.DEBUG_UTILS.error('oauth', 'Google OAuth initialization failed:', error);
-            // 初始化失败时回退到演示模式
-            this.initializeDemoMode();
         }
     },
     
@@ -130,42 +113,6 @@ window.GoogleOAuth = {
         const container = document.getElementById(containerId);
         if (!container) {
             window.DEBUG_UTILS.error('oauth', 'Container not found:', containerId);
-            return;
-        }
-        
-        // 演示模式：显示模拟按钮
-        if (this.isDemoMode) {
-            const buttonWidth = options.width && options.width !== '100%' ? options.width + 'px' : '300px';
-            container.innerHTML = `
-                <div style="
-                    display: inline-flex;
-                    align-items: center;
-                    background: white;
-                    border: 1px solid #dadce0;
-                    border-radius: 4px;
-                    padding: 10px 12px;
-                    font-family: 'Roboto', sans-serif;
-                    font-size: 14px;
-                    color: #3c4043;
-                    cursor: pointer;
-                    width: ${buttonWidth};
-                    justify-content: center;
-                    transition: box-shadow 0.3s;
-                " 
-                onclick="window.GoogleOAuth.handleDemoClick()"
-                onmouseover="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.3)'"
-                onmouseout="this.style.boxShadow='none'">
-                    <svg width="18" height="18" viewBox="0 0 18 18" style="margin-right: 8px;">
-                        <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
-                        <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2.04a4.8 4.8 0 0 1-7.18-2.53H1.83v2.07A8 8 0 0 0 8.98 17z"/>
-                        <path fill="#FBBC05" d="M4.5 10.49a4.8 4.8 0 0 1 0-3.07V5.35H1.83a8 8 0 0 0 0 7.17l2.67-2.07z"/>
-                        <path fill="#EA4335" d="M8.98 4.72c1.16 0 2.19.4 3.01 1.2l2.26-2.26A7.7 7.7 0 0 0 8.98 1a8 8 0 0 0-7.15 4.42l2.67 2.07c.64-1.93 2.4-3.27 4.48-3.27z"/>
-                    </svg>
-                    <span>使用 Google 登录（演示）</span>
-                </div>
-            `;
-            
-            window.DEBUG_UTILS.log('oauth', 'Demo Google sign-in button rendered');
             return;
         }
         
@@ -191,12 +138,7 @@ window.GoogleOAuth = {
         }
     },
     
-    // 处理演示模式点击
-    handleDemoClick: function() {
-        window.MessageComponent.info('📝 这是 Google OAuth 的演示界面。要使用真实的 Google 登录，请在配置中设置真实的 Google Client ID。');
-        window.DEBUG_UTILS.log('oauth', 'Demo Google OAuth button clicked');
-    },
-    
+
     // 程序化触发登录
     signIn: function() {
         if (!this.isInitialized) {

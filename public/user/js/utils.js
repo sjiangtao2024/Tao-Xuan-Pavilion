@@ -56,6 +56,55 @@ window.DOMUtils = {
 
 // API请求工具
 window.APIUtils = {
+    // 翻译错误信息
+    translateError: function(errorMessage) {
+        if (!window.I18nManager || !errorMessage) {
+            window.DEBUG_UTILS.warn('api', 'No I18nManager or empty error message:', errorMessage);
+            return errorMessage;
+        }
+        
+        window.DEBUG_UTILS.log('api', 'Translating error message:', errorMessage);
+        
+        // 首先尝试直接翻译
+        const translated = window.I18nManager.t(errorMessage);
+        if (translated !== errorMessage) {
+            window.DEBUG_UTILS.log('api', 'Direct translation found:', translated);
+            return translated;
+        }
+        
+        // 如果没有找到直接翻译，尝试匹配常见错误模式
+        const errorPatterns = [
+            { pattern: /email.*already.*exists/i, key: 'Email already exists' },
+            { pattern: /invalid.*email.*password/i, key: 'Invalid email or password' },
+            { pattern: /invalid.*data/i, key: 'Invalid data' },
+            { pattern: /密码至少需要\d+个字符/i, key: 'Password too short' }, // 中文密码错误
+            { pattern: /String must contain at least \d+ character/i, key: 'Password too short' }, // 英文密码错误
+            { pattern: /user.*not.*found/i, key: 'User not found' },
+            { pattern: /invalid.*password/i, key: 'Invalid password' },
+            { pattern: /email.*required/i, key: 'Email is required' },
+            { pattern: /password.*required/i, key: 'Password is required' },
+            { pattern: /invalid.*email.*format/i, key: 'Invalid email format' },
+            { pattern: /password.*too.*short/i, key: 'Password too short' },
+            { pattern: /internal.*server.*error/i, key: 'Internal server error' },
+            { pattern: /bad.*request/i, key: 'Bad request' },
+            { pattern: /service.*unavailable/i, key: 'Service unavailable' },
+            { pattern: /network.*error/i, key: 'Network error' }
+        ];
+        
+        for (const { pattern, key } of errorPatterns) {
+            if (pattern.test(errorMessage)) {
+                const patternTranslated = window.I18nManager.t(key);
+                if (patternTranslated !== key) {
+                    window.DEBUG_UTILS.log('api', `Pattern match found: ${key} -> ${patternTranslated}`);
+                    return patternTranslated;
+                }
+            }
+        }
+        
+        window.DEBUG_UTILS.log('api', 'No translation found, using original message:', errorMessage);
+        // 如果都没有匹配，返回原始错误信息
+        return errorMessage;
+    },
     // 通用请求方法
     request: async function(endpoint, options = {}) {
         const config = {
@@ -77,23 +126,96 @@ window.APIUtils = {
         
         try {
             const response = await fetch(endpoint, config);
-            const data = await response.json();
+            
+            // 尝试解析JSON响应
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                // 如果不是JSON响应，获取文本内容
+                const textContent = await response.text();
+                window.DEBUG_UTILS.warn('api', 'Non-JSON response received:', textContent);
+                data = { error: textContent || `HTTP Error: ${response.status}` };
+            }
             
             if (!response.ok) {
-                const errorMessage = data.message || `HTTP Error: ${response.status}`;
-                const error = new Error(errorMessage);
+                // 优先使用API返回的具体错误信息
+                let errorMessage;
+                let detailedErrors = [];
+                
+                if (data && data.error) {
+                    errorMessage = data.error;
+                    
+                    // 处理详细的验证错误信息
+                    if (data.issues && Array.isArray(data.issues)) {
+                        detailedErrors = data.issues.map(issue => {
+                            // 根据错误类型返回友好的错误信息
+                            if (issue.path && issue.path.includes('password')) {
+                                if (issue.code === 'too_small') {
+                                    return `密码至少需要${issue.minimum}个字符`;
+                                }
+                                return `密码格式错误: ${issue.message}`;
+                            } else if (issue.path && issue.path.includes('email')) {
+                                return `邮箱格式错误: ${issue.message}`;
+                            }
+                            return issue.message || '输入验证失败';
+                        });
+                        
+                        // 如果有详细错误，使用更具体的错误信息
+                        if (detailedErrors.length > 0) {
+                            errorMessage = detailedErrors.join('；');
+                        }
+                    }
+                } else if (data && data.message) {
+                    errorMessage = data.message;
+                } else if (typeof data === 'string') {
+                    errorMessage = data;
+                } else {
+                    errorMessage = `HTTP Error: ${response.status}`;
+                }
+                
+                window.DEBUG_UTILS.error('api', `Request failed (${response.status}):`, {
+                    endpoint,
+                    status: response.status,
+                    errorMessage,
+                    responseData: data,
+                    // 添加更详细的调试信息
+                    rawResponseData: JSON.stringify(data, null, 2),
+                    dataType: typeof data,
+                    hasError: !!(data && data.error),
+                    hasMessage: !!(data && data.message),
+                    hasIssues: !!(data && data.issues),
+                    detailedErrors: detailedErrors, // 显示处理后的详细错误
+                    issuesCount: detailedErrors.length
+                });
+                
+                // 翻译错误信息
+                const translatedMessage = this.translateError(errorMessage);
+                
+                const error = new Error(translatedMessage);
                 error.status = response.status;
+                error.response = data; // 保存完整的响应数据
+                error.originalMessage = errorMessage; // 保存原始错误信息
                 throw error;
             }
             
             return data;
         } catch (error) {
+            // 如果是网络错误或其他未捕获的错误
+            if (!error.status) {
+                window.DEBUG_UTILS.error('api', 'Network or other error:', error);
+                // 对于网络错误，也进行翻译
+                const translatedMessage = this.translateError(error.message || 'Network error');
+                const networkError = new Error(translatedMessage);
+                networkError.originalError = error;
+                throw networkError;
+            }
+            
             // 对于401错误（未授权），使用更友好的日志级别
             if (error.status === 401) {
                 window.DEBUG_UTILS.log('api', `Unauthorized request to ${endpoint} - user not logged in`);
-            } else {
-                window.DEBUG_UTILS.error('api', 'Request failed:', error);
             }
+            
             throw error;
         }
     },

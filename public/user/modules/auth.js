@@ -129,11 +129,37 @@ window.AuthModule = {
                 password: password
             });
             
-            // 根据实际API响应结构判断成功（注册成功可能返回不同的结构）
-            if (response && (response.success !== false)) {
-                window.DEBUG_UTILS.log('auth', 'Registration successful');
-                return response;
+            // 检查注册是否成功 - 如果返回token和用户信息，表示注册成功并可直接登录
+            if (response && response.token && response.user) {
+                // 注册成功并返回了登录凭据，直接登录用户
+                this.currentUser = response.user;
+                window.APP_STATE.user = response.user;
+                
+                // 保存到本地存储
+                window.StorageUtils.set(window.APP_CONFIG.STORAGE_KEYS.USER, response.user);
+                window.StorageUtils.set(window.APP_CONFIG.STORAGE_KEYS.TOKEN, response.token);
+                
+                // 触发登录成功事件
+                window.EventUtils.emit(window.APP_EVENTS.USER_LOGIN, response.user);
+                
+                window.DEBUG_UTILS.log('auth', 'Registration successful with auto-login:', response.user);
+                
+                // 返回包含自动登录信息的响应
+                return {
+                    ...response,
+                    autoLogin: true,
+                    message: window.I18nManager.t('registerAndLoginSuccess') || 'Registration successful! You have been automatically logged in. Welcome!'
+                };
+            } else if (response && (response.success !== false)) {
+                // 注册成功但需要手动登录
+                window.DEBUG_UTILS.log('auth', 'Registration successful - manual login required');
+                return {
+                    ...response,
+                    autoLogin: false,
+                    message: window.I18nManager.t('registerSuccess') || 'Registration successful! Please login.'
+                };
             } else {
+                // 注册失败
                 throw new Error(response.message || window.I18nManager.t('registerFailed') || 'Registration failed');
             }
         } catch (error) {

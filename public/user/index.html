@@ -6,6 +6,9 @@
     <title>Tao Xuan Pavilion - Find Taoist Artifacts</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/responsive.css">
     <style>
         :root {
             --bg-mystic-black: #1C1C1C;
@@ -154,6 +157,42 @@
         
         .hover\:underline:hover {
             text-decoration: underline;
+        }
+        
+        /* 消息提示样式 */
+        .message-modal {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            transform: translateX(120%);
+            transition: transform 0.5s ease;
+            max-width: 300px;
+            font-weight: 500;
+        }
+        
+        .message-modal.show {
+            transform: translateX(0);
+        }
+        
+        .message-modal.success {
+            background-color: #10b981;
+        }
+        
+        .message-modal.error {
+            background-color: #ef4444;
+        }
+        
+        .message-modal.warning {
+            background-color: #f59e0b;
+        }
+        
+        .message-modal.info {
+            background-color: #3b82f6;
         }
     </style>
 </head>

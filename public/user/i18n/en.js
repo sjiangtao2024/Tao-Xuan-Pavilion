@@ -78,7 +78,10 @@ window.translations_en = {
     // Message prompts
     loginSuccess: 'Login successful!',
     logoutSuccess: 'Logout successful!',
-    registerSuccess: 'Registration successful! Please login.',
+    registerSuccess: 'Registration successful! Welcome to Tao Xuan Pavilion!',
+    registerAndLoginSuccess: 'Registration successful! You have been automatically logged in. Welcome to Tao Xuan Pavilion!',
+    loginFailed: 'Login failed',
+    registerFailed: 'Registration failed',
     profileUpdated: 'Profile updated successfully!',
     itemAddedToCart: 'Artifact added to cart successfully!',
     itemRemovedFromCart: 'Artifact removed from cart.',
@@ -100,6 +103,21 @@ window.translations_en = {
     cartFull: 'Your cart is full. Maximum items allowed: ' + (window.APP_CONFIG ? window.APP_CONFIG.MAX_CART_ITEMS : 99),
     productNotAvailable: 'This artifact is currently not available.',
     loginRequired: 'Please login to add artifacts to cart.',
+    
+    // Specific API error message translations
+    'Email already exists': 'This email address is already registered. Please use a different email or try logging in.',
+    'Invalid email or password': 'Invalid email or password. Please check and try again.',
+    'Invalid data': 'Invalid input data. Please check your email and password format.',
+    'User not found': 'User not found',
+    'Invalid password': 'Invalid password',
+    'Email is required': 'Email address is required',
+    'Password is required': 'Password is required',
+    'Invalid email format': 'Invalid email format',
+    'Password too short': 'Password is too short, must be at least 8 characters. Please use a more secure password.',
+    'Internal server error': 'Internal server error. Please try again later.',
+    'Bad request': 'Bad request parameters',
+    'Service unavailable': 'Service temporarily unavailable. Please try again later.',
+    'Network error': 'Network connection error. Please check your internet connection.',
     
     // Validation errors
     emailRequired: 'Please enter your email address',

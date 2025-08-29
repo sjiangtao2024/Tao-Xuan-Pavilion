@@ -60,7 +60,14 @@ window.MessageComponent = {
         this.isShowing = true;
         
         // 设置消息内容和样式
-        this.currentMessage.textContent = messageData.text;
+        // 检查是否有message-text子元素，如果有则使用它，否则直接设置容器文本
+        const messageTextElement = this.currentMessage.querySelector('#message-text');
+        if (messageTextElement) {
+            messageTextElement.textContent = messageData.text;
+        } else {
+            this.currentMessage.textContent = messageData.text;
+        }
+        
         this.currentMessage.className = `message-modal ${messageData.type}`;
         
         // 显示消息

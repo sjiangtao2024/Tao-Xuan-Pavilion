@@ -1423,10 +1423,10 @@ var init_jwt5 = __esm({
   }
 });
 
-// .wrangler/tmp/bundle-VAzRFF/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-Z1XiQ3/middleware-loader.entry.ts
 init_modules_watch_stub();
 
-// .wrangler/tmp/bundle-VAzRFF/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-Z1XiQ3/middleware-insertion-facade.js
 init_modules_watch_stub();
 
 // src/index.ts
@@ -8443,7 +8443,7 @@ var users = sqliteTable("users", {
   emailVerified: integer("email_verified", { mode: "boolean" }).default(false),
   // Email verification status
   role: text("role", { enum: ["user", "admin", "super_admin", "moderator"] }).default("user"),
-  status: text("status", { enum: ["active", "disabled", "suspended", "deleted"] }).default("active"),
+  status: text("status", { enum: ["active", "disabled", "suspended", "deleted", "anonymized"] }).default("active"),
   lastLoginAt: integer("last_login_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }),
   updatedAt: integer("updated_at", { mode: "timestamp" }),
@@ -13714,8 +13714,9 @@ adminRoutes.put("/users/:id/status", authMiddleware, adminMiddleware, async (c) 
     return c.json({ error: "Failed to update user status", details: error.message }, 500);
   }
 });
-adminRoutes.delete("/users/:id", authMiddleware, superAdminMiddleware, async (c) => {
+adminRoutes.put("/users/:id/soft-delete", authMiddleware, superAdminMiddleware, async (c) => {
   const userId = Number(c.req.param("id"));
+  const { reason } = await c.req.json();
   const adminUser = c.get("adminUser");
   const db = drizzle(c.env.DB, { schema: schema_exports });
   try {
@@ -13728,20 +13729,202 @@ adminRoutes.delete("/users/:id", authMiddleware, superAdminMiddleware, async (c)
     if (["admin", "super_admin", "moderator"].includes(user.role)) {
       return c.json({ error: "Cannot delete admin accounts" }, 403);
     }
-    await db.update(users).set({ status: "deleted", updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, userId));
+    const activeOrders = await db.query.orders.findMany({
+      where: and(
+        eq(orders.userId, userId),
+        eq(orders.status, "pending")
+      )
+    });
+    if (activeOrders.length > 0) {
+      return c.json({
+        error: "Cannot delete user with active orders",
+        details: `User has ${activeOrders.length} pending orders`
+      }, 400);
+    }
+    await db.update(users).set({
+      status: "deleted",
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq(users.id, userId));
     await logAdminAction(
       db,
       adminUser.id,
-      "delete_user",
+      "soft_delete_user",
       c.req.header("CF-Connecting-IP"),
       c.req.header("User-Agent"),
       "user",
       userId,
-      { email: user.email }
+      {
+        email: user.email,
+        reason: reason || "No reason provided",
+        hasActiveOrders: activeOrders.length > 0
+      }
     );
-    return c.json({ success: true, message: "User deleted successfully" });
+    return c.json({
+      success: true,
+      message: "User account has been deactivated (soft deleted)",
+      note: "User data is preserved for compliance and business continuity"
+    });
   } catch (error) {
     return c.json({ error: "Failed to delete user", details: error.message }, 500);
+  }
+});
+adminRoutes.put("/users/:id/anonymize", authMiddleware, superAdminMiddleware, async (c) => {
+  const userId = Number(c.req.param("id"));
+  const { reason } = await c.req.json();
+  const adminUser = c.get("adminUser");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId)
+    });
+    if (!user) {
+      return c.json({ error: "User not found" }, 404);
+    }
+    if (["admin", "super_admin", "moderator"].includes(user.role)) {
+      return c.json({ error: "Cannot anonymize admin accounts" }, 403);
+    }
+    const anonymizedEmail = `deleted_user_${userId}@anonymized.local`;
+    await db.update(users).set({
+      email: anonymizedEmail,
+      status: "anonymized",
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq(users.id, userId));
+    await logAdminAction(
+      db,
+      adminUser.id,
+      "anonymize_user",
+      c.req.header("CF-Connecting-IP"),
+      c.req.header("User-Agent"),
+      "user",
+      userId,
+      {
+        originalEmail: user.email,
+        anonymizedEmail,
+        reason: reason || "GDPR compliance or user request"
+      }
+    );
+    return c.json({
+      success: true,
+      message: "User data has been anonymized",
+      note: "Personal data removed while preserving business records"
+    });
+  } catch (error) {
+    return c.json({ error: "Failed to anonymize user", details: error.message }, 500);
+  }
+});
+adminRoutes.delete("/users/:id/force-delete", authMiddleware, superAdminMiddleware, async (c) => {
+  const userId = Number(c.req.param("id"));
+  const { confirmation, reason } = await c.req.json();
+  const adminUser = c.get("adminUser");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  if (confirmation !== "I_UNDERSTAND_THE_RISKS_AND_WANT_TO_PERMANENTLY_DELETE_THIS_USER") {
+    return c.json({
+      error: "Missing or invalid confirmation",
+      required: "confirmation field must contain: I_UNDERSTAND_THE_RISKS_AND_WANT_TO_PERMANENTLY_DELETE_THIS_USER"
+    }, 400);
+  }
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId)
+    });
+    if (!user) {
+      return c.json({ error: "User not found" }, 404);
+    }
+    if (["admin", "super_admin", "moderator"].includes(user.role)) {
+      return c.json({ error: "Cannot permanently delete admin accounts" }, 403);
+    }
+    const relatedOrders = await db.query.orders.findMany({
+      where: eq(orders.userId, userId)
+    });
+    await logAdminAction(
+      db,
+      adminUser.id,
+      "force_delete_user_attempt",
+      c.req.header("CF-Connecting-IP"),
+      c.req.header("User-Agent"),
+      "user",
+      userId,
+      {
+        email: user.email,
+        reason: reason || "No reason provided",
+        relatedOrdersCount: relatedOrders.length,
+        warning: "This action will cause data integrity issues"
+      }
+    );
+    if (relatedOrders.length > 0) {
+      return c.json({
+        error: "Cannot permanently delete user with order history",
+        details: `User has ${relatedOrders.length} orders that would become orphaned`,
+        recommendation: "Use soft delete or anonymization instead"
+      }, 400);
+    }
+    await db.delete(users).where(eq(users.id, userId));
+    await logAdminAction(
+      db,
+      adminUser.id,
+      "force_delete_user_completed",
+      c.req.header("CF-Connecting-IP"),
+      c.req.header("User-Agent"),
+      "user",
+      userId,
+      {
+        email: user.email,
+        reason,
+        warning: "User permanently deleted - data cannot be recovered"
+      }
+    );
+    return c.json({
+      success: true,
+      message: "User permanently deleted",
+      warning: "This action cannot be undone"
+    });
+  } catch (error) {
+    return c.json({ error: "Failed to delete user permanently", details: error.message }, 500);
+  }
+});
+adminRoutes.put("/users/:id/restore", authMiddleware, superAdminMiddleware, async (c) => {
+  const userId = Number(c.req.param("id"));
+  const { reason } = await c.req.json();
+  const adminUser = c.get("adminUser");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId)
+    });
+    if (!user) {
+      return c.json({ error: "User not found" }, 404);
+    }
+    if (user.status !== "deleted") {
+      return c.json({ error: "User is not in deleted status" }, 400);
+    }
+    await db.update(users).set({
+      status: "active",
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq(users.id, userId));
+    await logAdminAction(
+      db,
+      adminUser.id,
+      "restore_user",
+      c.req.header("CF-Connecting-IP"),
+      c.req.header("User-Agent"),
+      "user",
+      userId,
+      {
+        email: user.email,
+        reason: reason || "User account restored"
+      }
+    );
+    return c.json({
+      success: true,
+      message: "User account has been restored",
+      user: {
+        id: user.id,
+        email: user.email,
+        status: "active"
+      }
+    });
+  } catch (error) {
+    return c.json({ error: "Failed to restore user", details: error.message }, 500);
   }
 });
 adminRoutes.post("/users/:id/reset-password", authMiddleware, adminMiddleware, async (c) => {
@@ -14670,14 +14853,16 @@ staticRoutes.get("/placeholder/:width/:height", async (c) => {
   const width = c.req.param("width") || "300";
   const height = c.req.param("height") || "250";
   try {
-    const svg = await c.env.ASSETS.get("placeholder.svg");
-    if (svg) {
-      return new Response(await svg.text(), {
-        headers: {
-          "Content-Type": "image/svg+xml",
-          "Access-Control-Allow-Origin": "*"
-        }
-      });
+    if (c.env?.ASSETS) {
+      const svg = await c.env.ASSETS.get("placeholder.svg");
+      if (svg) {
+        return new Response(await svg.text(), {
+          headers: {
+            "Content-Type": "image/svg+xml",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
     }
   } catch (error) {
     console.error("Error loading placeholder SVG:", error);
@@ -14697,14 +14882,16 @@ staticRoutes.get("/placeholder/:width/:height", async (c) => {
 });
 staticRoutes.get("/placeholder.svg", async (c) => {
   try {
-    const svg = await c.env.ASSETS.get("placeholder.svg");
-    if (svg) {
-      return new Response(await svg.text(), {
-        headers: {
-          "Content-Type": "image/svg+xml",
-          "Access-Control-Allow-Origin": "*"
-        }
-      });
+    if (c.env?.ASSETS) {
+      const svg = await c.env.ASSETS.get("placeholder.svg");
+      if (svg) {
+        return new Response(await svg.text(), {
+          headers: {
+            "Content-Type": "image/svg+xml",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
     }
   } catch (error) {
     console.error("Error loading placeholder SVG:", error);
@@ -14725,10 +14912,22 @@ staticRoutes.get("/placeholder.svg", async (c) => {
 staticRoutes.get("/user/*", async (c) => {
   const path = c.req.path.replace("/user/", "user/");
   try {
+    if (!c.env?.ASSETS) {
+      console.log("ASSETS binding not available for:", path);
+      if (path === "user/index.html") {
+        const developmentHtml = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>\u9053\u7384\u9601 - \u5F00\u53D1\u73AF\u5883\u914D\u7F6E</title><style>body { font-family: Arial, sans-serif; background: #1a1a1a; color: #f0f0f0; margin: 0; padding: 20px; min-height: 100vh; display: flex; align-items: center; justify-content: center; }.container { max-width: 600px; background: rgba(40, 40, 40, 0.9); border-radius: 15px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #444; }h1 { color: #ffd700; text-align: center; margin-bottom: 10px; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }.subtitle { text-align: center; color: #ccc; margin-bottom: 30px; font-size: 1.2em; }.status-box { background: #2a1810; border: 2px solid #d4641a; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center; }.status-icon { font-size: 3em; margin-bottom: 10px; }.solutions { background: #1a2a1a; border: 2px solid #4a7c59; border-radius: 10px; padding: 25px; margin: 20px 0; }.solution-item { margin: 15px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 4px solid #4a7c59; }.cmd { background: #000; color: #0f0; padding: 8px 12px; border-radius: 5px; font-family: Consolas, Monaco, monospace; margin: 5px 0; display: inline-block; border: 1px solid #333; }.btn { background: linear-gradient(45deg, #d4641a, #ff7b2a); color: white; padding: 12px 25px; border: none; border-radius: 8px; margin: 10px; cursor: pointer; text-decoration: none; display: inline-block; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(212, 100, 26, 0.3); }.btn:hover { background: linear-gradient(45deg, #ff7b2a, #d4641a); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212, 100, 26, 0.4); }.btn-secondary { background: linear-gradient(45deg, #666, #888); box-shadow: 0 4px 15px rgba(102, 102, 102, 0.3); }.btn-secondary:hover { background: linear-gradient(45deg, #888, #666); }.footer { text-align: center; margin-top: 30px; color: #888; font-size: 0.9em; }ol { padding-left: 20px; }li { margin: 8px 0; line-height: 1.6; }</style></head><body><div class="container"><h1>\u9053\u7384\u9601</h1><div class="subtitle">Tao Xuan Pavilion</div><div class="status-box"><div class="status-icon">\u26A1</div><h3>\u5F00\u53D1\u73AF\u5883 - ASSETS \u7ED1\u5B9A\u914D\u7F6E\u4E2D</h3><p>\u672C\u5730\u5F00\u53D1\u670D\u52A1\u5668\u6B63\u5728\u8FD0\u884C\uFF0C\u4F46\u9700\u8981\u6B63\u786E\u914D\u7F6E\u9759\u6001\u8D44\u6E90\u7ED1\u5B9A\u3002</p></div><div class="solutions"><h3>\u{1F6E0}\uFE0F \u914D\u7F6E\u6B65\u9AA4\uFF1A</h3><div class="solution-item"><strong>\u65B9\u6CD5\u4E00\uFF1A\u6DFB\u52A0 assets \u914D\u7F6E</strong><br>\u5728 <code>wrangler.jsonc</code> \u4E2D\u6DFB\u52A0\uFF1A<br><div class="cmd">"assets": { "directory": "./public", "binding": "ASSETS" }</div></div><div class="solution-item"><strong>\u65B9\u6CD5\u4E8C\uFF1A\u4F7F\u7528 --assets \u53C2\u6570</strong><br><div class="cmd">wrangler dev --assets ./public</div></div><div class="solution-item"><strong>\u65B9\u6CD5\u4E09\uFF1A\u91CD\u542F\u5F00\u53D1\u670D\u52A1\u5668</strong><br><div class="cmd">npm run dev</div></div></div><div style="text-align: center;"><button class="btn" onclick="location.reload()">\u{1F504} \u91CD\u65B0\u52A0\u8F7D</button><a href="/legacy" class="btn btn-secondary">\u{1F4C4} \u65E7\u7248\u754C\u9762</a></div><div class="footer"><p>\u{1F4A1} \u63D0\u793A\uFF1A\u914D\u7F6E\u5B8C\u6210\u540E\u5237\u65B0\u9875\u9762\u5373\u53EF\u8FDB\u5165\u5B8C\u6574\u7684\u6A21\u5757\u5316\u7CFB\u7EDF</p><p>\u5F00\u53D1\u73AF\u5883\u72B6\u6001\u68C0\u6D4B - ' + (/* @__PURE__ */ new Date()).toLocaleString() + '</p></div></div><script>console.log("\u{1F4CA} \u5F00\u53D1\u73AF\u5883\u72B6\u6001:");console.log("- ASSETS \u7ED1\u5B9A: \u672A\u914D\u7F6E");console.log("- \u9759\u6001\u6587\u4EF6\u670D\u52A1: \u5F00\u53D1\u6A21\u5F0F");console.log("- \u5EFA\u8BAE: \u914D\u7F6E assets \u7ED1\u5B9A\u6216\u4F7F\u7528 --assets \u53C2\u6570");<\/script></body></html>';
+        return c.html(developmentHtml);
+      }
+      return c.json({
+        error: "ASSETS binding not available in development mode",
+        suggestion: "Configure assets binding in wrangler.jsonc or use --assets flag",
+        path
+      }, 503);
+    }
     const file = await c.env.ASSETS.get(path);
     if (!file) {
-      console.log("Static file not found:", path);
-      return c.json({ error: "File not found" }, 404);
+      console.log("File not found in ASSETS:", path);
+      return c.json({ error: "File not found", path }, 404);
     }
     const headers = new Headers();
     if (path.endsWith(".html")) {
@@ -14744,12 +14943,16 @@ staticRoutes.get("/user/*", async (c) => {
     return new Response(await file.text(), { headers });
   } catch (error) {
     console.error("Error serving static file:", error);
-    return c.json({ error: "Error loading file" }, 500);
+    return c.json({ error: "Error loading file", details: error.message }, 500);
   }
 });
 staticRoutes.get("/admin/*", async (c) => {
   const path = c.req.path.replace("/admin/", "admin/");
   try {
+    if (!c.env?.ASSETS) {
+      console.log("ASSETS binding not available for admin route");
+      return c.json({ error: "ASSETS binding required" }, 503);
+    }
     const file = await c.env.ASSETS.get(path);
     if (!file) {
       console.log("Admin file not found:", path);
@@ -15685,7 +15888,7 @@ var adminPaths = {
           "name": "status",
           "in": "query",
           "description": "\u7528\u6237\u72B6\u6001\u7B5B\u9009",
-          "schema": { "type": "string", "enum": ["active", "disabled", "suspended", "deleted"] }
+          "schema": { "type": "string", "enum": ["active", "disabled", "suspended", "deleted", "anonymized"] }
         }
       ],
       "responses": {
@@ -16260,6 +16463,229 @@ var adminPaths = {
         "401": { "description": "\u672A\u6388\u6743" },
         "403": { "description": "\u65E0\u7BA1\u7406\u5458\u6743\u9650" },
         "404": { "description": "\u5206\u7C7B\u672A\u627E\u5230" }
+      }
+    }
+  },
+  "/admin/users/{id}/soft-delete": {
+    "put": {
+      "summary": "\u8F6F\u5220\u9664\u7528\u6237",
+      "description": "\u5C06\u7528\u6237\u6807\u8BB0\u4E3A\u5220\u9664\u72B6\u6001\uFF0C\u4E0D\u4F1A\u771F\u6B63\u5220\u9664\u6570\u636E\uFF0C\u53EF\u4EE5\u6062\u590D",
+      "tags": ["Admin"],
+      "security": [{ "BearerAuth": [] }],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "\u7528\u6237ID",
+          "schema": { "type": "integer" }
+        }
+      ],
+      "requestBody": {
+        "required": false,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "reason": { "type": "string", "description": "\u5220\u9664\u539F\u56E0" }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "\u7528\u6237\u8F6F\u5220\u9664\u6210\u529F",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "message": { "type": "string" },
+                  "user": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "email": { "type": "string" },
+                      "status": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": { "description": "\u7528\u6237\u5DF2\u662F\u5220\u9664\u72B6\u6001" },
+        "401": { "description": "\u672A\u6388\u6743" },
+        "403": { "description": "\u65E0\u8D85\u7EA7\u7BA1\u7406\u5458\u6743\u9650" },
+        "404": { "description": "\u7528\u6237\u672A\u627E\u5230" }
+      }
+    }
+  },
+  "/admin/users/{id}/anonymize": {
+    "put": {
+      "summary": "\u7528\u6237\u6570\u636E\u8131\u654F",
+      "description": "\u5BF9\u7528\u6237\u4E2A\u4EBA\u6570\u636E\u8FDB\u884C\u8131\u654F\u5904\u7406\uFF0C\u7B26\u5408GDPR\u5408\u89C4\u8981\u6C42",
+      "tags": ["Admin"],
+      "security": [{ "BearerAuth": [] }],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "\u7528\u6237ID",
+          "schema": { "type": "integer" }
+        }
+      ],
+      "requestBody": {
+        "required": false,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "reason": { "type": "string", "description": "\u8131\u654F\u539F\u56E0" }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "\u7528\u6237\u6570\u636E\u8131\u654F\u6210\u529F",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "message": { "type": "string" },
+                  "note": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "401": { "description": "\u672A\u6388\u6743" },
+        "403": { "description": "\u65E0\u8D85\u7EA7\u7BA1\u7406\u5458\u6743\u9650\u6216\u65E0\u6CD5\u533F\u540D\u5316\u7BA1\u7406\u5458\u8D26\u6237" },
+        "404": { "description": "\u7528\u6237\u672A\u627E\u5230" }
+      }
+    }
+  },
+  "/admin/users/{id}/restore": {
+    "put": {
+      "summary": "\u6062\u590D\u7528\u6237\u8D26\u6237",
+      "description": "\u6062\u590D\u8F6F\u5220\u9664\u7684\u7528\u6237\u8D26\u6237\uFF0C\u5C06\u72B6\u6001\u6539\u4E3A\u6B63\u5E38",
+      "tags": ["Admin"],
+      "security": [{ "BearerAuth": [] }],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "\u7528\u6237ID",
+          "schema": { "type": "integer" }
+        }
+      ],
+      "requestBody": {
+        "required": false,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "reason": { "type": "string", "description": "\u6062\u590D\u539F\u56E0" }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "\u7528\u6237\u8D26\u6237\u6062\u590D\u6210\u529F",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "message": { "type": "string" },
+                  "user": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "email": { "type": "string" },
+                      "status": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": { "description": "\u7528\u6237\u4E0D\u662F\u5220\u9664\u72B6\u6001" },
+        "401": { "description": "\u672A\u6388\u6743" },
+        "403": { "description": "\u65E0\u8D85\u7EA7\u7BA1\u7406\u5458\u6743\u9650" },
+        "404": { "description": "\u7528\u6237\u672A\u627E\u5230" }
+      }
+    }
+  },
+  "/admin/users/{id}/force-delete": {
+    "delete": {
+      "summary": "\u786C\u5220\u9664\u7528\u6237\uFF08\u5371\u9669\u64CD\u4F5C\uFF09",
+      "description": "\u6C38\u4E45\u5220\u9664\u7528\u6237\u6570\u636E\uFF0C\u6B64\u64CD\u4F5C\u4E0D\u53EF\u6062\u590D\uFF0C\u9700\u8981\u660E\u786E\u786E\u8BA4",
+      "tags": ["Admin"],
+      "security": [{ "BearerAuth": [] }],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "\u7528\u6237ID",
+          "schema": { "type": "integer" }
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["confirmation"],
+              "properties": {
+                "confirmation": {
+                  "type": "string",
+                  "description": "\u5FC5\u987B\u4E3A: I_UNDERSTAND_THE_RISKS_AND_WANT_TO_PERMANENTLY_DELETE_THIS_USER",
+                  "example": "I_UNDERSTAND_THE_RISKS_AND_WANT_TO_PERMANENTLY_DELETE_THIS_USER"
+                },
+                "reason": { "type": "string", "description": "\u5220\u9664\u539F\u56E0" }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "\u7528\u6237\u6C38\u4E45\u5220\u9664\u6210\u529F",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "message": { "type": "string" },
+                  "warning": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "400": { "description": "\u786E\u8BA4\u5B57\u7B26\u4E32\u9519\u8BEF\u6216\u7528\u6237\u6709\u8BA2\u5355\u8BB0\u5F55" },
+        "401": { "description": "\u672A\u6388\u6743" },
+        "403": { "description": "\u65E0\u8D85\u7EA7\u7BA1\u7406\u5458\u6743\u9650\u6216\u65E0\u6CD5\u5220\u9664\u7BA1\u7406\u5458\u8D26\u6237" },
+        "404": { "description": "\u7528\u6237\u672A\u627E\u5230" }
       }
     }
   },
@@ -16964,7 +17390,7 @@ function generateAdminDashboard() {
 __name(generateAdminDashboard, "generateAdminDashboard");
 
 // src/index.ts
-import html from "./5759aa23656c7919b1eeae34e17e26ce94ff4092-frontend.html";
+import html from "./519b220ebeae859f3828cdd9df0362f2771d2158-frontend.html";
 var app = new Hono2();
 app.use("/api/*", corsMiddleware);
 app.get("/", (c) => {
@@ -16972,14 +17398,19 @@ app.get("/", (c) => {
 });
 app.get("/user/", async (c) => {
   try {
+    if (!c.env?.ASSETS) {
+      console.warn("ASSETS binding not available for /user/ route");
+      return c.redirect("/user/index.html", 302);
+    }
     const html2 = await c.env.ASSETS.get("user/index.html");
     if (!html2) {
-      return c.text("User interface not found", 404);
+      console.warn("User interface file not found in ASSETS for /user/");
+      return c.redirect("/user/index.html", 302);
     }
     return c.html(await html2.text());
   } catch (error) {
     console.error("Error serving user interface:", error);
-    return c.text("Error loading user interface", 500);
+    return c.redirect("/user/index.html", 302);
   }
 });
 app.get("/legacy", (c) => c.html(html));
@@ -16988,6 +17419,10 @@ app.get("/admin", (c) => {
 });
 app.get("/admin/user-management", async (c) => {
   try {
+    if (!c.env?.ASSETS) {
+      console.warn("ASSETS binding not available for admin route");
+      return c.text("Admin interface not available in development mode", 503);
+    }
     const html2 = await c.env.ASSETS.get("admin/user-management.html");
     if (!html2) {
       return c.text("Admin interface not found", 404);
@@ -17098,7 +17533,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-VAzRFF/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-Z1XiQ3/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -17131,7 +17566,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-VAzRFF/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-Z1XiQ3/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
